@@ -14,7 +14,7 @@ It is not an official GNOME release.  Project page:
 
     https://familybusinesssoftware.com/oss/librsvg
 
-    https://github.com/randy-/librsvg
+    https://github.com/oss-fbs/librsvg
 
 The public C API matches librsvg-2.0.  Viewport, stylesheet,
 cancellable-render, and the other 2.46–2.59 entry points are present.
