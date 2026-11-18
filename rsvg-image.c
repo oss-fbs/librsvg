@@ -644,10 +644,187 @@ rsvg_jpeg_output_message (j_common_ptr cinfo)
     (void) cinfo;
 }
 
+static gboolean
+rsvg_exif_get_u16 (const guint8 *p, const guint8 *end, gboolean le, guint16 *out)
+{
+    if (p == NULL || end == NULL || p > end || (gsize) (end - p) < 2)
+        return FALSE;
+    if (le)
+        *out = (guint16) p[0] | ((guint16) p[1] << 8);
+    else
+        *out = ((guint16) p[0] << 8) | (guint16) p[1];
+    return TRUE;
+}
+
+static gboolean
+rsvg_exif_get_u32 (const guint8 *p, const guint8 *end, gboolean le, guint32 *out)
+{
+    if (p == NULL || end == NULL || p > end || (gsize) (end - p) < 4)
+        return FALSE;
+    if (le)
+        *out = (guint32) p[0] | ((guint32) p[1] << 8) |
+               ((guint32) p[2] << 16) | ((guint32) p[3] << 24);
+    else
+        *out = ((guint32) p[0] << 24) | ((guint32) p[1] << 16) |
+               ((guint32) p[2] << 8) | (guint32) p[3];
+    return TRUE;
+}
+
+/* APP1 payload. Returns 1..8, or 0 when this marker has no Orientation tag. */
+static int
+rsvg_exif_orientation_app1 (const guint8 *data, unsigned int len)
+{
+    const guint8 *end, *tiff, *p;
+    gboolean le;
+    guint16 magic, count, i;
+    guint32 ifd_off;
+    guint32 tiff_len;
+
+    if (data == NULL || len < 16)
+        return 0;
+    if (data[0] != 'E' || data[1] != 'x' || data[2] != 'i' || data[3] != 'f' ||
+        data[4] != 0 || data[5] != 0)
+        return 0;
+
+    tiff = data + 6;
+    end = data + len;
+    tiff_len = (guint32) (end - tiff);
+    if (tiff_len < 8)
+        return 0;
+    if (tiff[0] == 'I' && tiff[1] == 'I')
+        le = TRUE;
+    else if (tiff[0] == 'M' && tiff[1] == 'M')
+        le = FALSE;
+    else
+        return 0;
+    if (!rsvg_exif_get_u16 (tiff + 2, end, le, &magic) || magic != 42)
+        return 0;
+    if (!rsvg_exif_get_u32 (tiff + 4, end, le, &ifd_off))
+        return 0;
+    if (ifd_off > tiff_len || tiff_len - ifd_off < 2)
+        return 0;
+
+    p = tiff + ifd_off;
+    if (!rsvg_exif_get_u16 (p, end, le, &count))
+        return 0;
+    /* IFD0 is small. Cap the walk so a corrupt count cannot run away. */
+    if (count > 128)
+        count = 128;
+    p += 2;
+
+    for (i = 0; i < count; i++) {
+        guint16 tag, type;
+        guint32 n, val;
+
+        if ((gsize) (end - p) < 12)
+            return 0;
+        if (!rsvg_exif_get_u16 (p, end, le, &tag) ||
+            !rsvg_exif_get_u16 (p + 2, end, le, &type) ||
+            !rsvg_exif_get_u32 (p + 4, end, le, &n) ||
+            !rsvg_exif_get_u32 (p + 8, end, le, &val))
+            return 0;
+        if (tag == 0x0112 && type == 3 && n >= 1) {
+            /* SHORT stored left-justified in the 4-byte value field. */
+            guint16 orient = le ? (guint16) (val & 0xffff)
+                                : (guint16) ((val >> 16) & 0xffff);
+            if (orient >= 1 && orient <= 8)
+                return (int) orient;
+            return 0;
+        }
+        p += 12;
+    }
+    return 0;
+}
+
+static int
+rsvg_jpeg_exif_orientation (j_decompress_ptr cinfo)
+{
+    jpeg_saved_marker_ptr marker;
+
+    if (cinfo == NULL)
+        return 1;
+    for (marker = cinfo->marker_list; marker != NULL; marker = marker->next) {
+        int orient;
+
+        if (marker->marker != (JPEG_APP0 + 1) || marker->data == NULL)
+            continue;
+        orient = rsvg_exif_orientation_app1 (marker->data, marker->data_length);
+        if (orient >= 1 && orient <= 8)
+            return orient;
+    }
+    return 1;
+}
+
+/* EXIF Orientation 1..8. 1 and unknown values leave the buffer alone. */
+static gboolean
+rsvg_rgba_apply_exif_orientation (guint8 **rgba, int *width, int *height,
+                                  int orientation)
+{
+    int w, h, ow, oh, x, y;
+    guint8 *src, *dst;
+    gsize nbytes;
+
+    if (rgba == NULL || *rgba == NULL || width == NULL || height == NULL)
+        return FALSE;
+    if (orientation <= 1 || orientation > 8)
+        return TRUE;
+
+    w = *width;
+    h = *height;
+    if (w <= 0 || h <= 0)
+        return FALSE;
+
+    if (orientation >= 5) {
+        ow = h;
+        oh = w;
+    } else {
+        ow = w;
+        oh = h;
+    }
+    if (!rsvg_image_rgba_nbytes ((gint64) ow, (gint64) oh, &nbytes))
+        return FALSE;
+    dst = g_try_malloc (nbytes);
+    if (dst == NULL)
+        return FALSE;
+
+    src = *rgba;
+    for (y = 0; y < h; y++) {
+        for (x = 0; x < w; x++) {
+            int dx, dy;
+            const guint8 *sp;
+            guint8 *dp;
+
+            switch (orientation) {
+            case 2: dx = w - 1 - x; dy = y; break;
+            case 3: dx = w - 1 - x; dy = h - 1 - y; break;
+            case 4: dx = x; dy = h - 1 - y; break;
+            case 5: dx = y; dy = x; break;
+            case 6: dx = h - 1 - y; dy = x; break;
+            case 7: dx = h - 1 - y; dy = w - 1 - x; break;
+            case 8: dx = y; dy = w - 1 - x; break;
+            default: dx = x; dy = y; break;
+            }
+            sp = src + ((gsize) y * (gsize) w + (gsize) x) * 4;
+            dp = dst + ((gsize) dy * (gsize) ow + (gsize) dx) * 4;
+            dp[0] = sp[0];
+            dp[1] = sp[1];
+            dp[2] = sp[2];
+            dp[3] = sp[3];
+        }
+    }
+
+    g_free (src);
+    *rgba = dst;
+    *width = ow;
+    *height = oh;
+    return TRUE;
+}
+
 static cairo_surface_t *
 rsvg_cairo_surface_from_jpeg (const guint8 *data,
                               gsize data_len,
                               const char *href,
+                              gboolean apply_orientation,
                               GError **error)
 {
     struct jpeg_decompress_struct cinfo;
@@ -658,6 +835,7 @@ rsvg_cairo_surface_from_jpeg (const guint8 *data,
     int y;
     cairo_surface_t *surface = NULL;
     gboolean created = FALSE;
+    int orientation = 1;
 
     if (data == NULL || data_len == 0) {
         g_set_error (error,
@@ -688,10 +866,15 @@ rsvg_cairo_surface_from_jpeg (const guint8 *data,
     jpeg_create_decompress (&cinfo);
     created = TRUE;
     jpeg_mem_src (&cinfo, data, (unsigned long) data_len);
+    /* Keep APP1 so the EXIF Orientation tag can be read. */
+    jpeg_save_markers (&cinfo, JPEG_APP0 + 1, 0xFFFF);
 
     if (jpeg_read_header (&cinfo, TRUE) != JPEG_HEADER_OK) {
         longjmp (jerr.setjmp_buffer, 1);
     }
+
+    if (apply_orientation)
+        orientation = rsvg_jpeg_exif_orientation (&cinfo);
 
     if (!rsvg_image_dims_ok ((gint64) cinfo.image_width,
                              (gint64) cinfo.image_height)) {
@@ -745,6 +928,17 @@ rsvg_cairo_surface_from_jpeg (const guint8 *data,
         jpeg_finish_decompress (&cinfo);
         jpeg_destroy_decompress (&cinfo);
         created = FALSE;
+
+        if (apply_orientation &&
+            !rsvg_rgba_apply_exif_orientation (&rgba, &width, &height, orientation)) {
+            g_free (rgba);
+            g_set_error (error,
+                         GDK_PIXBUF_ERROR,
+                         GDK_PIXBUF_ERROR_FAILED,
+                         _("Failed to decode JPEG image '%s'"),
+                         href ? href : "");
+            return NULL;
+        }
 
         surface = rsvg_cairo_surface_from_rgba (rgba, width, height, href, "JPEG", error);
         g_free (rgba);
@@ -1380,6 +1574,7 @@ rsvg_cairo_surface_from_avif (const guint8 *data,
 cairo_surface_t *
 rsvg_cairo_surface_new_from_href (RsvgHandle *handle,
                                   const char *href,
+                                  gboolean apply_orientation,
                                   GError **error)
 {
     char *data;
@@ -1387,6 +1582,7 @@ rsvg_cairo_surface_new_from_href (RsvgHandle *handle,
     char *mime_type = NULL;
     GdkPixbufLoader *loader = NULL;
     GdkPixbuf *pixbuf = NULL;
+    GdkPixbuf *oriented = NULL;
     cairo_surface_t *surface = NULL;
 
     data = _rsvg_handle_acquire_data (handle, href, &mime_type, &data_len, error);
@@ -1446,7 +1642,8 @@ rsvg_cairo_surface_new_from_href (RsvgHandle *handle,
 
     if (rsvg_data_is_jpeg (data, data_len, mime_type, href)) {
 #ifdef HAVE_LIBJPEG
-        surface = rsvg_cairo_surface_from_jpeg ((const guint8 *) data, data_len, href, error);
+        surface = rsvg_cairo_surface_from_jpeg ((const guint8 *) data, data_len, href,
+                                                apply_orientation, error);
         if (surface == NULL)
             goto out;
 
@@ -1558,6 +1755,12 @@ rsvg_cairo_surface_new_from_href (RsvgHandle *handle,
         goto out;
     }
 
+    if (apply_orientation) {
+        oriented = gdk_pixbuf_apply_embedded_orientation (pixbuf);
+        if (oriented != NULL)
+            pixbuf = oriented;
+    }
+
     if (!rsvg_image_dims_ok (gdk_pixbuf_get_width (pixbuf),
                              gdk_pixbuf_get_height (pixbuf))) {
         g_set_error (error,
@@ -1594,6 +1797,8 @@ rsvg_cairo_surface_new_from_href (RsvgHandle *handle,
     }
 
   out:
+    if (oriented)
+        g_object_unref (oriented);
     if (loader)
         g_object_unref (loader);
     g_free (mime_type);
@@ -1650,6 +1855,7 @@ rsvg_node_image_free (RsvgNode * self)
     z->super.state = NULL;
     if (z->surface)
         cairo_surface_destroy (z->surface);
+    g_free (z->href);
     _rsvg_node_free(self);
 }
 
@@ -1659,10 +1865,9 @@ rsvg_node_image_draw (RsvgNode * self, RsvgDrawingCtx * ctx, int dominate)
     RsvgNodeImage *z = (RsvgNodeImage *) self;
     unsigned int aspect_ratio = z->preserve_aspect_ratio;
     gdouble x, y, w, h;
-    cairo_surface_t *surface = z->surface;
-
-    if (surface == NULL)
-        return;
+    cairo_surface_t *surface;
+    int orient;
+    gboolean apply;
 
     x = _rsvg_css_normalize_length (&z->x, ctx, 'h');
     y = _rsvg_css_normalize_length (&z->y, ctx, 'v');
@@ -1670,6 +1875,26 @@ rsvg_node_image_draw (RsvgNode * self, RsvgDrawingCtx * ctx, int dominate)
     h = _rsvg_css_normalize_length (&z->h, ctx, 'v');
 
     rsvg_state_reinherit_top (ctx, z->super.state, dominate);
+
+    /* Computed value: specified on this node, else inherited, else from-image. */
+    orient = rsvg_current_state (ctx)->image_orientation;
+    apply = orient != RSVG_IMAGE_ORIENTATION_NONE;
+    if (z->href != NULL && z->surface_orientation != orient) {
+        if (z->surface) {
+            cairo_surface_destroy (z->surface);
+            z->surface = NULL;
+        }
+        z->surface = rsvg_cairo_surface_new_from_href (z->handle, z->href, apply, NULL);
+        z->surface_orientation = orient;
+#ifdef G_ENABLE_DEBUG
+        if (!z->surface)
+            g_warning ("Couldn't load image: %s\n", z->href);
+#endif
+    }
+
+    surface = z->surface;
+    if (surface == NULL)
+        return;
 
     rsvg_push_discrete_layer (ctx);
 
@@ -1693,6 +1918,8 @@ rsvg_node_image_set_atts (RsvgNode * self, RsvgHandle * ctx, RsvgPropertyBag * a
     const char *klazz = NULL, *id = NULL, *value;
     RsvgNodeImage *image = (RsvgNodeImage *) self;
 
+    image->handle = ctx;
+
     if (rsvg_property_bag_size (atts)) {
         if ((value = rsvg_property_bag_lookup (atts, "x")))
             image->x = _rsvg_css_parse_length (value);
@@ -1705,15 +1932,14 @@ rsvg_node_image_set_atts (RsvgNode * self, RsvgHandle * ctx, RsvgPropertyBag * a
         /* path is used by some older adobe illustrator versions */
         if ((value = rsvg_property_bag_lookup (atts, "path"))
             || (value = rsvg_property_bag_lookup_href (atts))) {
-            image->surface = rsvg_cairo_surface_new_from_href (ctx,
-                                                               value, 
-                                                               NULL);
-
-            if (!image->surface) {
-#ifdef G_ENABLE_DEBUG
-                g_warning ("Couldn't load image: %s\n", value);
-#endif
+            /* Decode at draw time, after image-orientation is computed. */
+            g_free (image->href);
+            image->href = g_strdup (value);
+            if (image->surface) {
+                cairo_surface_destroy (image->surface);
+                image->surface = NULL;
             }
+            image->surface_orientation = -1;
         }
         if ((value = rsvg_property_bag_lookup (atts, "class")))
             klazz = value;
@@ -1736,10 +1962,23 @@ rsvg_new_image (void)
     _rsvg_node_init (&image->super, RSVG_NODE_TYPE_IMAGE);
     g_assert (image->super.state);
     image->surface = NULL;
+    image->href = NULL;
+    image->handle = NULL;
+    image->surface_orientation = -1;
     image->preserve_aspect_ratio = RSVG_ASPECT_RATIO_XMID_YMID;
     image->x = image->y = image->w = image->h = _rsvg_css_parse_length ("0");
     image->super.free = rsvg_node_image_free;
     image->super.draw = rsvg_node_image_draw;
     image->super.set_atts = rsvg_node_image_set_atts;
     return &image->super;
+}
+
+gboolean
+rsvg_image_orientation_applies (RsvgNode *node)
+{
+    for (; node != NULL; node = node->parent) {
+        if (node->state != NULL && node->state->has_image_orientation)
+            return node->state->image_orientation != RSVG_IMAGE_ORIENTATION_NONE;
+    }
+    return TRUE;
 }

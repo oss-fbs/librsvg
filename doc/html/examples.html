@@ -26,7 +26,7 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname"><a href="../index.html">LIBRSVG</a><span id="projectnumber">&#160;2.62.3</span>
+   <div id="projectname"><a href="../index.html">LIBRSVG</a><span id="projectnumber">&#160;2.62.5</span>
    </div>
    <div id="projectbrief">C library for rendering SVG</div>
   </td>
@@ -94,8 +94,8 @@ $(document).ready(function(){initNavTree('examples.html',''); initResizable(); }
   <div class="headertitle"><div class="title">Examples</div></div>
 </div><!--header-->
 <div class="contents">
-<div class="textblock"><p>Curated samples for librsvg <b>2.62.3</b>.</p>
-<p>Full programs live in <code>examples/</code> in the source tree and in the <code>librsvg-c-2.62.3</code> tarball. Build from that directory (needs pkg-config <code>librsvg-2.0</code>; Cairo samples also need <code>cairo</code> / <code>cairo-png</code>):</p>
+<div class="textblock"><p>Curated samples for librsvg <b>2.62.5</b>.</p>
+<p>Full programs live in <code>examples/</code> in the source tree and in the <code>librsvg-c-2.62.5</code> tarball. Build from that directory (needs pkg-config <code>librsvg-2.0</code>; Cairo samples also need <code>cairo</code> / <code>cairo-png</code>):</p>
 <pre class="fragment">cc -o 01-render-document 01-render-document.c \
     $(pkg-config --cflags --libs librsvg-2.0 cairo cairo-png)
 </pre><p>Run from <code>examples/</code> so <code>icon.svg</code> is found. Prefer the modern calls shown here: <code><a class="el" href="group__rsvg__rendering.html#ga410511165f0ceaf7b63fa8101a60c8d6" title="Draw the whole SVG into @viewport on @cr.">rsvg_handle_render_document()</a></code>, <code><a class="el" href="group__rsvg__stylesheet.html#gad4d67c485d432628d97a9487809cb299" title="Set a CSS stylesheet for the SVG document.">rsvg_handle_set_stylesheet()</a></code>, <code><a class="el" href="group__rsvg__pixbuf.html#gafb51f9231919118d93655eff08a277ce" title="Render the SVG to a #GdkPixbuf.">rsvg_handle_get_pixbuf_and_error()</a></code>.</p>

@@ -939,6 +939,13 @@ rsvg_entity_decl (void *data, const xmlChar * name, int type,
     GHashTable *entities = ctx->priv->entities;
     xmlEntityPtr entity;
     xmlChar *resolvedSystemId = NULL, *resolvedPublicId = NULL;
+    xmlChar *owned_content = NULL;
+
+    /* First declaration wins. Nested XInclude reuses this table while
+     * the outer parser may still hold the original xmlEntity. A second
+     * insert would free that live entity. */
+    if (name == NULL || g_hash_table_lookup (entities, name) != NULL)
+        return;
 
     if (systemId)
         resolvedSystemId = xmlBuildRelativeURI (systemId, (xmlChar*) rsvg_handle_get_base_uri (ctx));
@@ -965,7 +972,8 @@ rsvg_entity_decl (void *data, const xmlChar * name, int type,
             entity_data = NULL;
 
         if (entity_data) {
-            content = xmlCharStrndup (entity_data, entity_data_len);
+            owned_content = xmlCharStrndup (entity_data, entity_data_len);
+            content = owned_content;
             g_free (entity_data);
         }
     }
@@ -974,6 +982,11 @@ rsvg_entity_decl (void *data, const xmlChar * name, int type,
 
     xmlFree(resolvedPublicId);
     xmlFree(resolvedSystemId);
+    /* xmlNewEntity copies content. Free only the buffer we allocated. */
+    xmlFree(owned_content);
+
+    if (entity == NULL)
+        return;
 
     g_hash_table_insert (entities, g_strdup ((const char*) name), entity);
 }

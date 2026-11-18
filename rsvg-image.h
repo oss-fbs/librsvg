@@ -47,13 +47,23 @@ struct _RsvgNodeImage {
     gint preserve_aspect_ratio;
     RsvgCssLength x, y, w, h;
     cairo_surface_t *surface; /* a cairo image surface */
+    char *href;
+    RsvgHandle *handle;          /* not owned */
+    int surface_orientation;     /* -1 until a load is attempted */
 };
 
 G_GNUC_INTERNAL
 void rsvg_preserve_aspect_ratio (unsigned int aspect_ratio, double width,
                                  double height, double *w, double *h, double *x, double *y);
 G_GNUC_INTERNAL
-cairo_surface_t *rsvg_cairo_surface_new_from_href (RsvgHandle *handle, const char *href, GError ** error);
+cairo_surface_t *rsvg_cairo_surface_new_from_href (RsvgHandle *handle,
+                                                   const char *href,
+                                                   gboolean apply_orientation,
+                                                   GError ** error);
+
+/* TRUE when image-orientation is from-image (the initial value). */
+G_GNUC_INTERNAL
+gboolean rsvg_image_orientation_applies (RsvgNode *node);
 
 G_END_DECLS
 
