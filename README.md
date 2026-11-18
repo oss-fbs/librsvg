@@ -13,7 +13,7 @@ This tree is an independent continuation of the C implementation.
 It is not an official GNOME release.  Project page:
 
     https://familybusinesssoftware.com/oss/librsvg
-
+    
     https://github.com/oss-fbs/librsvg
 
 The public C API matches librsvg-2.0.  Viewport, stylesheet,
@@ -44,14 +44,14 @@ A system libcroco is not used.
 
 Raster decoders (each **auto** at configure time):
 
-| Format | Library                 | Disable             |
-| ------ | ----------------------- | ------------------- |
-| PNG    | libpng                  | `--disable-png`     |
-| JPEG   | libjpeg / libjpeg-turbo | `--disable-jpeg`    |
-| GIF    | giflib                  | `--disable-gif`     |
-| WebP   | libwebp                 | `--disable-webp`    |
-| BMP    | in-tree decoder         | `--disable-bmp`     |
-| AVIF   | libavif                 | `--disable-avif`    |
+| Format | Library                 | Disable          |
+| ------ | ----------------------- | ---------------- |
+| PNG    | libpng                  | `--disable-png`  |
+| JPEG   | libjpeg / libjpeg-turbo | `--disable-jpeg` |
+| GIF    | giflib                  | `--disable-gif`  |
+| WebP   | libwebp                 | `--disable-webp` |
+| BMP    | in-tree decoder         | `--disable-bmp`  |
+| AVIF   | libavif                 | `--disable-avif` |
 
 `--enable-*` without the corresponding library is an error for
 PNG/JPEG/GIF/WebP/AVIF.  `--enable-bmp` needs no extra library.
@@ -97,9 +97,9 @@ Release
 Download and signature:
 
     https://familybusinesssoftware.com/oss/librsvg
-
+    
     https://github.com/randy-/librsvg
-
+    
     make help
     make pkg
 
