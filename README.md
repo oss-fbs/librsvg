@@ -5,7 +5,7 @@ librsvg is a C library that renders Scalable Vector Graphics (SVG) to
 Cairo surfaces.  The shared library, headers, and pkg-config module
 are **librsvg-2.0**.  The soname is **librsvg-2.so.2**.
 
-Version **2.62.3**.
+Version **2.62.5**.
 
 Originally written by Raph Levien.
 
@@ -103,7 +103,7 @@ Download and signature:
     make help
     make pkg
 
-writes `librsvg-c-2.62.3.tar.xz` only under `../pkg/`.
+writes `librsvg-c-2.62.5.tar.xz` only under `../pkg/`.
 The tarball is source only (C tree, tests, autotools; `libcroco/`
 is an unbuilt archive).  Sample packaging lives in git `dist/`,
 not in the public source archive.
@@ -115,8 +115,8 @@ and in the git tree (`oss-familybusinesssoftware.com-pubkey.asc`).
 Neither installs onto a live prefix or runs pkgmk.
 
     cd ../pkg
-    gpg --detach-sign --armor librsvg-c-2.62.3.tar.xz
-    sha256sum librsvg-c-2.62.3.tar.xz > SHA256SUMS
+    gpg --detach-sign --armor librsvg-c-2.62.5.tar.xz
+    sha256sum librsvg-c-2.62.5.tar.xz > SHA256SUMS
     gpg --detach-sign --armor SHA256SUMS
 
 Further reading

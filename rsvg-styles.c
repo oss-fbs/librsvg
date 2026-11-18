@@ -214,6 +214,8 @@ rsvg_state_init (RsvgState * state)
     state->has_text_rendering_type = FALSE;
     state->image_rendering = CAIRO_FILTER_GOOD;
     state->has_image_rendering = FALSE;
+    state->image_orientation = RSVG_IMAGE_ORIENTATION_FROM_IMAGE;
+    state->has_image_orientation = FALSE;
     state->lighting_color = 0xFFFFFFFF;
     state->has_lighting_color = FALSE;
     state->color_interpolation_filters_srgb = FALSE;
@@ -370,6 +372,8 @@ rsvg_state_inherit_run (RsvgState * dst, const RsvgState * src,
             dst->text_rendering_type = src->text_rendering_type;
     if (function (dst->has_image_rendering, src->has_image_rendering))
             dst->image_rendering = src->image_rendering;
+    if (function (dst->has_image_orientation, src->has_image_orientation))
+            dst->image_orientation = src->image_orientation;
     if (function (dst->has_lighting_color, src->has_lighting_color))
             dst->lighting_color = src->lighting_color;
     if (function (dst->has_color_interpolation_filters, src->has_color_interpolation_filters))
@@ -966,6 +970,17 @@ rsvg_parse_style_pair (RsvgHandle * ctx,
             state->image_rendering = CAIRO_FILTER_NEAREST;
         else
             state->image_rendering = CAIRO_FILTER_GOOD;
+    } else if (g_str_equal (name, "image-orientation")) {
+        /* from-image and none only. Angles and unknown tokens are ignored. */
+        if (g_ascii_strcasecmp (value, "inherit") != 0) {
+            if (g_ascii_strcasecmp (value, "none") == 0) {
+                state->has_image_orientation = TRUE;
+                state->image_orientation = RSVG_IMAGE_ORIENTATION_NONE;
+            } else if (g_ascii_strcasecmp (value, "from-image") == 0) {
+                state->has_image_orientation = TRUE;
+                state->image_orientation = RSVG_IMAGE_ORIENTATION_FROM_IMAGE;
+            }
+        }
     } else if (g_str_equal (name, "lighting-color")) {
         if (!g_str_equal (value, "inherit")) {
             state->lighting_color = rsvg_css_parse_color (value, &state->has_lighting_color);

@@ -74,6 +74,12 @@ typedef enum {
     RSVG_TEXT_ORIENTATION_SIDEWAYS
 } RsvgTextOrientation;
 
+/* CSS Images image-orientation. Angles are not handled. */
+typedef enum {
+    RSVG_IMAGE_ORIENTATION_FROM_IMAGE = 0,
+    RSVG_IMAGE_ORIENTATION_NONE = 1
+} RsvgImageOrientation;
+
 typedef enum {
     RSVG_ENABLE_BACKGROUND_ACCUMULATE,
     RSVG_ENABLE_BACKGROUND_NEW
@@ -243,6 +249,10 @@ struct _RsvgState {
 
     cairo_filter_t image_rendering;
     gboolean has_image_rendering;
+
+    /* CSS image-orientation. Inherits. Default is from-image. */
+    gint image_orientation;     /* RsvgImageOrientation */
+    gboolean has_image_orientation;
 
     guint32 lighting_color;
     gboolean has_lighting_color;

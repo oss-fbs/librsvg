@@ -4353,7 +4353,9 @@ rsvg_filter_primitive_image_render (RsvgFilterPrimitive * self, RsvgFilterContex
 
     img = rsvg_filter_primitive_image_render_in (self, ctx);
     if (img == NULL)
-        img = rsvg_cairo_surface_new_from_href (upself->ctx, upself->href->str, NULL);
+        img = rsvg_cairo_surface_new_from_href (upself->ctx, upself->href->str,
+                                                rsvg_image_orientation_applies (&upself->super.super),
+                                                NULL);
 
     if (img) {
         img_w = cairo_image_surface_get_width (img);

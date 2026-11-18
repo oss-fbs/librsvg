@@ -1,3 +1,14 @@
+librsvg-c (2.62.5-1) unstable; urgency=medium
+
+  * Version 2.62.5. There is no 2.62.4 package.
+  * Keep the first declaration of an entity name. A nested XInclude
+    that repeats the name no longer frees the entity still in use.
+  * SVG image and feImage honor image-orientation (from-image default,
+    none leaves stored pixels). JPEG EXIF Orientation is applied for
+    from-image. PNG, GIF, WebP, BMP, and AVIF decoders do not.
+
+ -- Randy Butler <oss@familybusinesssoftware.com>  Tue, 17 Nov 2026 12:00:00 -0500
+
 librsvg-c (2.62.3-1) unstable; urgency=medium
 
   * Initial Debian package of the C librsvg 2.62.3 tree.

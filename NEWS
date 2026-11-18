@@ -1,3 +1,20 @@
+Version 2.62.5 (Not released)
+
+There was no public 2.62.4 release.
+
+- Fixes CVE-2026-96889 (use-after-free in entity handling).
+  A second declaration of the same entity name no longer replaces
+  the first entry in the handle entity table. The first declaration
+  is kept. Nested XInclude parses share that table, so an included
+  document that declares an existing name no longer frees the entity
+  the outer parse is still using.
+- SVG <image> and feImage honor CSS image-orientation. The initial
+  value from-image applies embedded orientation. none leaves stored
+  pixels unchanged. Other values, including angles, are ignored.
+  The JPEG decoder reads the EXIF Orientation tag. PNG, GIF, WebP,
+  BMP, and AVIF decoders do not. A gdk-pixbuf fallback applies that
+  loader's embedded orientation when from-image is in effect.
+
 Version 2.62.3
 
 librsvg-2.0 C library for rendering SVG to Cairo 
