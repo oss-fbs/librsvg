@@ -1,6 +1,4 @@
-Version 2.62.5 (Not released)
-
-There was no public 2.62.4 release.
+Version 2.62.5
 
 - Fixes CVE-2026-96889 (use-after-free in entity handling).
   A second declaration of the same entity name no longer replaces
@@ -14,6 +12,12 @@ There was no public 2.62.4 release.
   The JPEG decoder reads the EXIF Orientation tag. PNG, GIF, WebP,
   BMP, and AVIF decoders do not. A gdk-pixbuf fallback applies that
   loader's embedded orientation when from-image is in effect.
+
+
+Version 2.62.4
+ 
+  There was no public 2.62.4 release.
+
 
 Version 2.62.3
 
