@@ -98,7 +98,7 @@ Download and signature:
 
     https://familybusinesssoftware.com/oss/librsvg
     
-    https://github.com/randy-/librsvg
+    https://github.com/oss-fbs/librsvg
     
     make help
     make pkg
