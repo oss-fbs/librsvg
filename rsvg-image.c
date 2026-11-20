@@ -1626,6 +1626,157 @@ rsvg_data_is_svg (const char *data,
     return rsvg_bytes_look_like_svg (data, data_len);
 }
 
+/* Dest user-space size (origin 0,0) transformed by the current CTM.
+ * AABB width/height; caller ceils to device pixels. */
+static void
+rsvg_device_size_from_user (const cairo_matrix_t *affine,
+                            double w, double h,
+                            double *out_w, double *out_h)
+{
+    double x0 = 0, y0 = 0, x1 = w, y1 = 0, x2 = 0, y2 = h, x3 = w, y3 = h;
+    double minx, maxx, miny, maxy;
+
+    cairo_matrix_transform_point ((cairo_matrix_t *) affine, &x0, &y0);
+    cairo_matrix_transform_point ((cairo_matrix_t *) affine, &x1, &y1);
+    cairo_matrix_transform_point ((cairo_matrix_t *) affine, &x2, &y2);
+    cairo_matrix_transform_point ((cairo_matrix_t *) affine, &x3, &y3);
+
+    minx = x0; if (x1 < minx) minx = x1; if (x2 < minx) minx = x2; if (x3 < minx) minx = x3;
+    maxx = x0; if (x1 > maxx) maxx = x1; if (x2 > maxx) maxx = x2; if (x3 > maxx) maxx = x3;
+    miny = y0; if (y1 < miny) miny = y1; if (y2 < miny) miny = y2; if (y3 < miny) miny = y3;
+    maxy = y0; if (y1 > maxy) maxy = y1; if (y2 > maxy) maxy = y2; if (y3 > maxy) maxy = y3;
+
+    *out_w = maxx - minx;
+    *out_h = maxy - miny;
+}
+
+/* Load href as a nested SVG. Returns a child handle on success.
+ * Returns NULL with no error if href is not SVG (caller uses the
+ * raster path). Returns NULL with error on acquire, size, nesting,
+ * or parse failure. The image is omitted; the parent still renders. */
+static RsvgHandle *
+rsvg_handle_try_nested_svg (RsvgHandle *parent, const char *href, GError **error)
+{
+    char *data;
+    gsize data_len;
+    char *mime_type = NULL;
+    RsvgHandle *child;
+    char *resolved;
+    const char *base;
+
+    data = _rsvg_handle_acquire_data (parent, href, &mime_type, &data_len, error);
+    if (data == NULL)
+        return NULL;
+
+    if (data_len > rsvg_handle_max_data_uri_bytes (parent)) {
+        g_set_error (error,
+                     RSVG_ERROR,
+                     RSVG_ERROR_FAILED,
+                     _("Image '%s' is too large"),
+                     href ? href : "");
+        g_free (mime_type);
+        g_free (data);
+        return NULL;
+    }
+
+    if (!rsvg_data_is_svg (data, data_len, mime_type, href)) {
+        g_free (mime_type);
+        g_free (data);
+        return NULL;
+    }
+    g_free (mime_type);
+
+    if (parent->priv->file_nesting_depth >= RSVG_MAX_FILE_NESTING_DEPTH) {
+        rsvg_set_nesting_error (error);
+        g_free (data);
+        return NULL;
+    }
+
+    child = rsvg_handle_new_child (parent);
+
+    if (href != NULL && g_ascii_strncasecmp (href, "data:", 5) == 0) {
+        base = rsvg_handle_get_base_uri (parent);
+        if (base != NULL)
+            rsvg_handle_set_base_uri (child, base);
+    } else {
+        resolved = rsvg_handle_resolve_uri (parent, href);
+        if (resolved != NULL) {
+            rsvg_handle_set_base_uri (child, resolved);
+            g_free (resolved);
+        }
+    }
+
+    if (!rsvg_handle_fill_with_data (child, data, data_len, error)) {
+        if (error != NULL && *error == NULL)
+            g_set_error (error, RSVG_ERROR, RSVG_ERROR_FAILED,
+                         _("Failed to load image '%s'"),
+                         href ? href : "");
+        g_object_unref (child);
+        g_free (data);
+        return NULL;
+    }
+
+    g_free (data);
+    return child;
+}
+
+/* Rasterize a nested SVG at dest user-space size × current CTM
+ * (ceil). Omit if the device surface exceeds image caps. */
+static cairo_surface_t *
+rsvg_cairo_surface_from_nested_svg (RsvgHandle *svg_handle,
+                                    RsvgHandle *parent,
+                                    const cairo_matrix_t *affine,
+                                    double dest_w, double dest_h)
+{
+    double dw, dh;
+    int sw, sh;
+    cairo_surface_t *surface;
+    cairo_t *cr;
+    RsvgRectangle viewport;
+    GError *err = NULL;
+
+    if (!(dest_w > 0.0) || !(dest_h > 0.0))
+        return NULL;
+
+    rsvg_device_size_from_user (affine, dest_w, dest_h, &dw, &dh);
+    if (!(dw > 0.0) || !(dh > 0.0) ||
+        dw > (double) G_MAXINT || dh > (double) G_MAXINT)
+        return NULL;
+
+    sw = (int) ceil (dw);
+    sh = (int) ceil (dh);
+    if (!rsvg_image_dims_ok ((gint64) sw, (gint64) sh,
+                             rsvg_handle_max_image_pixel_bytes (parent)))
+        return NULL;
+
+    surface = cairo_image_surface_create (CAIRO_FORMAT_ARGB32, sw, sh);
+    if (cairo_surface_status (surface) != CAIRO_STATUS_SUCCESS) {
+        cairo_surface_destroy (surface);
+        return NULL;
+    }
+
+    cr = cairo_create (surface);
+    if (cairo_status (cr) != CAIRO_STATUS_SUCCESS) {
+        cairo_destroy (cr);
+        cairo_surface_destroy (surface);
+        return NULL;
+    }
+
+    viewport.x = 0;
+    viewport.y = 0;
+    viewport.width = (double) sw;
+    viewport.height = (double) sh;
+    if (!rsvg_handle_render_document (svg_handle, cr, &viewport, &err)) {
+        g_clear_error (&err);
+        cairo_destroy (cr);
+        cairo_surface_destroy (surface);
+        return NULL;
+    }
+
+    cairo_destroy (cr);
+    return surface;
+}
+
 typedef struct {
     gboolean too_large;
     gsize max_pixel_bytes;
@@ -1814,7 +1965,8 @@ rsvg_cairo_surface_new_from_href (RsvgHandle *handle,
     }
 
     /* Nested SVG must not go through gdk-pixbuf (the SVG loader
-     * recurses into this library). Count it against file nesting. */
+     * recurses into this library). <image> loads SVG via
+     * rsvg_handle_try_nested_svg. feImage still omits nested SVG. */
     if (rsvg_data_is_svg (data, data_len, mime_type, href)) {
         if (handle->priv->file_nesting_depth >= RSVG_MAX_FILE_NESTING_DEPTH)
             rsvg_set_nesting_error (error);
@@ -1968,14 +2120,27 @@ rsvg_preserve_aspect_ratio (unsigned int aspect_ratio, double width,
 }
 
 static void
+rsvg_node_image_clear_loaded (RsvgNodeImage *z)
+{
+    if (z->surface) {
+        cairo_surface_destroy (z->surface);
+        z->surface = NULL;
+    }
+    if (z->svg_handle) {
+        g_object_unref (z->svg_handle);
+        z->svg_handle = NULL;
+    }
+    z->surface_orientation = -1;
+}
+
+static void
 rsvg_node_image_free (RsvgNode * self)
 {
     RsvgNodeImage *z = (RsvgNodeImage *) self;
     rsvg_state_finalize (z->super.state);
     g_free (z->super.state);
     z->super.state = NULL;
-    if (z->surface)
-        cairo_surface_destroy (z->surface);
+    rsvg_node_image_clear_loaded (z);
     g_free (z->href);
     _rsvg_node_free(self);
 }
@@ -1987,6 +2152,7 @@ rsvg_node_image_draw (RsvgNode * self, RsvgDrawingCtx * ctx, int dominate)
     unsigned int aspect_ratio = z->preserve_aspect_ratio;
     gdouble x, y, w, h;
     cairo_surface_t *surface;
+    cairo_surface_t *svg_surface = NULL;
     int orient;
     gboolean apply;
 
@@ -2005,12 +2171,59 @@ rsvg_node_image_draw (RsvgNode * self, RsvgDrawingCtx * ctx, int dominate)
             cairo_surface_destroy (z->surface);
             z->surface = NULL;
         }
-        z->surface = rsvg_cairo_surface_new_from_href (z->handle, z->href, apply, NULL);
-        z->surface_orientation = orient;
+
+        if (z->svg_handle == NULL) {
+            GError *err = NULL;
+
+            z->svg_handle = rsvg_handle_try_nested_svg (z->handle, z->href, &err);
+            if (z->svg_handle != NULL) {
+                g_clear_error (&err);
+            } else if (err != NULL) {
 #ifdef G_ENABLE_DEBUG
-        if (!z->surface)
-            g_warning ("Couldn't load image: %s\n", z->href);
+                g_warning ("Couldn't load image: %s\n", z->href);
 #endif
+                g_clear_error (&err);
+                z->surface_orientation = orient;
+            }
+        }
+
+        if (z->svg_handle == NULL && z->surface_orientation != orient) {
+            z->surface = rsvg_cairo_surface_new_from_href (z->handle, z->href, apply, NULL);
+            z->surface_orientation = orient;
+#ifdef G_ENABLE_DEBUG
+            if (!z->surface)
+                g_warning ("Couldn't load image: %s\n", z->href);
+#endif
+        } else {
+            z->surface_orientation = orient;
+        }
+    }
+
+    if (z->svg_handle != NULL) {
+        double fx = x, fy = y, fw = w, fh = h;
+        RsvgDimensionData dim;
+
+        rsvg_handle_get_document_size (z->svg_handle, &dim);
+        if (dim.width > 0 && dim.height > 0)
+            rsvg_preserve_aspect_ratio (aspect_ratio,
+                                        (double) dim.width,
+                                        (double) dim.height,
+                                        &fw, &fh, &fx, &fy);
+
+        svg_surface = rsvg_cairo_surface_from_nested_svg (z->svg_handle,
+                                                          z->handle,
+                                                          &rsvg_current_state (ctx)->affine,
+                                                          fw, fh);
+        if (svg_surface == NULL)
+            return;
+
+        rsvg_push_discrete_layer (ctx);
+        if (!rsvg_current_state (ctx)->overflow && (aspect_ratio & RSVG_ASPECT_RATIO_SLICE))
+            rsvg_add_clipping_rect (ctx, x, y, w, h);
+        rsvg_render_surface (ctx, svg_surface, fx, fy, fw, fh);
+        rsvg_pop_discrete_layer (ctx);
+        cairo_surface_destroy (svg_surface);
+        return;
     }
 
     surface = z->surface;
@@ -2056,11 +2269,7 @@ rsvg_node_image_set_atts (RsvgNode * self, RsvgHandle * ctx, RsvgPropertyBag * a
             /* Decode at draw time, after image-orientation is computed. */
             g_free (image->href);
             image->href = g_strdup (value);
-            if (image->surface) {
-                cairo_surface_destroy (image->surface);
-                image->surface = NULL;
-            }
-            image->surface_orientation = -1;
+            rsvg_node_image_clear_loaded (image);
         }
         if ((value = rsvg_property_bag_lookup (atts, "class")))
             klazz = value;
@@ -2083,6 +2292,7 @@ rsvg_new_image (void)
     _rsvg_node_init (&image->super, RSVG_NODE_TYPE_IMAGE);
     g_assert (image->super.state);
     image->surface = NULL;
+    image->svg_handle = NULL;
     image->href = NULL;
     image->handle = NULL;
     image->surface_orientation = -1;

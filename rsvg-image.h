@@ -46,7 +46,8 @@ struct _RsvgNodeImage {
     RsvgNode super;
     gint preserve_aspect_ratio;
     RsvgCssLength x, y, w, h;
-    cairo_surface_t *surface; /* a cairo image surface */
+    cairo_surface_t *surface; /* cairo image surface for rasters */
+    RsvgHandle *svg_handle;      /* owned nested SVG; rasterized at draw */
     char *href;
     RsvgHandle *handle;          /* not owned */
     int surface_orientation;     /* -1 until a load is attempted */

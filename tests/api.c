@@ -2298,6 +2298,57 @@ oversized_data_uri_does_not_abort (void)
     g_object_unref (handle);
 }
 
+/* Nested SVG in <image> rasterized at device pixels (parent CTM).
+ * Inner SVG is 10×10: black 0,0 5×5 and green 5,5 5×5. Parent is
+ * rendered at 2× so a CSS-pixel intermediate would bilinear-smear. */
+static void
+embedded_svg_image_renders_at_device_resolution (void)
+{
+    const char *svg =
+        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+        "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"10\" height=\"10\">"
+        "  <image width=\"10\" height=\"10\""
+        "    href=\"data:image/svg+xml;base64,"
+        "PHN2ZyB3aWR0aD0iMTAiIGhlaWdodD0iMTAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+"
+        "PHJlY3QgeD0iMCIgeT0iMCIgd2lkdGg9IjUiIGhlaWdodD0iNSIgZmlsbD0iIzAwMDAwMCIvPjxyZWN0IHg9IjUi"
+        "IHk9IjUiIHdpZHRoPSI1IiBoZWlnaHQ9IjUiIGZpbGw9IiMwMGZmMDAiLz48L3N2Zz4=\"/>"
+        "</svg>";
+    RsvgHandle *handle;
+    cairo_surface_t *output;
+    cairo_t *cr;
+    RsvgRectangle viewport;
+    GError *error = NULL;
+
+    handle = handle_from_svg_string (svg);
+    output = cairo_image_surface_create (CAIRO_FORMAT_ARGB32, 20, 20);
+    cr = cairo_create (output);
+    cairo_scale (cr, 2.0, 2.0);
+    viewport.x = 0;
+    viewport.y = 0;
+    viewport.width = 10;
+    viewport.height = 10;
+    g_assert_true (rsvg_handle_render_document (handle, cr, &viewport, &error));
+    g_assert_no_error (error);
+    cairo_destroy (cr);
+
+    g_assert_cmphex (pixel_argb (output, 0, 0), ==, 0xff000000);
+    g_assert_cmphex (pixel_argb (output, 9, 9), ==, 0xff000000);
+    g_assert_cmphex (pixel_argb (output, 10, 10), ==, 0xff00ff00);
+    g_assert_cmphex (pixel_argb (output, 19, 19), ==, 0xff00ff00);
+    g_assert_cmphex (pixel_argb (output, 9, 10), ==, 0x00000000);
+    g_assert_cmphex (pixel_argb (output, 10, 9), ==, 0x00000000);
+
+    cairo_surface_destroy (output);
+    g_object_unref (handle);
+}
+
+static void
+embedded_svg_image_invalid_is_omitted (void)
+{
+    /* mime says SVG; payload is "not svg". Image is omitted. */
+    assert_href_paints_center ("data:image/svg+xml;base64,bm90IHN2Zw==", 0xff00ff00);
+}
+
 #ifdef CONVERT_PROGRAM
 static gchar *
 convert_temp_png (void)
@@ -3210,6 +3261,10 @@ main (int argc, char **argv)
     g_test_add_func ("/api/oversized_dasharray_does_not_abort", oversized_dasharray_does_not_abort);
     g_test_add_func ("/api/color_matrix_20_values_still_applies", color_matrix_20_values_still_applies);
     g_test_add_func ("/api/oversized_data_uri_does_not_abort", oversized_data_uri_does_not_abort);
+    g_test_add_func ("/api/embedded_svg_image_renders_at_device_resolution",
+                     embedded_svg_image_renders_at_device_resolution);
+    g_test_add_func ("/api/embedded_svg_image_invalid_is_omitted",
+                     embedded_svg_image_invalid_is_omitted);
 #ifdef CONVERT_PROGRAM
     g_test_add_func ("/convert/stylesheet", convert_stylesheet_file);
     g_test_add_func ("/convert/stdin_dash", convert_stdin_dash);
