@@ -1321,6 +1321,7 @@ rsvg_parse_style_pairs (RsvgHandle * ctx, RsvgState * state, RsvgPropertyBag * a
     rsvg_lookup_parse_style_pair (ctx, state, "font", atts);
     rsvg_lookup_parse_style_pair (ctx, state, "marker", atts);
     rsvg_lookup_parse_style_pair (ctx, state, "image-rendering", atts);
+    rsvg_lookup_parse_style_pair (ctx, state, "image-orientation", atts);
     rsvg_lookup_parse_style_pair (ctx, state, "lighting-color", atts);
     rsvg_lookup_parse_style_pair (ctx, state, "color-interpolation-filters", atts);
     rsvg_lookup_parse_style_pair (ctx, state, "visibility", atts);

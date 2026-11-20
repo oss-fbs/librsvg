@@ -12,6 +12,9 @@ forces a later patch.
   at the parent document's device resolution, so they stay sharp when
   the parent is zoomed or rendered at a high DPI. Failure to load or
   render the nested SVG omits that image; the parent still renders.
+- CSS image-orientation is also accepted as a presentation attribute
+  and from stylesheets. from-image (the initial value) applies JPEG
+  EXIF orientation; none draws the stored pixels.
 - Layer nesting during drawing is limited to 500 discrete layers on
   glibc and 50 on musl. Exceeding it skips the subtree and is a
   render error: "maximum layer nesting depth exceeded".

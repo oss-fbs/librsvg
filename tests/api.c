@@ -1834,6 +1834,26 @@ jpeg_image_orientation_none_skips_exif (void)
         "<image href='orient.jpg' width='16' height='8' "
         "style='image-rendering: pixelated; image-orientation: from-image'/>"
         "</g></svg>";
+    const char *pres_none =
+        "<svg xmlns='http://www.w3.org/2000/svg' width='16' height='8'>"
+        "<image href='orient.jpg' width='16' height='8' "
+        "image-orientation='none' image-rendering='pixelated'/>"
+        "</svg>";
+    const char *pres_from =
+        "<svg xmlns='http://www.w3.org/2000/svg' width='16' height='8'>"
+        "<image href='orient.jpg' width='16' height='8' "
+        "image-orientation='from-image' image-rendering='pixelated'/>"
+        "</svg>";
+    const char *sheet_none =
+        "<svg xmlns='http://www.w3.org/2000/svg' width='16' height='8'>"
+        "<style>image { image-orientation: none; image-rendering: pixelated; }</style>"
+        "<image href='orient.jpg' width='16' height='8'/>"
+        "</svg>";
+    const char *sheet_from =
+        "<svg xmlns='http://www.w3.org/2000/svg' width='16' height='8'>"
+        "<style>image { image-orientation: from-image; image-rendering: pixelated; }</style>"
+        "<image href='orient.jpg' width='16' height='8'/>"
+        "</svg>";
 
     dir = g_dir_make_tmp ("librsvg-orient-XXXXXX", &error);
     g_assert_no_error (error);
@@ -1868,6 +1888,28 @@ jpeg_image_orientation_none_skips_exif (void)
 
     left = render_orient_pixel (dir, override, 2, 4);
     right = render_orient_pixel (dir, override, 13, 4);
+    assert_near_green (left);
+    assert_near_red (right);
+
+    /* Presentation attribute. */
+    left = render_orient_pixel (dir, pres_none, 2, 4);
+    right = render_orient_pixel (dir, pres_none, 13, 4);
+    assert_near_red (left);
+    assert_near_green (right);
+
+    left = render_orient_pixel (dir, pres_from, 2, 4);
+    right = render_orient_pixel (dir, pres_from, 13, 4);
+    assert_near_green (left);
+    assert_near_red (right);
+
+    /* Author stylesheet. */
+    left = render_orient_pixel (dir, sheet_none, 2, 4);
+    right = render_orient_pixel (dir, sheet_none, 13, 4);
+    assert_near_red (left);
+    assert_near_green (right);
+
+    left = render_orient_pixel (dir, sheet_from, 2, 4);
+    right = render_orient_pixel (dir, sheet_from, 13, 4);
     assert_near_green (left);
     assert_near_red (right);
 
