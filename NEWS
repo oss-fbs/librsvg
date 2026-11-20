@@ -1,20 +1,18 @@
 Version 2.63.4
 
-C library matching GNOME librsvg 2.63.4 for the items below.
-The public name, soname, and pkg-config module remain librsvg-2.0
-(soname librsvg-2.so.2).
-
-- Nested SVG documents in <image> (href / xlink:href) are rasterized
-  at the parent document's device resolution, so they stay sharp when
-  the parent is zoomed or rendered at a high DPI. Failure to load or
-  render the nested SVG omits that image; the parent still renders.
-- SVG <image> and feImage honor CSS image-orientation. from-image
-  (the initial value) applies JPEG EXIF orientation; none draws the
-  stored pixels. Also accepted as a presentation attribute and from
-  stylesheets.
-- --unlimited is accepted for API compatibility with GNOME librsvg
-  2.63.x. Resource limits remain enforced. The matching C API is
-  RSVG_HANDLE_FLAG_UNLIMITED.
+- Nested SVG documents in <image> are rasterized at the parent
+  document's device resolution, so they stay sharp when the parent
+  is zoomed or rendered at a high DPI. Failure to load or render
+  the nested SVG omits that image; the parent still renders. The
+  file nesting limit of 20 still applies.
+- CSS image-orientation (from-image | none) is accepted as a
+  presentation attribute and from stylesheets. from-image (the
+  initial value) applies JPEG EXIF orientation; none draws the
+  stored pixels.
+- --unlimited / RSVG_HANDLE_FLAG_UNLIMITED is accepted for API
+  compatibility with GNOME librsvg 2.63.x. Resource limits remain
+  enforced: image and data: caps, nesting, and layer limits are
+  not raised.
 - feConvolveMatrix with an invalid kernel size (order zero, negative,
   or larger than 20) is a no-op. The rest of the document still
   renders.
@@ -25,33 +23,22 @@ Version 2.62.6
 This is the final release of the 2.62 series unless a serious bug
 forces a later patch.
 
-- File nesting (XInclude, cross-document references, CSS @import,
-  nested SVG in <image>) is limited to 20. Exceeding it is a load
-  error: "maximum nesting depth exceeded". RSVG_HANDLE_FLAG_UNLIMITED
-  / rsvg-convert --unlimited does not lift this limit. CSS @import
-  also keeps a tighter sub-limit of 8.
-- Nested SVG documents in <image> (href / xlink:href) are rasterized
-  at the parent document's device resolution, so they stay sharp when
-  the parent is zoomed or rendered at a high DPI. Failure to load or
-  render the nested SVG omits that image; the parent still renders.
-- CSS image-orientation is also accepted as a presentation attribute
-  and from stylesheets. from-image (the initial value) applies JPEG
-  EXIF orientation; none draws the stored pixels.
+- File nesting (XInclude, cross-document references, CSS @import)
+  is limited to 20. Exceeding it is a load error: "maximum nesting
+  depth exceeded". RSVG_HANDLE_FLAG_UNLIMITED / rsvg-convert
+  --unlimited does not lift this limit. CSS @import also keeps a
+  tighter sub-limit of 8.
 - Layer nesting during drawing is limited to 500 discrete layers on
   glibc and 50 on musl. Exceeding it skips the subtree and is a
   render error: "maximum layer nesting depth exceeded".
   --unlimited / RSVG_HANDLE_FLAG_UNLIMITED does not lift this limit.
 - Path and text coordinates outside Cairo's 24.8 fixed-point range
   (a bit over ±8 million) are skipped and never passed to Cairo.
-- SVG <image> rasters: maximum side 32767 pixels. Decoded pixels
-  128 MiB; data: URI size 64 MiB. Dimensions and data: size are
+- SVG <image> rasters: maximum side 32767 pixels (never raised).
+  Decoded pixels default 128 MiB; data: URI size default 64 MiB.
+  With --unlimited / RSVG_HANDLE_FLAG_UNLIMITED: 512 MiB decoded
+  pixels and 256 MiB data: URIs. Dimensions and data: size are
   checked before allocating the decode buffer.
-- --unlimited is accepted for API compatibility with GNOME librsvg
-  2.63.x. Resource limits remain enforced. The matching C API is
-  RSVG_HANDLE_FLAG_UNLIMITED.
-- feConvolveMatrix with an invalid kernel size (order zero, negative,
-  or larger than 20) is a no-op. The rest of the document still
-  renders.
 
 
 Version 2.62.5
