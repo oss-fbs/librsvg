@@ -653,6 +653,7 @@ librsvg_@RSVG_API_MAJOR_VERSION@_la_SOURCES = \
 	rsvg-path.c 		\
 	rsvg-path.h 		\
 	rsvg-private.h 		\
+	rsvg-limits.h		\
 	rsvg-base-file-util.c 	\
 	rsvg-filter.c		\
 	rsvg-filter.h		\

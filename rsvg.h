@@ -378,11 +378,11 @@ gboolean rsvg_handle_has_sub (RsvgHandle *handle, const char *id);
 /**
  * RsvgHandleFlags:
  * @RSVG_HANDLE_FLAGS_NONE: no flags
- * @RSVG_HANDLE_FLAG_UNLIMITED: accepted for API compatibility with
- * GNOME librsvg 2.63.x. Resource limits remain enforced: file nesting
- * 20, layer nesting (500 on glibc, 50 on musl), Cairo 24.8 coordinate
- * range, 32767-pixel image side, 128 MiB decoded pixels, and 64 MiB
- * `data:` URIs. Also enables libxml2 XML_PARSE_HUGE for huge XML.
+ * @RSVG_HANDLE_FLAG_UNLIMITED: raise decoded-pixel cap to 512 MiB
+ * and `data:` URI cap to 256 MiB. File nesting 20, layer nesting
+ * (500 on glibc, 50 on musl), Cairo 24.8 coordinate range, and
+ * 32767-pixel image side are never raised. Also enables libxml2
+ * XML_PARSE_HUGE for huge XML.
  * @RSVG_HANDLE_FLAG_KEEP_IMAGE_DATA: keep compressed image bytes
  *
  * \since 2.36

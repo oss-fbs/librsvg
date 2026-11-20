@@ -720,7 +720,7 @@ main (int argc, char **argv)
         {"background-color", 'b', 0, G_OPTION_ARG_STRING, &background_color_str,
          N_("set the background color [optional; defaults to None]"), N_("[black, white, #abccee, #aaa...]")},
         {"unlimited", 'u', 0, G_OPTION_ARG_NONE, &unlimited,
-         N_("Accepted for API compatibility; resource limits remain enforced"), NULL},
+         N_("Raise decoded-pixel and data: URI caps; other limits stay in force"), NULL},
         {"keep-image-data", 0, 0, G_OPTION_ARG_NONE, &keep_image_data, N_("Keep image data"), NULL},
         {"no-keep-image-data", 0, 0, G_OPTION_ARG_NONE, &no_keep_image_data, N_("Don't keep image data"), NULL},
         {"version", 'v', 0, G_OPTION_ARG_NONE, &bVersion, N_("show version information"), NULL},

@@ -9,10 +9,10 @@ Version 2.63.4
   presentation attribute and from stylesheets. from-image (the
   initial value) applies JPEG EXIF orientation; none draws the
   stored pixels.
-- --unlimited / RSVG_HANDLE_FLAG_UNLIMITED is accepted for API
-  compatibility with GNOME librsvg 2.63.x. Resource limits remain
-  enforced: image and data: caps, nesting, and layer limits are
-  not raised.
+- --unlimited / RSVG_HANDLE_FLAG_UNLIMITED raises decoded pixels from
+  128 MiB to 512 MiB and data: URI size from 64 MiB to 256 MiB. Side
+  length 32767, file nesting 20, layer nesting 500/50, and Cairo
+  coordinates stay at their default values.
 - feConvolveMatrix with an invalid kernel size (order zero, negative,
   or larger than 20) is a no-op. The rest of the document still
   renders.

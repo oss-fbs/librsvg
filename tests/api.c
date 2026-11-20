@@ -31,6 +31,7 @@
 #include <gio/gio.h>
 
 #define RSVG_DISABLE_DEPRECATION_WARNINGS
+#define RSVG_COMPILATION
 #include "rsvg.h"
 #include "rsvg-private.h"
 #include "librsvg-features.h"
@@ -2070,34 +2071,6 @@ unlimited_does_not_raise_image_side (void)
 }
 
 static void
-unlimited_does_not_raise_image_pixels (void)
-{
-    char *svg;
-    RsvgHandle *handle;
-    GError *error = NULL;
-    cairo_surface_t *output;
-
-    svg = g_strdup_printf (
-        "<svg xmlns='http://www.w3.org/2000/svg' width='8' height='8'>"
-        "<rect width='8' height='8' fill='#00ff00'/>"
-        "<image href='%s' width='8' height='8'/>"
-        "</svg>", BMP_OVERSIZE_PIXELS_URI);
-    handle = rsvg_handle_new_with_flags (RSVG_HANDLE_FLAG_UNLIMITED);
-    g_assert_nonnull (handle);
-    g_assert_true (rsvg_handle_write (handle, (const guint8 *) svg, strlen (svg), &error));
-    g_assert_true (rsvg_handle_close (handle, &error));
-    g_assert_no_error (error);
-    g_free (svg);
-
-    output = cairo_image_surface_create (CAIRO_FORMAT_ARGB32, 8, 8);
-    render_to_surface (handle, output);
-    g_assert_cmphex (pixel_argb (output, 4, 4), ==, 0xff00ff00);
-
-    cairo_surface_destroy (output);
-    g_object_unref (handle);
-}
-
-static void
 bmp_oversized_pixels_does_not_abort (void)
 {
     assert_href_paints_center (BMP_OVERSIZE_PIXELS_URI, 0xff00ff00);
@@ -2336,6 +2309,37 @@ color_matrix_20_values_still_applies (void)
 
     cairo_surface_destroy (output);
     g_object_unref (handle);
+}
+
+static void
+unlimited_raises_image_and_data_caps (void)
+{
+    RsvgHandle *def;
+    RsvgHandle *unl;
+
+    def = rsvg_handle_new ();
+    unl = rsvg_handle_new_with_flags (RSVG_HANDLE_FLAG_UNLIMITED);
+    g_assert_nonnull (def);
+    g_assert_nonnull (unl);
+
+    g_assert_cmpuint (RSVG_MAX_IMAGE_PIXEL_BYTES, ==, (gsize) 128 * 1024 * 1024);
+    g_assert_cmpuint (RSVG_MAX_IMAGE_PIXEL_BYTES_UNLIMITED, ==, (gsize) 512 * 1024 * 1024);
+    g_assert_cmpuint (RSVG_MAX_DATA_URI_BYTES, ==, (gsize) 64 * 1024 * 1024);
+    g_assert_cmpuint (RSVG_MAX_DATA_URI_BYTES_UNLIMITED, ==, (gsize) 256 * 1024 * 1024);
+    g_assert_cmpint (RSVG_MAX_IMAGE_DIMENSION, ==, 32767);
+    g_assert_cmpint (RSVG_MAX_FILE_NESTING_DEPTH, ==, 20);
+
+    g_assert_cmpuint (rsvg_handle_max_image_pixel_bytes (def),
+                      ==, RSVG_MAX_IMAGE_PIXEL_BYTES);
+    g_assert_cmpuint (rsvg_handle_max_data_uri_bytes (def),
+                      ==, RSVG_MAX_DATA_URI_BYTES);
+    g_assert_cmpuint (rsvg_handle_max_image_pixel_bytes (unl),
+                      ==, RSVG_MAX_IMAGE_PIXEL_BYTES_UNLIMITED);
+    g_assert_cmpuint (rsvg_handle_max_data_uri_bytes (unl),
+                      ==, RSVG_MAX_DATA_URI_BYTES_UNLIMITED);
+
+    g_object_unref (def);
+    g_object_unref (unl);
 }
 
 static void
@@ -3366,7 +3370,6 @@ main (int argc, char **argv)
     g_test_add_func ("/api/bmp_decode_failure_does_not_abort", bmp_decode_failure_does_not_abort);
     g_test_add_func ("/api/bmp_oversized_dimensions_does_not_abort", bmp_oversized_dimensions_does_not_abort);
     g_test_add_func ("/api/unlimited_does_not_raise_image_side", unlimited_does_not_raise_image_side);
-    g_test_add_func ("/api/unlimited_does_not_raise_image_pixels", unlimited_does_not_raise_image_pixels);
     g_test_add_func ("/api/bmp_oversized_pixels_does_not_abort", bmp_oversized_pixels_does_not_abort);
     g_test_add_func ("/api/bmp_bad_offbits_does_not_abort", bmp_bad_offbits_does_not_abort);
     g_test_add_func ("/api/bmp_rle_oob_does_not_abort", bmp_rle_oob_does_not_abort);
@@ -3387,6 +3390,7 @@ main (int argc, char **argv)
     g_test_add_func ("/api/oversized_number_list_does_not_abort", oversized_number_list_does_not_abort);
     g_test_add_func ("/api/oversized_dasharray_does_not_abort", oversized_dasharray_does_not_abort);
     g_test_add_func ("/api/color_matrix_20_values_still_applies", color_matrix_20_values_still_applies);
+    g_test_add_func ("/api/unlimited_raises_image_and_data_caps", unlimited_raises_image_and_data_caps);
     g_test_add_func ("/api/oversized_data_uri_does_not_abort", oversized_data_uri_does_not_abort);
     g_test_add_func ("/api/embedded_svg_image_renders_at_device_resolution",
                      embedded_svg_image_renders_at_device_resolution);

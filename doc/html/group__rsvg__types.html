@@ -392,8 +392,8 @@ Functions</h2></td></tr>
 
 <p><code>#include &lt;<a class="el" href="rsvg_8h.html">rsvg.h</a>&gt;</code></p>
 
-<p>RsvgHandleFlags: @RSVG_HANDLE_FLAGS_NONE: no flags @RSVG_HANDLE_FLAG_UNLIMITED: accepted for API compatibility with GNOME librsvg 2.63.x. Resource limits remain enforced. </p>
-<p>File nesting 20, layer nesting (500 on glibc, 50 on musl), Cairo 24.8 coordinate range, 32767-pixel image side, 128 MiB decoded pixels, and 64 MiB <code>data:</code> URIs stay in effect. Also enables libxml2 XML_PARSE_HUGE for huge XML. @RSVG_HANDLE_FLAG_KEEP_IMAGE_DATA: keep compressed image bytes</p>
+<p>RsvgHandleFlags: @RSVG_HANDLE_FLAGS_NONE: no flags @RSVG_HANDLE_FLAG_UNLIMITED: raise decoded-pixel cap to 512 MiB and <code>data:</code> URI cap to 256 MiB. </p>
+<p>File nesting 20, layer nesting (500 on glibc, 50 on musl), Cairo 24.8 coordinate range, and 32767-pixel image side are never raised. Also enables libxml2 XML_PARSE_HUGE for huge XML. @RSVG_HANDLE_FLAG_KEEP_IMAGE_DATA: keep compressed image bytes</p>
 <dl class="section since"><dt>Since</dt><dd>2.36 </dd></dl>
 <table class="fieldtable">
 <tr><th colspan="2">Enumerator</th></tr><tr><td class="fieldname"><a id="gga7c05821c0ad6a0051cc32860bb76c80da48c5120d300031b9232e9e662f647eee" name="gga7c05821c0ad6a0051cc32860bb76c80da48c5120d300031b9232e9e662f647eee"></a>RSVG_HANDLE_FLAGS_NONE&#160;</td><td class="fielddoc"></td></tr>

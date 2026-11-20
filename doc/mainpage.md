@@ -11,9 +11,9 @@ gdk-pixbuf loader and `rsvg-convert` are included.  See the
 
 ## Limits
 
-`--unlimited` / `RSVG_HANDLE_FLAG_UNLIMITED` is accepted for API
-compatibility with GNOME librsvg 2.63.x. Resource limits remain
-enforced.
+`--unlimited` / `RSVG_HANDLE_FLAG_UNLIMITED` raises decoded pixels to
+512 MiB and `data:` URI size to 256 MiB. Side length, file nesting,
+layer nesting, and Cairo coordinates stay at their default values.
 
 File nesting (XInclude, cross-document references, CSS `@import`) is
 limited to 20.  Exceeding it is a load error.
@@ -22,9 +22,10 @@ Layer nesting during drawing is limited to 500 discrete layers on
 glibc and 50 on musl.  Path and text coordinates outside Cairo's 24.8
 fixed-point range are skipped.
 
-SVG `<image>` rasters: maximum side 32767 pixels. Decoded pixels
-128 MiB; `data:` URI size 64 MiB. Very large stylesheet buffers may
-be rejected.
+SVG `<image>` rasters: maximum side 32767 pixels (never raised).
+Decoded pixels 128 MiB default, 512 MiB with `--unlimited`. `data:`
+URI size 64 MiB default, 256 MiB with `--unlimited`. Very large
+stylesheet buffers may be rejected.
 
 ## API groups
 

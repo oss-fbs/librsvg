@@ -31,6 +31,7 @@
 #include <cairo.h>
 
 #include "rsvg.h"
+#include "rsvg-limits.h"
 
 #include <libxml/parser.h>
 #include <libxml/xmlerror.h>
@@ -82,27 +83,9 @@ typedef struct _RsvgNodeChars RsvgNodeChars;
 # define DBL_EPSILON 1e-7
 #endif
 
-/* Untrusted input. Encoded data: payload (stylesheet or image) and
- * standalone <image> bytes. CSS number lists (dasharray, tableValues,
- * kernelMatrix, polygon points). File nesting (XInclude, cross-document
- * refs, CSS @import). Decoded <image> pixels. Layer nesting. Cairo
- * fixed-point coordinate range. */
-#define RSVG_MAX_DATA_URI_BYTES              ((gsize) 64 * 1024 * 1024)
-#define RSVG_MAX_IMAGE_DIMENSION             32767
-#define RSVG_MAX_IMAGE_PIXEL_BYTES           ((gsize) 128 * 1024 * 1024)
-#define RSVG_MAX_FILE_NESTING_DEPTH          20
-/* GNOME #1224 / 2.63.0: nested discrete layers. musl's default thread
- * stack is small, so the cap is 50 there; glibc and other libcs use
- * 500. UNLIMITED does not raise this. */
-#if defined(__linux__) && !defined(__GLIBC__) && !defined(__UCLIBC__) && !defined(__ANDROID__)
-#  define RSVG_MAX_LAYER_NESTING_DEPTH 50
-#else
-#  define RSVG_MAX_LAYER_NESTING_DEPTH 500
-#endif
-/* cairo_fixed_t is 24.8; representable range is a bit over ±8 million.
- * GNOME #1088 / #1239: do not pass coordinates outside this to Cairo. */
-#define RSVG_CAIRO_COORD_MAX ((double) 2147483647 / 256.0)
-#define RSVG_CAIRO_COORD_MIN ((double) (-2147483647 - 1) / 256.0)
+/* Untrusted input. Image / data: / nesting / Cairo caps: rsvg-limits.h.
+ * CSS number lists (dasharray, tableValues, kernelMatrix, polygon
+ * points) and stylesheet walk bounds stay here. */
 #define RSVG_MAX_CSS_LIST_TOKENS    4096
 #define RSVG_MAX_STYLESHEET_BYTES   ((gsize) 1024 * 1024)
 #define RSVG_MAX_CSS_RULES          4096
@@ -564,18 +547,18 @@ RsvgHandle *rsvg_handle_new_child (RsvgHandle *parent);
 
 #ifdef RSVG_COMPILATION
 static inline gsize
-rsvg_handle_max_data_uri_bytes (const RsvgHandle *handle G_GNUC_UNUSED)
+rsvg_handle_max_data_uri_bytes (const RsvgHandle *handle)
 {
-    /* RSVG_HANDLE_FLAG_UNLIMITED is stored for API compatibility.
-     * It does not raise this cap. */
+    if (handle && (handle->priv->flags & RSVG_HANDLE_FLAG_UNLIMITED))
+        return RSVG_MAX_DATA_URI_BYTES_UNLIMITED;
     return RSVG_MAX_DATA_URI_BYTES;
 }
 
 static inline gsize
-rsvg_handle_max_image_pixel_bytes (const RsvgHandle *handle G_GNUC_UNUSED)
+rsvg_handle_max_image_pixel_bytes (const RsvgHandle *handle)
 {
-    /* RSVG_HANDLE_FLAG_UNLIMITED is stored for API compatibility.
-     * It does not raise this cap. */
+    if (handle && (handle->priv->flags & RSVG_HANDLE_FLAG_UNLIMITED))
+        return RSVG_MAX_IMAGE_PIXEL_BYTES_UNLIMITED;
     return RSVG_MAX_IMAGE_PIXEL_BYTES;
 }
 

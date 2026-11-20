@@ -7,8 +7,9 @@ are **librsvg-2.0**.  The soname is **librsvg-2.so.2**.
 
 Version **2.63.4**. C library matching GNOME librsvg 2.63.4 for nested
 SVG `<image>` at device resolution, EXIF / `image-orientation`
-(`from-image` | `none`), `--unlimited` compatibility (resource limits
-remain enforced), and invalid `feConvolveMatrix` order as a no-op.
+(`from-image` | `none`), `--unlimited` (decoded pixels 512 MiB and
+`data:` URIs 256 MiB; other limits stay), and invalid
+`feConvolveMatrix` order as a no-op.
 
 Originally written by Raph Levien.
 
@@ -63,8 +64,9 @@ PNG/JPEG/GIF/WebP/AVIF.  `--enable-bmp` needs no extra library.
 Limits
 ------
 
-`--unlimited` is accepted for API compatibility with GNOME librsvg
-2.63.x. Resource limits remain enforced.
+`--unlimited` / `RSVG_HANDLE_FLAG_UNLIMITED` raises only the decoded-pixel
+and `data:` URI caps.  Side length, file nesting, layer nesting, and
+Cairo coordinates stay at their default values.
 
 File nesting (XInclude, cross-document references, CSS `@import`) is
 limited to 20.  Exceeding it is a load error: “maximum nesting depth
@@ -79,14 +81,14 @@ bit over ±8 million) are skipped.
 
 SVG `<image>` rasters:
 
-| Cap               | Default                 | With `--unlimited` |
-| ----------------- | ----------------------- | ------------------ |
-| Side length       | 32767 px                | same               |
-| Decoded pixels    | 128 MiB                 | same               |
-| `data:` URI size  | 64 MiB                  | same               |
-| File nesting      | 20                      | same               |
-| Layer nesting     | 500 (glibc) / 50 (musl) | same               |
-| Cairo coordinates | ±8,388,608              | same               |
+| Cap               | Default                 | With `--unlimited`      |
+| ----------------- | ----------------------- | ----------------------- |
+| Side length       | 32767 px                | 32767 px (never raised) |
+| Decoded pixels    | 128 MiB                 | 512 MiB                 |
+| `data:` URI size  | 64 MiB                  | 256 MiB                 |
+| File nesting      | 20                      | 20 (never raised)       |
+| Layer nesting     | 500 (glibc) / 50 (musl) | same                    |
+| Cairo coordinates | ±8,388,608              | same                    |
 
 Dimensions and `data:` size are checked before allocating the decode
 buffer.  Stylesheet buffers may still be rejected.

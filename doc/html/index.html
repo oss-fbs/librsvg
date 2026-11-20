@@ -98,10 +98,10 @@ $(document).ready(function(){initNavTree('index.html',''); initResizable(); });
 <p>It handles non-animated SVG, CSS styling, filters, masks, clip paths, and SVG <code>&lt;image&gt;</code> rasters (PNG, JPEG, GIF, WebP, BMP; optional AVIF). A gdk-pixbuf loader and <code>rsvg-convert</code> are included. See the <a class="el" href="examples.html">examples</a>.</p>
 <h1><a class="anchor" id="autotoc_md0"></a>
 Limits</h1>
-<p><code>--unlimited</code> / <code>RSVG_HANDLE_FLAG_UNLIMITED</code> is accepted for API compatibility with GNOME librsvg 2.63.x. Resource limits remain enforced.</p>
+<p><code>--unlimited</code> / <code>RSVG_HANDLE_FLAG_UNLIMITED</code> raises decoded pixels to 512 MiB and <code>data:</code> URI size to 256 MiB. Side length, file nesting, layer nesting, and Cairo coordinates stay at their default values.</p>
 <p>File nesting (XInclude, cross-document references, CSS <code>@import</code>) is limited to 20. Exceeding it is a load error.</p>
 <p>Layer nesting during drawing is limited to 500 discrete layers on glibc and 50 on musl. Path and text coordinates outside Cairo's 24.8 fixed-point range are skipped.</p>
-<p>SVG <code>&lt;image&gt;</code> rasters: maximum side 32767 pixels. Decoded pixels 128 MiB; <code>data:</code> URI size 64 MiB. Very large stylesheet buffers may be rejected.</p>
+<p>SVG <code>&lt;image&gt;</code> rasters: maximum side 32767 pixels (never raised). Decoded pixels 128 MiB default, 512 MiB with <code>--unlimited</code>. <code>data:</code> URI size 64 MiB default, 256 MiB with <code>--unlimited</code>. Very large stylesheet buffers may be rejected.</p>
 <h1><a class="anchor" id="autotoc_md1"></a>
 API groups</h1>
 <ul>

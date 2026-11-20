@@ -632,7 +632,7 @@ main (int argc, char **argv)
         {"keep-aspect", 'k', 0, G_OPTION_ARG_NONE, &keep_aspect_ratio,
          N_("Preserve the image's aspect ratio"), NULL},
         {"unlimited", 'u', 0, G_OPTION_ARG_NONE, &unlimited,
-         N_("Accepted for API compatibility; resource limits remain enforced"), NULL},
+         N_("Raise decoded-pixel and data: URI caps; other limits stay in force"), NULL},
         {"version", 'v', 0, G_OPTION_ARG_NONE, &bVersion, N_("Show version information"), NULL},
         {G_OPTION_REMAINING, 0, 0, G_OPTION_ARG_FILENAME_ARRAY, &args, NULL, N_("[FILE...]")},
         {NULL}
