@@ -4,8 +4,8 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros">
     <RsvgMajorVersion>2</RsvgMajorVersion>
-    <RsvgMinorVersion>62</RsvgMinorVersion>
-    <RsvgMicroVersion>6</RsvgMicroVersion>
+    <RsvgMinorVersion>63</RsvgMinorVersion>
+    <RsvgMicroVersion>4</RsvgMicroVersion>
     <ApiVersion>2.0</ApiVersion>
     <VSVer>10</VSVer>
     <GlibEtcInstallRoot>$(SolutionDir)\..\..\..\..\vs$(VSVer)\$(Platform)</GlibEtcInstallRoot>

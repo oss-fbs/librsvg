@@ -1,3 +1,25 @@
+Version 2.63.4
+
+C library matching GNOME librsvg 2.63.4 for the items below.
+The public name, soname, and pkg-config module remain librsvg-2.0
+(soname librsvg-2.so.2).
+
+- Nested SVG documents in <image> (href / xlink:href) are rasterized
+  at the parent document's device resolution, so they stay sharp when
+  the parent is zoomed or rendered at a high DPI. Failure to load or
+  render the nested SVG omits that image; the parent still renders.
+- SVG <image> and feImage honor CSS image-orientation. from-image
+  (the initial value) applies JPEG EXIF orientation; none draws the
+  stored pixels. Also accepted as a presentation attribute and from
+  stylesheets.
+- --unlimited is accepted for API compatibility with GNOME librsvg
+  2.63.x. Resource limits remain enforced. The matching C API is
+  RSVG_HANDLE_FLAG_UNLIMITED.
+- feConvolveMatrix with an invalid kernel size (order zero, negative,
+  or larger than 20) is a no-op. The rest of the document still
+  renders.
+
+
 Version 2.62.6
 
 This is the final release of the 2.62 series unless a serious bug

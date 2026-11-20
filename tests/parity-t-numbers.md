@@ -7,7 +7,7 @@ open defects. Structure (path / fill / text / feature) is present.
 Counts after T6 (`make check-parity`, 72 dpi, `RSVG_PARITY=1`):
 **pass=608 / fail=0 / xfail=115 / skip=27 / unexpected_pass=0**.
 
-`LIBRSVG_VERSION` is **2.62.6**. Pixel-identity is not required.
+`LIBRSVG_VERSION` is **2.63.4**. Pixel-identity is not required.
 
 Policy: `tests/README-parity.md`.
 Machine-readable sibling the harness loads:

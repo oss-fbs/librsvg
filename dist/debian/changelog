@@ -1,3 +1,12 @@
+librsvg-c (2.63.4-1) unstable; urgency=medium
+
+  * Version 2.63.4. C library matching GNOME librsvg 2.63.4 for nested
+    SVG image at device resolution, EXIF / image-orientation
+    (from-image | none), --unlimited compatibility (limits remain
+    enforced), and invalid feConvolveMatrix order as a no-op.
+
+ -- Randy Butler <oss@familybusinesssoftware.com>  Fri, 20 Nov 2026 12:00:00 -0500
+
 librsvg-c (2.62.6-1) unstable; urgency=medium
 
   * Version 2.62.6. Final 2.62 series release unless a serious bug

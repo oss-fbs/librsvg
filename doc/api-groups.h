@@ -3,7 +3,7 @@
 
 /**
  * @defgroup rsvg librsvg
- * @brief Public C API for librsvg 2.62.6 (librsvg-2.0).
+ * @brief Public C API for librsvg 2.63.4 (librsvg-2.0).
  *
  * Render SVG documents to Cairo surfaces.  The groups below list the
  * functions and types, not the header files.
@@ -70,7 +70,7 @@
  * @ingroup rsvg
  * @brief Compile-time and run-time version macros.
  *
- * The library release is 2.62.6.  The last new public C function
+ * The library release is 2.63.4.  The last new public C function
  * is rsvg_handle_set_cancellable_for_rendering() (2.59).
  */
 

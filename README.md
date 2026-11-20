@@ -5,8 +5,10 @@ librsvg is a C library that renders Scalable Vector Graphics (SVG) to
 Cairo surfaces.  The shared library, headers, and pkg-config module
 are **librsvg-2.0**.  The soname is **librsvg-2.so.2**.
 
-Version **2.62.6**. Final release of the 2.62 series unless a serious
-bug forces a later patch. Rendering behavior remains the 2.62 series.
+Version **2.63.4**. C library matching GNOME librsvg 2.63.4 for nested
+SVG `<image>` at device resolution, EXIF / `image-orientation`
+(`from-image` | `none`), `--unlimited` compatibility (resource limits
+remain enforced), and invalid `feConvolveMatrix` order as a no-op.
 
 Originally written by Raph Levien.
 
@@ -19,7 +21,7 @@ It is not an official GNOME release.  Project page:
 
 The public C API matches librsvg-2.0.  Viewport, stylesheet,
 cancellable-render, and the other 2.46–2.59 entry points are present.
-Programs written against librsvg 2.40 through 2.62 keep the same
+Programs written against librsvg 2.40 through 2.63 keep the same
 headers and link line.
 
 It renders non-animated SVG and SVGZ: CSS styling, filters, masks,
@@ -128,7 +130,7 @@ Download and signature:
     make help
     make pkg
 
-writes `librsvg-c-2.62.6.tar.xz` only under `../pkg/`.
+writes `librsvg-c-2.63.4.tar.xz` only under `../pkg/`.
 The tarball is source only (C tree, tests, autotools; `libcroco/`
 is an unbuilt archive).  Sample packaging lives in git `dist/`,
 not in the public source archive.
@@ -140,8 +142,8 @@ and in the git tree (`oss-familybusinesssoftware.com-pubkey.asc`).
 Neither installs onto a live prefix or runs pkgmk.
 
     cd ../pkg
-    gpg --detach-sign --armor librsvg-c-2.62.6.tar.xz
-    sha256sum librsvg-c-2.62.6.tar.xz > SHA256SUMS
+    gpg --detach-sign --armor librsvg-c-2.63.4.tar.xz
+    sha256sum librsvg-c-2.63.4.tar.xz > SHA256SUMS
     gpg --detach-sign --armor SHA256SUMS
 
 Further reading
