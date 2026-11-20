@@ -71,6 +71,7 @@ static char *
 rsvg_decode_data_uri (const char *uri,
                       char **out_mime_type,
                       gsize *out_len,
+                      gsize max_bytes,
                       GError **error)
 {
     const char *comma, *start, *end;
@@ -109,7 +110,9 @@ rsvg_decode_data_uri (const char *uri,
     if (*start) {
         gsize encoded_len = strlen (start);
 
-        if (encoded_len > RSVG_MAX_DATA_URI_BYTES) {
+        if (max_bytes == 0)
+            max_bytes = RSVG_MAX_DATA_URI_BYTES;
+        if (encoded_len > max_bytes) {
             g_free (mime_type);
             g_set_error (error, G_IO_ERROR, G_IO_ERROR_FAILED,
                          "data: URI is too large");
@@ -287,6 +290,7 @@ _rsvg_io_acquire_data (const char *href,
                        const char *base_uri, 
                        char **mime_type,
                        gsize *len,
+                       gsize max_data_uri_bytes,
                        GCancellable *cancellable,
                        GError **error)
 {
@@ -303,7 +307,7 @@ _rsvg_io_acquire_data (const char *href,
         len = &llen;
 
     if (strncmp (href, "data:", 5) == 0)
-      return rsvg_decode_data_uri (href, mime_type, len, error);
+      return rsvg_decode_data_uri (href, mime_type, len, max_data_uri_bytes, error);
 
     if ((data = rsvg_acquire_file_data (href, mime_type, len, cancellable, NULL)))
       return data;
@@ -318,6 +322,7 @@ GInputStream *
 _rsvg_io_acquire_stream (const char *href, 
                          const char *base_uri, 
                          char **mime_type,
+                         gsize max_data_uri_bytes,
                          GCancellable *cancellable,
                          GError **error)
 {
@@ -332,7 +337,7 @@ _rsvg_io_acquire_stream (const char *href,
     }
 
     if (strncmp (href, "data:", 5) == 0) {
-        if (!(data = rsvg_decode_data_uri (href, mime_type, &len, error)))
+        if (!(data = rsvg_decode_data_uri (href, mime_type, &len, max_data_uri_bytes, error)))
             return NULL;
 
         return g_memory_input_stream_new_from_data (data, len, (GDestroyNotify) g_free);

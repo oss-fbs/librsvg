@@ -82,6 +82,7 @@ rsvg_handle_init (RsvgHandle * self)
     self->priv->load_policy = RSVG_LOAD_POLICY_DEFAULT;
     self->priv->defs = rsvg_defs_new (self);
     self->priv->handler_nest = 0;
+    self->priv->file_nesting_depth = 0;
     self->priv->entities = g_hash_table_new_full (g_str_hash, 
                                                   g_str_equal,
                                                   g_free,
@@ -404,4 +405,19 @@ rsvg_handle_new_with_flags (RsvgHandleFlags flags)
     return g_object_new (RSVG_TYPE_HANDLE, 
                          "flags", flags,
                          NULL);
+}
+
+RsvgHandle *
+rsvg_handle_new_child (RsvgHandle *parent)
+{
+    RsvgHandle *child;
+
+    g_return_val_if_fail (parent != NULL, NULL);
+
+    child = rsvg_handle_new_with_flags (parent->priv->flags);
+    child->priv->file_nesting_depth = parent->priv->file_nesting_depth + 1;
+    child->priv->dpi_x = parent->priv->dpi_x;
+    child->priv->dpi_y = parent->priv->dpi_y;
+    child->priv->is_testing = parent->priv->is_testing;
+    return child;
 }

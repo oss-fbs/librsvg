@@ -3,6 +3,7 @@
    Copyright (C) 2002, 2003, 2004, 2005 Dom Lachowicz <cinamod@hotmail.com>
    Copyright (C) 2003, 2004, 2005 Caleb Moore <c.moore@student.unsw.edu.au>
    Copyright © 2011, 2012 Christian Persch
+   Copyright (C) 2026 Randy Butler
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU Library General Public License as
@@ -30,12 +31,14 @@ char *_rsvg_io_acquire_data (const char *uri,
 			     const char *base_uri,
 			     char **mime_type,
 			     gsize *len,
+			     gsize max_data_uri_bytes,
 			     GCancellable *cancellable,
 			     GError **error);
 
 GInputStream *_rsvg_io_acquire_stream (const char *uri,
                                        const char *base_uri,
                                        char **mime_type,
+                                       gsize max_data_uri_bytes,
                                        GCancellable *cancellable,
                                        GError **error);
 

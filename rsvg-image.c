@@ -65,32 +65,36 @@
 /* Cairo ARGB32 premultiplication, same as rsvg_cairo_surface_from_pixbuf. */
 #define RSVG_PREMUL(d,c,a,t) G_STMT_START { t = (c) * (a) + 0x7f; (d) = (((t) >> 8) + (t)) >> 8; } G_STMT_END
 
-/* Untrusted <image> rasters. Cairo ARGB32 max side is 32767.
- * Pixel cap avoids 32767² × 4 ≈ 4 GiB from a tiny header. */
-#define RSVG_MAX_IMAGE_DIMENSION 32767
-#define RSVG_MAX_IMAGE_PIXELS    (32 * 1024 * 1024)
-
+/* Untrusted <image> rasters. Cairo ARGB32 max side is 32767 (never
+ * raised). Decoded buffer cap is 128 MiB, or 512 MiB with UNLIMITED. */
 static gboolean
-rsvg_image_dims_ok (gint64 width, gint64 height)
+rsvg_image_dims_ok (gint64 width, gint64 height, gsize max_pixel_bytes)
 {
+    gsize max_pixels;
+
     if (width <= 0 || height <= 0)
         return FALSE;
     if (width > RSVG_MAX_IMAGE_DIMENSION || height > RSVG_MAX_IMAGE_DIMENSION)
         return FALSE;
-    if (width > (gint64) RSVG_MAX_IMAGE_PIXELS / height)
+    if (max_pixel_bytes < 4)
+        return FALSE;
+    max_pixels = max_pixel_bytes / 4;
+    if ((gsize) height > 0 && (gsize) width > max_pixels / (gsize) height)
         return FALSE;
     return TRUE;
 }
 
 static gboolean
-rsvg_image_rgba_nbytes (gint64 width, gint64 height, gsize *out_bytes)
+rsvg_image_rgba_nbytes (gint64 width, gint64 height, gsize max_pixel_bytes, gsize *out_bytes)
 {
     gsize n;
 
-    if (!rsvg_image_dims_ok (width, height))
+    if (!rsvg_image_dims_ok (width, height, max_pixel_bytes))
         return FALSE;
     n = (gsize) width * (gsize) height;
     if (n > G_MAXSIZE / 4)
+        return FALSE;
+    if (n * 4 > max_pixel_bytes)
         return FALSE;
     if (out_bytes)
         *out_bytes = n * 4;
@@ -395,6 +399,7 @@ rsvg_cairo_surface_from_rgba (const guint8 *rgba,
                               int height,
                               const char *href,
                               const char *kind,
+                              gsize max_pixel_bytes,
                               GError **error)
 {
     cairo_surface_t *surface;
@@ -402,7 +407,7 @@ rsvg_cairo_surface_from_rgba (const guint8 *rgba,
     int cairo_stride;
     int y;
 
-    if (rgba == NULL || !rsvg_image_dims_ok (width, height)) {
+    if (rgba == NULL || !rsvg_image_dims_ok (width, height, max_pixel_bytes)) {
         g_set_error (error,
                      GDK_PIXBUF_ERROR,
                      GDK_PIXBUF_ERROR_FAILED,
@@ -459,6 +464,7 @@ static cairo_surface_t *
 rsvg_cairo_surface_from_webp (const guint8 *data,
                               gsize data_len,
                               const char *href,
+                              gsize max_pixel_bytes,
                               GError **error)
 {
     uint8_t *rgba;
@@ -475,7 +481,7 @@ rsvg_cairo_surface_from_webp (const guint8 *data,
     }
 
     if (!WebPGetInfo (data, (size_t) data_len, &width, &height) ||
-        !rsvg_image_dims_ok (width, height)) {
+        !rsvg_image_dims_ok (width, height, max_pixel_bytes)) {
         g_set_error (error,
                      GDK_PIXBUF_ERROR,
                      GDK_PIXBUF_ERROR_FAILED,
@@ -485,7 +491,7 @@ rsvg_cairo_surface_from_webp (const guint8 *data,
     }
 
     rgba = WebPDecodeRGBA (data, (size_t) data_len, &width, &height);
-    if (rgba == NULL || !rsvg_image_dims_ok (width, height)) {
+    if (rgba == NULL || !rsvg_image_dims_ok (width, height, max_pixel_bytes)) {
         if (rgba)
             WebPFree (rgba);
         g_set_error (error,
@@ -496,7 +502,8 @@ rsvg_cairo_surface_from_webp (const guint8 *data,
         return NULL;
     }
 
-    surface = rsvg_cairo_surface_from_rgba (rgba, width, height, href, "WebP", error);
+    surface = rsvg_cairo_surface_from_rgba (rgba, width, height, href, "WebP",
+                                            max_pixel_bytes, error);
     WebPFree (rgba);
     return surface;
 }
@@ -524,6 +531,7 @@ static cairo_surface_t *
 rsvg_cairo_surface_from_png (const guint8 *data,
                              gsize data_len,
                              const char *href,
+                             gsize max_pixel_bytes,
                              GError **error)
 {
     png_structp png = NULL;
@@ -580,7 +588,7 @@ rsvg_cairo_surface_from_png (const guint8 *data,
 
     width = png_get_image_width (png, info);
     height = png_get_image_height (png, info);
-    if (!rsvg_image_dims_ok ((gint64) width, (gint64) height))
+    if (!rsvg_image_dims_ok ((gint64) width, (gint64) height, max_pixel_bytes))
         goto fail;
     if (png_get_rowbytes (png, info) != (png_size_t) width * 4)
         goto fail;
@@ -588,7 +596,7 @@ rsvg_cairo_surface_from_png (const guint8 *data,
     {
         gsize nbytes;
 
-        if (!rsvg_image_rgba_nbytes ((gint64) width, (gint64) height, &nbytes))
+        if (!rsvg_image_rgba_nbytes ((gint64) width, (gint64) height, max_pixel_bytes, &nbytes))
             goto fail;
         rgba = g_try_malloc (nbytes);
     }
@@ -606,7 +614,7 @@ rsvg_cairo_surface_from_png (const guint8 *data,
     rows = NULL;
 
     surface = rsvg_cairo_surface_from_rgba (rgba, (int) width, (int) height,
-                                            href, "PNG", error);
+                                            href, "PNG", max_pixel_bytes, error);
     g_free (rgba);
     return surface;
 
@@ -758,7 +766,7 @@ rsvg_jpeg_exif_orientation (j_decompress_ptr cinfo)
 /* EXIF Orientation 1..8. 1 and unknown values leave the buffer alone. */
 static gboolean
 rsvg_rgba_apply_exif_orientation (guint8 **rgba, int *width, int *height,
-                                  int orientation)
+                                  int orientation, gsize max_pixel_bytes)
 {
     int w, h, ow, oh, x, y;
     guint8 *src, *dst;
@@ -781,7 +789,7 @@ rsvg_rgba_apply_exif_orientation (guint8 **rgba, int *width, int *height,
         ow = w;
         oh = h;
     }
-    if (!rsvg_image_rgba_nbytes ((gint64) ow, (gint64) oh, &nbytes))
+    if (!rsvg_image_rgba_nbytes ((gint64) ow, (gint64) oh, max_pixel_bytes, &nbytes))
         return FALSE;
     dst = g_try_malloc (nbytes);
     if (dst == NULL)
@@ -825,6 +833,7 @@ rsvg_cairo_surface_from_jpeg (const guint8 *data,
                               gsize data_len,
                               const char *href,
                               gboolean apply_orientation,
+                              gsize max_pixel_bytes,
                               GError **error)
 {
     struct jpeg_decompress_struct cinfo;
@@ -877,7 +886,8 @@ rsvg_cairo_surface_from_jpeg (const guint8 *data,
         orientation = rsvg_jpeg_exif_orientation (&cinfo);
 
     if (!rsvg_image_dims_ok ((gint64) cinfo.image_width,
-                             (gint64) cinfo.image_height)) {
+                             (gint64) cinfo.image_height,
+                             max_pixel_bytes)) {
         longjmp (jerr.setjmp_buffer, 1);
     }
 
@@ -894,7 +904,7 @@ rsvg_cairo_surface_from_jpeg (const guint8 *data,
         int height = (int) cinfo.output_height;
         gsize nbytes;
 
-        if (!rsvg_image_rgba_nbytes (width, height, &nbytes))
+        if (!rsvg_image_rgba_nbytes (width, height, max_pixel_bytes, &nbytes))
             longjmp (jerr.setjmp_buffer, 1);
 
         row_stride = width * 3;
@@ -930,7 +940,8 @@ rsvg_cairo_surface_from_jpeg (const guint8 *data,
         created = FALSE;
 
         if (apply_orientation &&
-            !rsvg_rgba_apply_exif_orientation (&rgba, &width, &height, orientation)) {
+            !rsvg_rgba_apply_exif_orientation (&rgba, &width, &height, orientation,
+                                               max_pixel_bytes)) {
             g_free (rgba);
             g_set_error (error,
                          GDK_PIXBUF_ERROR,
@@ -940,7 +951,8 @@ rsvg_cairo_surface_from_jpeg (const guint8 *data,
             return NULL;
         }
 
-        surface = rsvg_cairo_surface_from_rgba (rgba, width, height, href, "JPEG", error);
+        surface = rsvg_cairo_surface_from_rgba (rgba, width, height, href, "JPEG",
+                                                max_pixel_bytes, error);
         g_free (rgba);
         return surface;
     }
@@ -975,6 +987,7 @@ static cairo_surface_t *
 rsvg_cairo_surface_from_gif (const guint8 *data,
                              gsize data_len,
                              const char *href,
+                             gsize max_pixel_bytes,
                              GError **error)
 {
     RsvgGifMem mem;
@@ -1009,7 +1022,7 @@ rsvg_cairo_surface_from_gif (const guint8 *data,
         gif->UserData = &mem;
 
     if (gif->SWidth > 0 && gif->SHeight > 0 &&
-        !rsvg_image_dims_ok (gif->SWidth, gif->SHeight))
+        !rsvg_image_dims_ok (gif->SWidth, gif->SHeight, max_pixel_bytes))
         goto fail;
 
     if (DGifSlurp (gif) != GIF_OK || gif->ImageCount < 1)
@@ -1035,13 +1048,13 @@ rsvg_cairo_surface_from_gif (const guint8 *data,
         width = img->ImageDesc.Width;
         height = img->ImageDesc.Height;
     }
-    if (!rsvg_image_dims_ok (width, height))
+    if (!rsvg_image_dims_ok (width, height, max_pixel_bytes))
         goto fail;
 
     {
         gsize nbytes;
 
-        if (!rsvg_image_rgba_nbytes (width, height, &nbytes))
+        if (!rsvg_image_rgba_nbytes (width, height, max_pixel_bytes, &nbytes))
             goto fail;
         rgba = g_try_malloc0 (nbytes);
     }
@@ -1092,7 +1105,8 @@ rsvg_cairo_surface_from_gif (const guint8 *data,
         gif = NULL;
     }
 
-    surface = rsvg_cairo_surface_from_rgba (rgba, width, height, href, "GIF", error);
+    surface = rsvg_cairo_surface_from_rgba (rgba, width, height, href, "GIF",
+                                            max_pixel_bytes, error);
     g_free (rgba);
     return surface;
 
@@ -1268,6 +1282,7 @@ static cairo_surface_t *
 rsvg_cairo_surface_from_bmp (const guint8 *data,
                              gsize data_len,
                              const char *href,
+                             gsize max_pixel_bytes,
                              GError **error)
 {
     guint32 pix_off, dib_size, compression, clrused;
@@ -1323,7 +1338,7 @@ rsvg_cairo_surface_from_bmp (const guint8 *data,
     } else {
         height = height_raw;
     }
-    if (!rsvg_image_dims_ok (width, height))
+    if (!rsvg_image_dims_ok (width, height, max_pixel_bytes))
         goto fail;
 
     if (compression == RSVG_BMP_BI_RLE8) {
@@ -1376,7 +1391,7 @@ rsvg_cairo_surface_from_bmp (const guint8 *data,
     {
         gsize nbytes;
 
-        if (!rsvg_image_rgba_nbytes (width, height, &nbytes))
+        if (!rsvg_image_rgba_nbytes (width, height, max_pixel_bytes, &nbytes))
             goto fail;
         rgba = g_try_malloc0 (nbytes);
     }
@@ -1461,7 +1476,8 @@ rsvg_cairo_surface_from_bmp (const guint8 *data,
         goto fail;
     }
 
-    surface = rsvg_cairo_surface_from_rgba (rgba, width, height, href, "BMP", error);
+    surface = rsvg_cairo_surface_from_rgba (rgba, width, height, href, "BMP",
+                                            max_pixel_bytes, error);
     g_free (rgba);
     return surface;
 
@@ -1481,6 +1497,7 @@ static cairo_surface_t *
 rsvg_cairo_surface_from_avif (const guint8 *data,
                               gsize data_len,
                               const char *href,
+                              gsize max_pixel_bytes,
                               GError **error)
 {
     avifDecoder *decoder = NULL;
@@ -1516,7 +1533,7 @@ rsvg_cairo_surface_from_avif (const guint8 *data,
 
     width = (int) decoder->image->width;
     height = (int) decoder->image->height;
-    if (!rsvg_image_dims_ok (width, height))
+    if (!rsvg_image_dims_ok (width, height, max_pixel_bytes))
         goto fail;
 
     avifRGBImageSetDefaults (&rgb, decoder->image);
@@ -1535,7 +1552,7 @@ rsvg_cairo_surface_from_avif (const guint8 *data,
     {
         gsize nbytes;
 
-        if (!rsvg_image_rgba_nbytes (width, height, &nbytes))
+        if (!rsvg_image_rgba_nbytes (width, height, max_pixel_bytes, &nbytes))
             goto fail;
         rgba = g_try_malloc (nbytes);
     }
@@ -1552,7 +1569,8 @@ rsvg_cairo_surface_from_avif (const guint8 *data,
     avifDecoderDestroy (decoder);
     decoder = NULL;
 
-    surface = rsvg_cairo_surface_from_rgba (rgba, width, height, href, "AVIF", error);
+    surface = rsvg_cairo_surface_from_rgba (rgba, width, height, href, "AVIF",
+                                            max_pixel_bytes, error);
     g_free (rgba);
     return surface;
 
@@ -1571,6 +1589,63 @@ rsvg_cairo_surface_from_avif (const guint8 *data,
 }
 #endif /* HAVE_LIBAVIF */
 
+static gboolean
+rsvg_bytes_look_like_svg (const char *data, gsize data_len)
+{
+    const guint8 *p, *end;
+
+    if (data == NULL || data_len < 4)
+        return FALSE;
+    p = (const guint8 *) data;
+    end = p + data_len;
+    if (data_len >= 3 && p[0] == 0xef && p[1] == 0xbb && p[2] == 0xbf)
+        p += 3;
+    while (p < end && g_ascii_isspace (*p))
+        p++;
+    if ((gsize) (end - p) >= 4 && memcmp (p, "<svg", 4) == 0)
+        return TRUE;
+    if ((gsize) (end - p) >= 5 && memcmp (p, "<?xml", 5) == 0)
+        return TRUE;
+    return FALSE;
+}
+
+static gboolean
+rsvg_data_is_svg (const char *data,
+                  gsize data_len,
+                  const char *mime_type,
+                  const char *href)
+{
+    if (rsvg_mime_is (mime_type, "image/svg+xml") ||
+        rsvg_mime_is (mime_type, "image/svg") ||
+        rsvg_mime_is (mime_type, "image/svg-xml") ||
+        rsvg_mime_is (mime_type, "image/svg+xml-compressed"))
+        return TRUE;
+    if (rsvg_href_has_extension (href, ".svg") ||
+        rsvg_href_has_extension (href, ".svgz"))
+        return TRUE;
+    return rsvg_bytes_look_like_svg (data, data_len);
+}
+
+typedef struct {
+    gboolean too_large;
+    gsize max_pixel_bytes;
+} RsvgPixbufSizeCheck;
+
+static void
+rsvg_pixbuf_size_prepared (GdkPixbufLoader *loader,
+                           int width,
+                           int height,
+                           gpointer user_data)
+{
+    RsvgPixbufSizeCheck *check = user_data;
+
+    if (!rsvg_image_dims_ok (width, height, check->max_pixel_bytes)) {
+        check->too_large = TRUE;
+        /* Avoid allocating the full decode buffer. */
+        gdk_pixbuf_loader_set_size (loader, 1, 1);
+    }
+}
+
 cairo_surface_t *
 rsvg_cairo_surface_new_from_href (RsvgHandle *handle,
                                   const char *href,
@@ -1584,12 +1659,18 @@ rsvg_cairo_surface_new_from_href (RsvgHandle *handle,
     GdkPixbuf *pixbuf = NULL;
     GdkPixbuf *oriented = NULL;
     cairo_surface_t *surface = NULL;
+    gsize max_pixel_bytes;
+    gsize max_data_bytes;
+    RsvgPixbufSizeCheck pixbuf_check;
 
     data = _rsvg_handle_acquire_data (handle, href, &mime_type, &data_len, error);
     if (data == NULL)
         return NULL;
 
-    if (data_len > RSVG_MAX_DATA_URI_BYTES) {
+    max_pixel_bytes = rsvg_handle_max_image_pixel_bytes (handle);
+    max_data_bytes = rsvg_handle_max_data_uri_bytes (handle);
+
+    if (data_len > max_data_bytes) {
         g_set_error (error,
                      GDK_PIXBUF_ERROR,
                      GDK_PIXBUF_ERROR_FAILED,
@@ -1600,7 +1681,8 @@ rsvg_cairo_surface_new_from_href (RsvgHandle *handle,
 
     if (rsvg_data_is_webp (data, data_len, mime_type, href)) {
 #ifdef HAVE_LIBWEBP
-        surface = rsvg_cairo_surface_from_webp ((const guint8 *) data, data_len, href, error);
+        surface = rsvg_cairo_surface_from_webp ((const guint8 *) data, data_len, href,
+                                                max_pixel_bytes, error);
         if (surface == NULL)
             goto out;
 
@@ -1621,7 +1703,8 @@ rsvg_cairo_surface_new_from_href (RsvgHandle *handle,
 
     if (rsvg_data_is_png (data, data_len, mime_type, href)) {
 #ifdef HAVE_LIBPNG
-        surface = rsvg_cairo_surface_from_png ((const guint8 *) data, data_len, href, error);
+        surface = rsvg_cairo_surface_from_png ((const guint8 *) data, data_len, href,
+                                               max_pixel_bytes, error);
         if (surface == NULL)
             goto out;
 
@@ -1643,7 +1726,7 @@ rsvg_cairo_surface_new_from_href (RsvgHandle *handle,
     if (rsvg_data_is_jpeg (data, data_len, mime_type, href)) {
 #ifdef HAVE_LIBJPEG
         surface = rsvg_cairo_surface_from_jpeg ((const guint8 *) data, data_len, href,
-                                                apply_orientation, error);
+                                                apply_orientation, max_pixel_bytes, error);
         if (surface == NULL)
             goto out;
 
@@ -1665,7 +1748,8 @@ rsvg_cairo_surface_new_from_href (RsvgHandle *handle,
 
     if (rsvg_data_is_gif (data, data_len, mime_type, href)) {
 #ifdef HAVE_LIBGIF
-        surface = rsvg_cairo_surface_from_gif ((const guint8 *) data, data_len, href, error);
+        surface = rsvg_cairo_surface_from_gif ((const guint8 *) data, data_len, href,
+                                               max_pixel_bytes, error);
         if (surface == NULL)
             goto out;
 
@@ -1686,7 +1770,8 @@ rsvg_cairo_surface_new_from_href (RsvgHandle *handle,
 
     if (rsvg_data_is_avif (data, data_len, mime_type, href)) {
 #ifdef HAVE_LIBAVIF
-        surface = rsvg_cairo_surface_from_avif ((const guint8 *) data, data_len, href, error);
+        surface = rsvg_cairo_surface_from_avif ((const guint8 *) data, data_len, href,
+                                                max_pixel_bytes, error);
         if (surface == NULL)
             goto out;
 
@@ -1707,7 +1792,8 @@ rsvg_cairo_surface_new_from_href (RsvgHandle *handle,
 
     if (rsvg_data_is_bmp (data, data_len, mime_type, href)) {
 #ifdef HAVE_BMP
-        surface = rsvg_cairo_surface_from_bmp ((const guint8 *) data, data_len, href, error);
+        surface = rsvg_cairo_surface_from_bmp ((const guint8 *) data, data_len, href,
+                                               max_pixel_bytes, error);
         if (surface == NULL)
             goto out;
 
@@ -1727,6 +1813,14 @@ rsvg_cairo_surface_new_from_href (RsvgHandle *handle,
 #endif
     }
 
+    /* Nested SVG must not go through gdk-pixbuf (the SVG loader
+     * recurses into this library). Count it against file nesting. */
+    if (rsvg_data_is_svg (data, data_len, mime_type, href)) {
+        if (handle->priv->file_nesting_depth >= RSVG_MAX_FILE_NESTING_DEPTH)
+            rsvg_set_nesting_error (error);
+        goto out;
+    }
+
     if (mime_type) {
         loader = gdk_pixbuf_loader_new_with_mime_type (mime_type, error);
     } else {
@@ -1736,13 +1830,39 @@ rsvg_cairo_surface_new_from_href (RsvgHandle *handle,
     if (loader == NULL)
         goto out;
 
+    pixbuf_check.too_large = FALSE;
+    pixbuf_check.max_pixel_bytes = max_pixel_bytes;
+    g_signal_connect (loader, "size-prepared",
+                      G_CALLBACK (rsvg_pixbuf_size_prepared), &pixbuf_check);
+
     if (!gdk_pixbuf_loader_write (loader, (guchar *) data, data_len, error)) {
         gdk_pixbuf_loader_close (loader, NULL);
         goto out;
     }
 
+    if (pixbuf_check.too_large) {
+        gdk_pixbuf_loader_close (loader, NULL);
+        g_clear_error (error);
+        g_set_error (error,
+                     GDK_PIXBUF_ERROR,
+                     GDK_PIXBUF_ERROR_FAILED,
+                     _("Image '%s' is too large"),
+                     href ? href : "");
+        goto out;
+    }
+
     if (!gdk_pixbuf_loader_close (loader, error))
         goto out;
+
+    if (pixbuf_check.too_large) {
+        g_clear_error (error);
+        g_set_error (error,
+                     GDK_PIXBUF_ERROR,
+                     GDK_PIXBUF_ERROR_FAILED,
+                     _("Image '%s' is too large"),
+                     href ? href : "");
+        goto out;
+    }
 
     pixbuf = gdk_pixbuf_loader_get_pixbuf (loader);
 
@@ -1762,7 +1882,8 @@ rsvg_cairo_surface_new_from_href (RsvgHandle *handle,
     }
 
     if (!rsvg_image_dims_ok (gdk_pixbuf_get_width (pixbuf),
-                             gdk_pixbuf_get_height (pixbuf))) {
+                             gdk_pixbuf_get_height (pixbuf),
+                             max_pixel_bytes)) {
         g_set_error (error,
                      GDK_PIXBUF_ERROR,
                      GDK_PIXBUF_ERROR_FAILED,

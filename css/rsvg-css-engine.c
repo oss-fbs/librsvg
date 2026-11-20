@@ -1361,6 +1361,8 @@ handle_import (RsvgCssEngine *eng, Sheet *sheet, const char *uri,
         return;
     if (import_depth >= RSVG_MAX_CSS_IMPORT_DEPTH)
         return;
+    if (ctx->priv->file_nesting_depth + (guint) import_depth >= RSVG_MAX_FILE_NESTING_DEPTH)
+        return;
     if (!allow_import && g_ascii_strncasecmp (uri, "data:", 5) != 0)
         return;
     data = _rsvg_handle_acquire_data (ctx, uri, &mime, &data_len, NULL);

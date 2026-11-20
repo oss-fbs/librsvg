@@ -661,6 +661,13 @@ rsvg_start_xinclude (RsvgHandle * ctx, RsvgPropertyBag * atts)
     const char *href, *parse;
     gboolean success = FALSE;
 
+    if (ctx->priv->file_nesting_depth >= RSVG_MAX_FILE_NESTING_DEPTH) {
+        rsvg_set_nesting_error (ctx->priv->error);
+        if (ctx->priv->ctxt)
+            xmlStopParser (ctx->priv->ctxt);
+        goto fallback;
+    }
+
     href = rsvg_property_bag_lookup (atts, "href");
     if (href == NULL)
         goto fallback;
@@ -708,13 +715,22 @@ rsvg_start_xinclude (RsvgHandle * ctx, RsvgPropertyBag * atts)
 
         g_object_unref (stream);
 
+        ctx->priv->file_nesting_depth++;
         if (xml_parser) {
+            xmlParserCtxtPtr saved_ctxt = ctx->priv->ctxt;
+
+            ctx->priv->ctxt = xml_parser;
             (void) xmlParseDocument (xml_parser);
+            ctx->priv->ctxt = saved_ctxt;
 
             xml_parser = rsvg_free_xml_parser_and_doc (xml_parser);
         }
+        ctx->priv->file_nesting_depth--;
 
         g_clear_error (&err);
+
+        if (ctx->priv->error && *ctx->priv->error)
+            goto fallback;
     }
 
     success = TRUE;
@@ -2484,12 +2500,23 @@ rsvg_node_set_atts (RsvgNode * node, RsvgHandle * ctx, RsvgPropertyBag * atts)
 void
 rsvg_pop_discrete_layer (RsvgDrawingCtx * ctx)
 {
+    if (ctx->layer_nesting_depth > RSVG_MAX_LAYER_NESTING_DEPTH) {
+        ctx->layer_nesting_depth--;
+        return;
+    }
     ctx->render->pop_discrete_layer (ctx);
+    if (ctx->layer_nesting_depth > 0)
+        ctx->layer_nesting_depth--;
 }
 
 void
 rsvg_push_discrete_layer (RsvgDrawingCtx * ctx)
 {
+    ctx->layer_nesting_depth++;
+    if (ctx->layer_nesting_depth > RSVG_MAX_LAYER_NESTING_DEPTH) {
+        ctx->layer_nesting_exceeded = TRUE;
+        return;
+    }
     ctx->render->push_discrete_layer (ctx);
 }
 
@@ -2525,7 +2552,21 @@ rsvg_drawing_ctx_increase_num_elements_acquired (RsvgDrawingCtx *draw_ctx)
 gboolean
 rsvg_drawing_ctx_limits_exceeded (RsvgDrawingCtx *draw_ctx)
 {
-    return draw_ctx->num_elements_acquired > 500000;
+    return draw_ctx->num_elements_acquired > 500000
+        || draw_ctx->layer_nesting_exceeded
+        || draw_ctx->layer_nesting_depth > RSVG_MAX_LAYER_NESTING_DEPTH;
+}
+
+void
+rsvg_drawing_ctx_set_limits_error (RsvgDrawingCtx *draw_ctx, GError **error)
+{
+    if (draw_ctx->layer_nesting_exceeded
+        || draw_ctx->layer_nesting_depth > RSVG_MAX_LAYER_NESTING_DEPTH)
+        g_set_error (error, RSVG_ERROR, RSVG_ERROR_FAILED,
+                     "maximum layer nesting depth exceeded");
+    else
+        g_set_error (error, RSVG_ERROR, RSVG_ERROR_FAILED,
+                     "drawing limits exceeded");
 }
 
 gboolean
@@ -2943,6 +2984,7 @@ _rsvg_handle_acquire_data (RsvgHandle *handle,
                                       rsvg_handle_get_base_uri (handle),
                                       content_type,
                                       len,
+                                      rsvg_handle_max_data_uri_bytes (handle),
                                       handle->priv->cancellable,
                                       error);
     } else {
@@ -2969,6 +3011,7 @@ _rsvg_handle_acquire_stream (RsvgHandle *handle,
         stream = _rsvg_io_acquire_stream (uri,
                                           rsvg_handle_get_base_uri (handle),
                                           content_type,
+                                          rsvg_handle_max_data_uri_bytes (handle),
                                           handle->priv->cancellable,
                                           error);
     } else {

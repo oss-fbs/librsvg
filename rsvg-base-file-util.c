@@ -5,6 +5,8 @@
 
    Copyright (C) 2000 Eazel, Inc.
    Copyright (C) 2002 Dom Lachowicz <cinamod@hotmail.com>
+   Copyright (C) 2026 Randy Butler
+   Copyright (C) 2026 Randy Butler
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU Library General Public License as
@@ -105,7 +107,8 @@ rsvg_handle_new_from_file (const gchar * file_name, GError ** error)
         return NULL;
     }
 
-    data = _rsvg_io_acquire_data (base_uri, base_uri, NULL, &data_len, NULL, error);
+    data = _rsvg_io_acquire_data (base_uri, base_uri, NULL, &data_len,
+                                  RSVG_MAX_DATA_URI_BYTES, NULL, error);
 
     if (data) {
         handle = rsvg_handle_new ();

@@ -4,6 +4,7 @@
    rsvg-defs.c: Manage SVG defs and references.
  
    Copyright (C) 2000 Eazel, Inc.
+   Copyright (C) 2026 Randy Butler
   
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU Library General Public License as
@@ -30,6 +31,7 @@
 #include "rsvg-io.h"
 
 #include <glib.h>
+#include <string.h>
 
 struct _RsvgDefs {
     GHashTable *hash;
@@ -58,16 +60,26 @@ rsvg_defs_load_extern (const RsvgDefs * defs, const char *uri)
     RsvgHandle *handle = NULL;
     char *data;
     gsize data_len;
+    GError *error = NULL;
+
+    if (defs->ctx->priv->file_nesting_depth >= RSVG_MAX_FILE_NESTING_DEPTH) {
+        rsvg_set_nesting_error (defs->ctx->priv->error);
+        return NULL;
+    }
 
     data = _rsvg_handle_acquire_data (defs->ctx, uri, NULL, &data_len, NULL);
 
     if (data) {
-        handle = rsvg_handle_new ();
+        handle = rsvg_handle_new_child (defs->ctx);
         rsvg_handle_set_base_uri (handle, uri);
 
-        if (rsvg_handle_fill_with_data (handle, data, data_len, NULL)) {
+        if (rsvg_handle_fill_with_data (handle, data, data_len, &error)) {
             g_hash_table_insert (defs->externs, g_strdup (uri), handle);
         } else {
+            if (error && error->message &&
+                strstr (error->message, "maximum nesting depth exceeded"))
+                rsvg_set_nesting_error (defs->ctx->priv->error);
+            g_clear_error (&error);
             g_object_unref (handle);
             handle = NULL;
         }

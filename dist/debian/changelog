@@ -1,3 +1,13 @@
+librsvg-c (2.62.6-1) unstable; urgency=medium
+
+  * Version 2.62.6. Final 2.62 series release unless a serious bug
+    forces a later patch.
+  * Resource limits: file nesting 20, layer nesting 500 (glibc) /
+    50 (musl), Cairo coordinate range, image/data: heap caps 128/64
+    MiB default and 512/256 MiB with UNLIMITED.
+
+ -- Randy Butler <oss@familybusinesssoftware.com>  Thu, 19 Nov 2026 12:00:00 -0500
+
 librsvg-c (2.62.5-1) unstable; urgency=medium
 
   * Version 2.62.5. There is no 2.62.4 package.

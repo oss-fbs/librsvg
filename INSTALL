@@ -7,8 +7,10 @@ unlimited permission to copy, distribute and modify it.
 Project-specific install (this tree)
 ====================================
 
-   This tree is librsvg 2.62.3 (`librsvg-2.0`).  The public name,
-   soname, and pkg-config module remain librsvg-2.0.
+   This tree is librsvg 2.62.6 (`librsvg-2.0`).  The public name,
+   soname, and pkg-config module remain librsvg-2.0.  2.62.6 is the
+   final release of the 2.62 series unless a serious bug forces a
+   later patch.  Rendering behavior remains the 2.62 series.
 
    libxml2 2.15 builds without a port patch.  When xmlParserMaxDepth
    is a writable global, the in-tree raise keeps default text/entity
@@ -105,9 +107,14 @@ Raster decoders in SVG `<image>`
    uses libavif (`pkg-config libavif`).  `libpixbufloader-svg.so`
    is unchanged.
 
-   SVG `<image>` rasters: maximum side 32767, maximum 32×1024×1024
-   pixels.  Very large `data:` payloads or stylesheet buffers may
-   be rejected.
+   SVG `<image>` rasters: maximum side 32767 pixels (never raised).
+   Decoded pixels default 128 MiB; `data:` URI size default 64 MiB.
+   `RSVG_HANDLE_FLAG_UNLIMITED` / `rsvg-convert --unlimited` raises
+   those heap caps to 512 MiB and 256 MiB.  File nesting (XInclude,
+   cross-document references, CSS `@import`) is limited to 20 and is
+   not raised by `--unlimited`.  Layer nesting is 500 discrete layers
+   on glibc and 50 on musl; `--unlimited` does not raise it.  Path and
+   text coordinates outside Cairo's 24.8 fixed-point range are skipped.
 
 Tests and docs
 --------------

@@ -2,7 +2,7 @@
 
 **librsvg** is a C library that loads SVG and SVGZ and draws it onto
 a Cairo surface.  The shared library, headers, and pkg-config module
-are **librsvg-2.0**.  This is the public C API for librsvg **2.62.5**.
+are **librsvg-2.0**.  This is the public C API for librsvg **2.62.6**.
 
 It handles non-animated SVG, CSS styling, filters, masks, clip paths,
 and SVG `<image>` rasters (PNG, JPEG, GIF, WebP, BMP; optional AVIF).  A
@@ -11,9 +11,18 @@ gdk-pixbuf loader and `rsvg-convert` are included.  See the
 
 ## Limits
 
-SVG `<image>` rasters: maximum side 32767, maximum 32×1024×1024
-pixels.  Very large `data:` payloads or stylesheet buffers may be
-rejected.
+File nesting (XInclude, cross-document references, CSS `@import`) is
+limited to 20.  Exceeding it is a load error.  `RSVG_HANDLE_FLAG_UNLIMITED`
+does not lift this limit.
+
+Layer nesting during drawing is limited to 500 discrete layers on
+glibc and 50 on musl.  Path and text coordinates outside Cairo's 24.8
+fixed-point range are skipped.
+
+SVG `<image>` rasters: maximum side 32767 pixels (never raised).
+Decoded pixels default 128 MiB; `data:` URI size default 64 MiB.
+`RSVG_HANDLE_FLAG_UNLIMITED` raises those heap caps to 512 MiB and
+256 MiB.  Very large stylesheet buffers may be rejected.
 
 ## API groups
 
@@ -28,7 +37,7 @@ rejected.
 - [Deprecated](@ref rsvg_deprecated) — older calls kept for compatibility
 
 The last new public C function is `rsvg_handle_set_cancellable_for_rendering`
-(2.59).  The library version is 2.62.5.
+(2.59).  The library version is 2.62.6.
 
 [Thank you](@ref thanks) — the people who built librsvg.
 

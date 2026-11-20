@@ -284,7 +284,7 @@ library_version_defines (void)
                                       LIBRSVG_MINOR_VERSION,
                                       LIBRSVG_MICRO_VERSION);
     g_assert_cmpstr (version, ==, LIBRSVG_VERSION);
-    g_assert_cmpstr (LIBRSVG_VERSION, ==, "2.62.5");
+    g_assert_cmpstr (LIBRSVG_VERSION, ==, "2.62.6");
     g_free (version);
 }
 
@@ -298,7 +298,8 @@ library_version_check (void)
     g_assert_true (LIBRSVG_CHECK_VERSION (2, 62, 0));
     g_assert_true (LIBRSVG_CHECK_VERSION (2, 62, 3));
     g_assert_true (LIBRSVG_CHECK_VERSION (2, 62, 5));
-    g_assert_false (LIBRSVG_CHECK_VERSION (2, 62, 6));
+    g_assert_true (LIBRSVG_CHECK_VERSION (2, 62, 6));
+    g_assert_false (LIBRSVG_CHECK_VERSION (2, 62, 7));
     g_assert_false (LIBRSVG_CHECK_VERSION (2, 63, 0));
     g_assert_false (LIBRSVG_CHECK_VERSION (3, 0, 0));
 }
@@ -1287,6 +1288,173 @@ duplicate_entity_xinclude_keeps_first (void)
     g_free (dir);
 }
 
+static void
+assert_xinclude_self_fails (RsvgHandleFlags flags)
+{
+    GError *error = NULL;
+    char *dir, *path;
+    RsvgHandle *handle;
+    GFile *file;
+
+    dir = g_dir_make_tmp ("librsvg-xinclude-nest-XXXXXX", &error);
+    g_assert_no_error (error);
+    g_assert_nonnull (dir);
+
+    path = g_build_filename (dir, "self.svg", NULL);
+    write_text_file (path,
+                     "<svg xmlns='http://www.w3.org/2000/svg'"
+                     " xmlns:xi='http://www.w3.org/2001/XInclude'"
+                     " width='8' height='8'>"
+                     "<xi:include parse='xml' href='self.svg'/>"
+                     "</svg>");
+
+    file = g_file_new_for_path (path);
+    handle = rsvg_handle_new_from_gfile_sync (file, flags, NULL, &error);
+    g_object_unref (file);
+    g_assert_null (handle);
+    g_assert_nonnull (error);
+    g_assert_nonnull (strstr (error->message, "maximum nesting depth exceeded"));
+    g_clear_error (&error);
+
+    g_remove (path);
+    g_rmdir (dir);
+    g_free (path);
+    g_free (dir);
+}
+
+static void
+xinclude_self_include_fails_with_nesting_error (void)
+{
+    assert_xinclude_self_fails (RSVG_HANDLE_FLAGS_NONE);
+}
+
+static void
+xinclude_self_include_unlimited_still_fails (void)
+{
+    assert_xinclude_self_fails (RSVG_HANDLE_FLAG_UNLIMITED);
+}
+
+static char *
+make_nested_groups_svg (int ngroups)
+{
+    GString *svg;
+    int i;
+
+    svg = g_string_new ("<svg xmlns='http://www.w3.org/2000/svg' width='8' height='8'>");
+    for (i = 0; i < ngroups; i++)
+        g_string_append (svg, "<g>");
+    g_string_append (svg, "<rect width='8' height='8' fill='#ff0000'/>");
+    for (i = 0; i < ngroups; i++)
+        g_string_append (svg, "</g>");
+    g_string_append (svg, "</svg>");
+    return g_string_free (svg, FALSE);
+}
+
+static void
+assert_nested_groups_render (int ngroups, RsvgHandleFlags flags, gboolean expect_ok)
+{
+    char *svg;
+    RsvgHandle *handle;
+    GError *error = NULL;
+    cairo_surface_t *output;
+    cairo_t *cr;
+    RsvgRectangle viewport = { 0, 0, 8, 8 };
+    gboolean ok;
+
+    svg = make_nested_groups_svg (ngroups);
+    handle = rsvg_handle_new_with_flags (flags);
+    g_assert_nonnull (handle);
+    g_assert_true (rsvg_handle_write (handle, (const guint8 *) svg, strlen (svg), &error));
+    g_assert_true (rsvg_handle_close (handle, &error));
+    g_assert_no_error (error);
+    g_free (svg);
+
+    output = cairo_image_surface_create (CAIRO_FORMAT_ARGB32, 8, 8);
+    cr = cairo_create (output);
+    ok = rsvg_handle_render_document (handle, cr, &viewport, &error);
+    g_assert_cmpint (cairo_status (cr), ==, CAIRO_STATUS_SUCCESS);
+    if (expect_ok) {
+        g_assert_true (ok);
+        g_assert_no_error (error);
+    } else {
+        g_assert_false (ok);
+        g_assert_nonnull (error);
+        g_assert_nonnull (strstr (error->message, "maximum layer nesting depth exceeded"));
+        g_clear_error (&error);
+    }
+    cairo_destroy (cr);
+    cairo_surface_destroy (output);
+    g_object_unref (handle);
+}
+
+static void
+layer_nesting_over_limit_does_not_crash (void)
+{
+    assert_nested_groups_render (RSVG_MAX_LAYER_NESTING_DEPTH + 20,
+                                 RSVG_HANDLE_FLAGS_NONE, FALSE);
+}
+
+static void
+layer_nesting_unlimited_still_fails (void)
+{
+    assert_nested_groups_render (RSVG_MAX_LAYER_NESTING_DEPTH + 20,
+                                 RSVG_HANDLE_FLAG_UNLIMITED, FALSE);
+}
+
+static void
+layer_nesting_shallow_still_renders (void)
+{
+    assert_nested_groups_render (10, RSVG_HANDLE_FLAGS_NONE, TRUE);
+}
+
+static void
+cairo_huge_path_coords_are_skipped (void)
+{
+    const char *svg =
+        "<svg xmlns='http://www.w3.org/2000/svg' width='8' height='8'>"
+        "<rect width='8' height='8' fill='#00ff00'/>"
+        "<path d='M 9000000 0 L 9000000 10' stroke='#000000'/>"
+        "</svg>";
+    RsvgHandle *handle;
+    GError *error = NULL;
+    cairo_surface_t *output;
+
+    handle = rsvg_handle_new_from_data ((const guint8 *) svg, strlen (svg), &error);
+    g_assert_no_error (error);
+    g_assert_nonnull (handle);
+
+    output = cairo_image_surface_create (CAIRO_FORMAT_ARGB32, 8, 8);
+    render_to_surface (handle, output);
+    g_assert_cmphex (pixel_argb (output, 4, 4), ==, 0xff00ff00);
+
+    cairo_surface_destroy (output);
+    g_object_unref (handle);
+}
+
+static void
+cairo_huge_text_coords_are_skipped (void)
+{
+    const char *svg =
+        "<svg xmlns='http://www.w3.org/2000/svg' width='8' height='8'>"
+        "<rect width='8' height='8' fill='#00ff00'/>"
+        "<text x='9000000' y='4' font-size='4'>x</text>"
+        "</svg>";
+    RsvgHandle *handle;
+    GError *error = NULL;
+    cairo_surface_t *output;
+
+    handle = rsvg_handle_new_from_data ((const guint8 *) svg, strlen (svg), &error);
+    g_assert_no_error (error);
+    g_assert_nonnull (handle);
+
+    output = cairo_image_surface_create (CAIRO_FORMAT_ARGB32, 8, 8);
+    render_to_surface (handle, output);
+    g_assert_cmphex (pixel_argb (output, 4, 4), ==, 0xff00ff00);
+
+    cairo_surface_destroy (output);
+    g_object_unref (handle);
+}
+
 /* 8×8 lossless red WebP / PNG generated with Pillow. */
 #define WEBP_RED_DATA_URI \
     "data:image/webp;base64,UklGRhwAAABXRUJQVlA4TA8AAAAvB8ABAAcQ/Y/+ByKi/wEA"
@@ -1321,7 +1489,7 @@ duplicate_entity_xinclude_keeps_first (void)
 /* 54-byte BITMAPINFOHEADER, 40000×40000 24-bit, no pixel data. */
 #define BMP_OVERSIZE_DIM_URI \
     "data:image/bmp;base64,Qk02AAAAAAAAADYAAAAoAAAAQJwAAECcAAABABgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
-/* 8192×8192 24-bit: under the 32767 side cap, over the 32MP pixel cap. */
+/* 8192×8192 24-bit: under the 32767 side cap, over the 128 MiB pixel cap. */
 #define BMP_OVERSIZE_PIXELS_URI \
     "data:image/bmp;base64,Qk02AAAAAAAAADYAAAAoAAAAACAAAAAgAAABABgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
 #define BMP_BAD_OFFBITS_URI \
@@ -1797,6 +1965,34 @@ static void
 bmp_oversized_dimensions_does_not_abort (void)
 {
     assert_href_paints_center (BMP_OVERSIZE_DIM_URI, 0xff00ff00);
+}
+
+static void
+unlimited_does_not_raise_image_side (void)
+{
+    char *svg;
+    RsvgHandle *handle;
+    GError *error = NULL;
+    cairo_surface_t *output;
+
+    svg = g_strdup_printf (
+        "<svg xmlns='http://www.w3.org/2000/svg' width='8' height='8'>"
+        "<rect width='8' height='8' fill='#00ff00'/>"
+        "<image href='%s' width='8' height='8'/>"
+        "</svg>", BMP_OVERSIZE_DIM_URI);
+    handle = rsvg_handle_new_with_flags (RSVG_HANDLE_FLAG_UNLIMITED);
+    g_assert_nonnull (handle);
+    g_assert_true (rsvg_handle_write (handle, (const guint8 *) svg, strlen (svg), &error));
+    g_assert_true (rsvg_handle_close (handle, &error));
+    g_assert_no_error (error);
+    g_free (svg);
+
+    output = cairo_image_surface_create (CAIRO_FORMAT_ARGB32, 8, 8);
+    render_to_surface (handle, output);
+    g_assert_cmphex (pixel_argb (output, 4, 4), ==, 0xff00ff00);
+
+    cairo_surface_destroy (output);
+    g_object_unref (handle);
 }
 
 static void
@@ -2945,6 +3141,13 @@ main (int argc, char **argv)
     g_test_add_func ("/api/file_url_query_is_denied", file_url_query_is_denied);
     g_test_add_func ("/api/href_path_traversal_is_denied", href_path_traversal_is_denied);
     g_test_add_func ("/api/duplicate_entity_xinclude_keeps_first", duplicate_entity_xinclude_keeps_first);
+    g_test_add_func ("/api/xinclude_self_include_fails_with_nesting_error", xinclude_self_include_fails_with_nesting_error);
+    g_test_add_func ("/api/xinclude_self_include_unlimited_still_fails", xinclude_self_include_unlimited_still_fails);
+    g_test_add_func ("/api/layer_nesting_over_limit_does_not_crash", layer_nesting_over_limit_does_not_crash);
+    g_test_add_func ("/api/layer_nesting_unlimited_still_fails", layer_nesting_unlimited_still_fails);
+    g_test_add_func ("/api/layer_nesting_shallow_still_renders", layer_nesting_shallow_still_renders);
+    g_test_add_func ("/api/cairo_huge_path_coords_are_skipped", cairo_huge_path_coords_are_skipped);
+    g_test_add_func ("/api/cairo_huge_text_coords_are_skipped", cairo_huge_text_coords_are_skipped);
 #ifdef HAVE_LIBWEBP
     g_test_add_func ("/api/webp_image_data_uri_renders", webp_image_data_uri_renders);
     g_test_add_func ("/api/webp_image_sniff_without_mime_renders", webp_image_sniff_without_mime_renders);
@@ -2985,6 +3188,7 @@ main (int argc, char **argv)
     g_test_add_func ("/api/bmp_image_file_href_renders", bmp_image_file_href_renders);
     g_test_add_func ("/api/bmp_decode_failure_does_not_abort", bmp_decode_failure_does_not_abort);
     g_test_add_func ("/api/bmp_oversized_dimensions_does_not_abort", bmp_oversized_dimensions_does_not_abort);
+    g_test_add_func ("/api/unlimited_does_not_raise_image_side", unlimited_does_not_raise_image_side);
     g_test_add_func ("/api/bmp_oversized_pixels_does_not_abort", bmp_oversized_pixels_does_not_abort);
     g_test_add_func ("/api/bmp_bad_offbits_does_not_abort", bmp_bad_offbits_does_not_abort);
     g_test_add_func ("/api/bmp_rle_oob_does_not_abort", bmp_rle_oob_does_not_abort);

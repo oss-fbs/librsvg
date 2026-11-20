@@ -5,6 +5,7 @@
 
    Copyright (C) 2000 Eazel, Inc.
    Copyright (C) 2002 Dom Lachowicz <cinamod@hotmail.com>
+   Copyright (C) 2026 Randy Butler
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU Library General Public License as
@@ -30,7 +31,17 @@
 
 #include "rsvg-private.h"
 
-G_BEGIN_DECLS 
+G_BEGIN_DECLS
+
+/* cairo_fixed_t 24.8 range. Skip the path/text if any transformed
+ * coordinate is outside it (GNOME #1088 / #1239). */
+G_GNUC_INTERNAL
+gboolean rsvg_cairo_user_point_ok (const cairo_matrix_t *affine, double x, double y);
+G_GNUC_INTERNAL
+gboolean rsvg_cairo_rect_coords_ok (const cairo_matrix_t *affine,
+                                    double x, double y, double w, double h);
+G_GNUC_INTERNAL
+gboolean rsvg_cairo_path_coords_ok (const cairo_path_t *path, const cairo_matrix_t *affine);
 
 G_GNUC_INTERNAL
 PangoContext    *rsvg_cairo_create_pango_context    (RsvgDrawingCtx *ctx);

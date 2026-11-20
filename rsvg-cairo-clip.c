@@ -74,6 +74,9 @@ rsvg_cairo_clip_render_pango_layout (RsvgDrawingCtx * ctx, PangoLayout * layout,
     double rotation;
 
     affine = ctx->state->affine;
+    if (!rsvg_cairo_user_point_ok (&affine, x, y))
+        return;
+
     rsvg_cairo_clip_apply_affine (render, &affine);
 
     rotation = pango_gravity_to_rotation (gravity);
@@ -98,6 +101,9 @@ rsvg_cairo_clip_render_path (RsvgDrawingCtx * ctx, const cairo_path_t *path)
     cairo_t *cr;
 
     cr = cairo_render->cr;
+
+    if (!rsvg_cairo_path_coords_ok (path, &state->affine))
+        return;
 
     rsvg_cairo_clip_apply_affine (render, &state->affine);
 

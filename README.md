@@ -5,7 +5,8 @@ librsvg is a C library that renders Scalable Vector Graphics (SVG) to
 Cairo surfaces.  The shared library, headers, and pkg-config module
 are **librsvg-2.0**.  The soname is **librsvg-2.so.2**.
 
-Version **2.62.5**.
+Version **2.62.6**. Final release of the 2.62 series unless a serious
+bug forces a later patch. Rendering behavior remains the 2.62 series.
 
 Originally written by Raph Levien.
 
@@ -60,9 +61,32 @@ PNG/JPEG/GIF/WebP/AVIF.  `--enable-bmp` needs no extra library.
 Limits
 ------
 
-SVG `<image>` rasters are limited to a maximum side of 32767 pixels and
-32×1024×1024 pixels total.  Very large `data:` payloads or stylesheet
-buffers may be rejected.
+File nesting (XInclude, cross-document references, CSS `@import`) is
+limited to 20.  Exceeding it is a load error: “maximum nesting depth
+exceeded”.  `RSVG_HANDLE_FLAG_UNLIMITED` / `rsvg-convert --unlimited`
+does not lift this limit.  CSS `@import` also keeps a tighter
+sub-limit of 8.
+
+Layer nesting during drawing is limited to 500 discrete layers on
+glibc and 50 on musl.  Exceeding it is a render error: “maximum layer
+nesting depth exceeded”.  `--unlimited` does not lift this limit.
+
+Path and text coordinates outside Cairo’s 24.8 fixed-point range (a
+bit over ±8 million) are skipped.
+
+SVG `<image>` rasters:
+
+| Cap               | Default                 | With `--unlimited`      |
+| ----------------- | ----------------------- | ----------------------- |
+| Side length       | 32767 px                | 32767 px (never raised) |
+| Decoded pixels    | 128 MiB                 | 512 MiB                 |
+| `data:` URI size  | 64 MiB                  | 256 MiB                 |
+| File nesting      | 20                      | 20 (never raised)       |
+| Layer nesting     | 500 (glibc) / 50 (musl) | same                    |
+| Cairo coordinates | ±8,388,608              | same                    |
+
+Dimensions and `data:` size are checked before allocating the decode
+buffer.  Stylesheet buffers may still be rejected.
 
 Defaults
 --------
@@ -103,7 +127,7 @@ Download and signature:
     make help
     make pkg
 
-writes `librsvg-c-2.62.5.tar.xz` only under `../pkg/`.
+writes `librsvg-c-2.62.6.tar.xz` only under `../pkg/`.
 The tarball is source only (C tree, tests, autotools; `libcroco/`
 is an unbuilt archive).  Sample packaging lives in git `dist/`,
 not in the public source archive.
@@ -115,8 +139,8 @@ and in the git tree (`oss-familybusinesssoftware.com-pubkey.asc`).
 Neither installs onto a live prefix or runs pkgmk.
 
     cd ../pkg
-    gpg --detach-sign --armor librsvg-c-2.62.5.tar.xz
-    sha256sum librsvg-c-2.62.5.tar.xz > SHA256SUMS
+    gpg --detach-sign --armor librsvg-c-2.62.6.tar.xz
+    sha256sum librsvg-c-2.62.6.tar.xz > SHA256SUMS
     gpg --detach-sign --armor SHA256SUMS
 
 Further reading

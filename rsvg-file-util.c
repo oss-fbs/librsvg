@@ -5,6 +5,8 @@
 
    Copyright (C) 2000 Eazel, Inc.
    Copyright (C) 2002 Dom Lachowicz <cinamod@hotmail.com>
+   Copyright (C) 2026 Randy Butler
+   Copyright (C) 2026 Randy Butler
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU Library General Public License as
@@ -117,7 +119,8 @@ rsvg_pixbuf_from_file_with_size_data (const gchar * file_name,
     gsize data_len;
     GString *base_uri = g_string_new (file_name);
 
-    data = _rsvg_io_acquire_data (file_name, base_uri->str, NULL, &data_len, NULL, error);
+    data = _rsvg_io_acquire_data (file_name, base_uri->str, NULL, &data_len,
+                                  RSVG_MAX_DATA_URI_BYTES, NULL, error);
 
     if (data) {
         pixbuf = rsvg_pixbuf_from_stdio_file_with_size_data (data, data_len,

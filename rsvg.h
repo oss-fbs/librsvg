@@ -1,7 +1,7 @@
 /* -*- Mode: C; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
 /* vim: set sw=4 sts=4 expandtab: */
 /*
-   rsvg.h: Public C API for librsvg.
+   rsvg.h: Public C API for librsvg 2.62.6.
 
    Copyright (C) 2000 Eazel, Inc.
    Copyright (C) 2026 Randy Butler
@@ -378,7 +378,11 @@ gboolean rsvg_handle_has_sub (RsvgHandle *handle, const char *id);
 /**
  * RsvgHandleFlags:
  * @RSVG_HANDLE_FLAGS_NONE: no flags
- * @RSVG_HANDLE_FLAG_UNLIMITED: no limits on XML size (trusted input only)
+ * @RSVG_HANDLE_FLAG_UNLIMITED: no limits on XML size (trusted input only).
+ * Also raises decoded `<image>` pixels from 128 MiB to 512 MiB and
+ * `data:` URI size from 64 MiB to 256 MiB. Does not raise the 32767-pixel
+ * side cap, the file-nesting depth of 20, the layer-nesting depth
+ * (500 on glibc, 50 on musl), or the Cairo 24.8 coordinate range.
  * @RSVG_HANDLE_FLAG_KEEP_IMAGE_DATA: keep compressed image bytes
  *
  * \since 2.36

@@ -1,6 +1,6 @@
 Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 Upstream-Name: librsvg
-Source: This tree (C librsvg-2.0, version 2.62.3)
+Source: This tree (C librsvg-2.0, version 2.62.6)
 Comment: Debian source package name is librsvg-c so it does not collide
  with GNOME/Rust librsvg2 in the archive namespace. Binary packages
  replace librsvg2-*.

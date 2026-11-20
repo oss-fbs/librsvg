@@ -178,6 +178,8 @@ rsvg_cairo_new_drawing_ctx (cairo_t * cr, RsvgHandle * handle)
     draw->vb.rect.width = data.em;
     draw->vb.rect.height = data.ex;
     draw->num_elements_acquired = 0;
+    draw->layer_nesting_depth = 0;
+    draw->layer_nesting_exceeded = FALSE;
     draw->pango_context = NULL;
     draw->drawsub_stack = NULL;
     draw->acquired_nodes = NULL;
@@ -445,7 +447,7 @@ rsvg_handle_measure (RsvgHandle *handle,
     }
 
     if (rsvg_drawing_ctx_limits_exceeded (draw)) {
-        g_set_error (error, RSVG_ERROR, RSVG_ERROR_FAILED, "drawing limits exceeded");
+        rsvg_drawing_ctx_set_limits_error (draw, error);
         goto out;
     }
 
@@ -506,7 +508,7 @@ rsvg_handle_draw_node (RsvgHandle *handle,
     if (rsvg_drawing_ctx_check_cancelled (draw)) {
         g_set_error (error, G_IO_ERROR, G_IO_ERROR_CANCELLED, "rendering cancelled");
     } else if (rsvg_drawing_ctx_limits_exceeded (draw)) {
-        g_set_error (error, RSVG_ERROR, RSVG_ERROR_FAILED, "drawing limits exceeded");
+        rsvg_drawing_ctx_set_limits_error (draw, error);
     } else if (cairo_status (cr) != CAIRO_STATUS_SUCCESS) {
         g_set_error (error, RSVG_ERROR, RSVG_ERROR_FAILED,
                      "cairo error: %s", cairo_status_to_string (cairo_status (cr)));

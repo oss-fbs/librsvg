@@ -45,6 +45,58 @@
 
 #include <pango/pangocairo.h>
 
+gboolean
+rsvg_cairo_user_point_ok (const cairo_matrix_t *affine, double x, double y)
+{
+    if (affine)
+        cairo_matrix_transform_point (affine, &x, &y);
+    return x >= RSVG_CAIRO_COORD_MIN && x <= RSVG_CAIRO_COORD_MAX
+        && y >= RSVG_CAIRO_COORD_MIN && y <= RSVG_CAIRO_COORD_MAX;
+}
+
+gboolean
+rsvg_cairo_rect_coords_ok (const cairo_matrix_t *affine,
+                           double x, double y, double w, double h)
+{
+    return rsvg_cairo_user_point_ok (affine, x, y)
+        && rsvg_cairo_user_point_ok (affine, x + w, y)
+        && rsvg_cairo_user_point_ok (affine, x, y + h)
+        && rsvg_cairo_user_point_ok (affine, x + w, y + h);
+}
+
+gboolean
+rsvg_cairo_path_coords_ok (const cairo_path_t *path, const cairo_matrix_t *affine)
+{
+    int i;
+
+    if (path == NULL)
+        return TRUE;
+
+    for (i = 0; i < path->num_data; ) {
+        cairo_path_data_t *d = &path->data[i];
+        int npts = 0, k;
+
+        switch (d->header.type) {
+        case CAIRO_PATH_MOVE_TO:
+        case CAIRO_PATH_LINE_TO:
+            npts = 1;
+            break;
+        case CAIRO_PATH_CURVE_TO:
+            npts = 3;
+            break;
+        default:
+            npts = 0;
+            break;
+        }
+        for (k = 1; k <= npts; k++) {
+            if (!rsvg_cairo_user_point_ok (affine, d[k].point.x, d[k].point.y))
+                return FALSE;
+        }
+        i += d->header.length;
+    }
+    return TRUE;
+}
+
 static void
 _pattern_add_rsvg_color_stops (cairo_pattern_t * pattern,
                                GPtrArray * stops, guint32 current_color_rgb, guint8 opacity)
@@ -590,10 +642,6 @@ rsvg_cairo_render_pango_layout (RsvgDrawingCtx * ctx, PangoLayout * layout, doub
         return;
     }
 
-    cairo_set_antialias (render->cr, state->text_rendering_type);
-
-    _set_rsvg_affine (render, &state->affine);
-
     rsvg_bbox_init (&bbox, &state->affine);
     if (PANGO_GRAVITY_IS_VERTICAL (gravity)) {
         bbox.rect.x = x + (ink.x - ink.height) / (double)PANGO_SCALE;
@@ -607,6 +655,16 @@ rsvg_cairo_render_pango_layout (RsvgDrawingCtx * ctx, PangoLayout * layout, doub
         bbox.rect.height = ink.height / (double)PANGO_SCALE;
     }
     bbox.virgin = 0;
+
+    if (!rsvg_cairo_user_point_ok (&state->affine, x, y)
+        || !rsvg_cairo_rect_coords_ok (&state->affine,
+                                       bbox.rect.x, bbox.rect.y,
+                                       bbox.rect.width, bbox.rect.height))
+        return;
+
+    cairo_set_antialias (render->cr, state->text_rendering_type);
+
+    _set_rsvg_affine (render, &state->affine);
 
     rotation = pango_gravity_to_rotation (gravity);
 
@@ -820,6 +878,9 @@ rsvg_cairo_render_path (RsvgDrawingCtx * ctx, const cairo_path_t *path)
     RsvgBbox bbox;
     RsvgBbox paint_bbox;
     double backup_tolerance;
+
+    if (!rsvg_cairo_path_coords_ok (path, &state->affine))
+        return;
 
     rsvg_cairo_push_discrete_layer (ctx);
 
@@ -1345,6 +1406,9 @@ rsvg_cairo_add_clipping_rect (RsvgDrawingCtx * ctx, double x, double y, double w
 {
     RsvgCairoRender *render = RSVG_CAIRO_RENDER (ctx->render);
     cairo_t *cr = render->cr;
+
+    if (!rsvg_cairo_rect_coords_ok (&rsvg_current_state (ctx)->affine, x, y, w, h))
+        return;
 
     _set_rsvg_affine (render, &rsvg_current_state (ctx)->affine);
 

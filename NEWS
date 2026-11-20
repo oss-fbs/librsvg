@@ -1,3 +1,26 @@
+Version 2.62.6
+
+This is the final release of the 2.62 series unless a serious bug
+forces a later patch.
+
+- File nesting (XInclude, cross-document references, CSS @import)
+  is limited to 20. Exceeding it is a load error: "maximum nesting
+  depth exceeded". RSVG_HANDLE_FLAG_UNLIMITED / rsvg-convert
+  --unlimited does not lift this limit. CSS @import also keeps a
+  tighter sub-limit of 8.
+- Layer nesting during drawing is limited to 500 discrete layers on
+  glibc and 50 on musl. Exceeding it skips the subtree and is a
+  render error: "maximum layer nesting depth exceeded".
+  --unlimited / RSVG_HANDLE_FLAG_UNLIMITED does not lift this limit.
+- Path and text coordinates outside Cairo's 24.8 fixed-point range
+  (a bit over ±8 million) are skipped and never passed to Cairo.
+- SVG <image> rasters: maximum side 32767 pixels (never raised).
+  Decoded pixels default 128 MiB; data: URI size default 64 MiB.
+  With --unlimited / RSVG_HANDLE_FLAG_UNLIMITED: 512 MiB decoded
+  pixels and 256 MiB data: URIs. Dimensions and data: size are
+  checked before allocating the decode buffer.
+
+
 Version 2.62.5
 
 - Fixes CVE-2026-96889 (use-after-free in entity handling).

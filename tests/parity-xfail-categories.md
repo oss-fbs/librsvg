@@ -10,7 +10,7 @@ Counts from the 750-test `make check-parity` run after T6
 Track 1 closed: class C=0. The 115 misses are **tolerance classes**, not
 open bugs.
 
-Named real-gap is **0**. `LIBRSVG_VERSION` **2.62.5** is
+Named real-gap is **0**. `LIBRSVG_VERSION` **2.62.6** is
 feature-complete vs GNOME 2.62.3 for the named `bugs/` + root
 `filter-*` + `svg2/` corpus. It is **not** pixel-identity to every
 rust PNG.

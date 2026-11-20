@@ -84,8 +84,27 @@ typedef struct _RsvgNodeChars RsvgNodeChars;
 
 /* Untrusted input. Encoded data: payload (stylesheet or image) and
  * standalone <image> bytes. CSS number lists (dasharray, tableValues,
- * kernelMatrix, polygon points). */
-#define RSVG_MAX_DATA_URI_BYTES     ((gsize) 64 * 1024 * 1024)
+ * kernelMatrix, polygon points). File nesting (XInclude, cross-document
+ * refs, CSS @import). Decoded <image> pixels. Layer nesting. Cairo
+ * fixed-point coordinate range. */
+#define RSVG_MAX_DATA_URI_BYTES              ((gsize) 64 * 1024 * 1024)
+#define RSVG_MAX_DATA_URI_BYTES_UNLIMITED    ((gsize) 256 * 1024 * 1024)
+#define RSVG_MAX_IMAGE_DIMENSION             32767
+#define RSVG_MAX_IMAGE_PIXEL_BYTES           ((gsize) 128 * 1024 * 1024)
+#define RSVG_MAX_IMAGE_PIXEL_BYTES_UNLIMITED ((gsize) 512 * 1024 * 1024)
+#define RSVG_MAX_FILE_NESTING_DEPTH          20
+/* GNOME #1224 / 2.63.0: nested discrete layers. musl's default thread
+ * stack is small, so the cap is 50 there; glibc and other libcs use
+ * 500. UNLIMITED does not raise this. */
+#if defined(__linux__) && !defined(__GLIBC__) && !defined(__UCLIBC__) && !defined(__ANDROID__)
+#  define RSVG_MAX_LAYER_NESTING_DEPTH 50
+#else
+#  define RSVG_MAX_LAYER_NESTING_DEPTH 500
+#endif
+/* cairo_fixed_t is 24.8; representable range is a bit over ±8 million.
+ * GNOME #1088 / #1239: do not pass coordinates outside this to Cairo. */
+#define RSVG_CAIRO_COORD_MAX ((double) 2147483647 / 256.0)
+#define RSVG_CAIRO_COORD_MIN ((double) (-2147483647 - 1) / 256.0)
 #define RSVG_MAX_CSS_LIST_TOKENS    4096
 #define RSVG_MAX_STYLESHEET_BYTES   ((gsize) 1024 * 1024)
 #define RSVG_MAX_CSS_RULES          4096
@@ -180,6 +199,10 @@ struct RsvgHandlePrivate {
 
     RsvgDefs *defs;
     guint nest_level;
+    /* Shared file-nesting depth: XInclude, rsvg_defs_load_extern,
+     * CSS @import, nested SVG <image>. Root is 0. Cap is
+     * RSVG_MAX_FILE_NESTING_DEPTH (20). UNLIMITED does not raise it. */
+    guint file_nesting_depth;
     RsvgNode *currentnode;
     /* this is the root level of the displayable tree, essentially what the
        file is converted into at the end */
@@ -243,6 +266,10 @@ struct RsvgDrawingCtx {
     GError **error;
     RsvgDefs *defs;
     gsize num_elements_acquired;
+    /* Discrete-layer nesting (rsvg_push_discrete_layer). Cap is
+     * RSVG_MAX_LAYER_NESTING_DEPTH. UNLIMITED does not raise it. */
+    guint layer_nesting_depth;
+    gboolean layer_nesting_exceeded;
     PangoContext *pango_context;
     double dpi_x, dpi_y;
     RsvgViewBox vb;
@@ -441,6 +468,8 @@ void rsvg_push_discrete_layer   (RsvgDrawingCtx * ctx);
 G_GNUC_INTERNAL
 gboolean rsvg_drawing_ctx_limits_exceeded (RsvgDrawingCtx *draw_ctx);
 G_GNUC_INTERNAL
+void rsvg_drawing_ctx_set_limits_error (RsvgDrawingCtx *draw_ctx, GError **error);
+G_GNUC_INTERNAL
 gboolean rsvg_drawing_ctx_check_cancelled (RsvgDrawingCtx *draw_ctx);
 G_GNUC_INTERNAL
 RsvgNode *rsvg_drawing_ctx_acquire_node_ref     (RsvgDrawingCtx * ctx, RsvgNode *node);
@@ -530,6 +559,35 @@ gboolean rsvg_handle_fill_with_data (RsvgHandle *handle,
                                      const char *data,
                                      gsize data_len,
                                      GError **error);
+
+/* Child handle: same flags/DPI/testing, file_nesting_depth + 1. */
+G_GNUC_INTERNAL
+RsvgHandle *rsvg_handle_new_child (RsvgHandle *parent);
+
+#ifdef RSVG_COMPILATION
+static inline gsize
+rsvg_handle_max_data_uri_bytes (const RsvgHandle *handle)
+{
+    if (handle && (handle->priv->flags & RSVG_HANDLE_FLAG_UNLIMITED))
+        return RSVG_MAX_DATA_URI_BYTES_UNLIMITED;
+    return RSVG_MAX_DATA_URI_BYTES;
+}
+
+static inline gsize
+rsvg_handle_max_image_pixel_bytes (const RsvgHandle *handle)
+{
+    if (handle && (handle->priv->flags & RSVG_HANDLE_FLAG_UNLIMITED))
+        return RSVG_MAX_IMAGE_PIXEL_BYTES_UNLIMITED;
+    return RSVG_MAX_IMAGE_PIXEL_BYTES;
+}
+
+static inline void
+rsvg_set_nesting_error (GError **error)
+{
+    g_set_error (error, RSVG_ERROR, RSVG_ERROR_FAILED,
+                 "maximum nesting depth exceeded");
+}
+#endif /* RSVG_COMPILATION */
 
 
 #define rsvg_return_if_fail(expr, error)    G_STMT_START{			\

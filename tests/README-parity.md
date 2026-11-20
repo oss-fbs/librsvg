@@ -173,7 +173,7 @@ difference line.
 ## Rules
 
 - Do not implement features just to shrink this list in the P0 step.
-- `LIBRSVG_VERSION` is **2.62.5** after P18 (named real-gap empty).
+- `LIBRSVG_VERSION` is **2.62.6** (series final; named real-gap empty).
   Do not bump further for TFM / TAA / TCR accepted differences.
 - Do not build or link `libcroco/` (discontinued archive; css/ only).
 - `RSVG_PARITY=1` loads only the rust 2.62.3 TTF list (Roboto / Ahem /

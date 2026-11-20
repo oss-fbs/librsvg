@@ -1,4 +1,4 @@
-.TH rsvg-convert 1
+.TH rsvg-convert 1 "19 Nov 2026" "librsvg 2.62.6"
 .SH NAME
 rsvg-convert \- turn SVG files into raster images.
 .SH SYNOPSIS
@@ -77,6 +77,17 @@ Specify the background color. If unspecified, none is used as the default.
 .TP
 .I "\-\-base-uri uri"
 Specify the base URI for SVG files. If unspecified, none is used as the default.
+.TP
+.I "\-u \-\-unlimited"
+Allow huge XML files (libxml2 XML_PARSE_HUGE).
+Also raises decoded
+.B <image>
+pixels from 128 MiB to 512 MiB and
+.B data:
+URI size from 64 MiB to 256 MiB.
+Does not raise the 32767-pixel side cap, the file-nesting depth of 20,
+the layer-nesting depth (500 on glibc, 50 on musl), or the Cairo 24.8
+coordinate range.
 .TP
 .I "\-v \-\-version"
 Display the version and a short GNU GPL-2.0-only notice

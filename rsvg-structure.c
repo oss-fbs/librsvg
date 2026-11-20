@@ -46,6 +46,8 @@ rsvg_node_draw (RsvgNode * self, RsvgDrawingCtx * ctx, int dominate)
         return;
     if (rsvg_drawing_ctx_check_cancelled (ctx))
         return;
+    /* layer_nesting_depth is incremented in rsvg_push_discrete_layer
+     * (GNOME #1224). UNLIMITED does not raise it. */
 
     state = self->state;
 

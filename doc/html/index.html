@@ -26,7 +26,7 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname"><a href="../index.html">LIBRSVG</a><span id="projectnumber">&#160;2.62.5</span>
+   <div id="projectname"><a href="../index.html">LIBRSVG</a><span id="projectnumber">&#160;2.62.6</span>
    </div>
    <div id="projectbrief">C library for rendering SVG</div>
   </td>
@@ -94,11 +94,13 @@ $(document).ready(function(){initNavTree('index.html',''); initResizable(); });
   <div class="headertitle"><div class="title">librsvg </div></div>
 </div><!--header-->
 <div class="contents">
-<div class="textblock"><p><a class="anchor" id="mainpage"></a> <b>librsvg</b> is a C library that loads SVG and SVGZ and draws it onto a Cairo surface. The shared library, headers, and pkg-config module are <b>librsvg-2.0</b>. This is the public C API for librsvg <b>2.62.5</b>.</p>
+<div class="textblock"><p><a class="anchor" id="mainpage"></a> <b>librsvg</b> is a C library that loads SVG and SVGZ and draws it onto a Cairo surface. The shared library, headers, and pkg-config module are <b>librsvg-2.0</b>. This is the public C API for librsvg <b>2.62.6</b>.</p>
 <p>It handles non-animated SVG, CSS styling, filters, masks, clip paths, and SVG <code>&lt;image&gt;</code> rasters (PNG, JPEG, GIF, WebP, BMP; optional AVIF). A gdk-pixbuf loader and <code>rsvg-convert</code> are included. See the <a class="el" href="examples.html">examples</a>.</p>
 <h1><a class="anchor" id="autotoc_md0"></a>
 Limits</h1>
-<p>SVG <code>&lt;image&gt;</code> rasters: maximum side 32767, maximum 32×1024×1024 pixels. Very large <code>data:</code> payloads or stylesheet buffers may be rejected.</p>
+<p>File nesting (XInclude, cross-document references, CSS <code>@import</code>) is limited to 20. Exceeding it is a load error. <code>RSVG_HANDLE_FLAG_UNLIMITED</code> does not lift this limit.</p>
+<p>Layer nesting during drawing is limited to 500 discrete layers on glibc and 50 on musl. Path and text coordinates outside Cairo's 24.8 fixed-point range are skipped.</p>
+<p>SVG <code>&lt;image&gt;</code> rasters: maximum side 32767 pixels (never raised). Decoded pixels default 128 MiB; <code>data:</code> URI size default 64 MiB. <code>RSVG_HANDLE_FLAG_UNLIMITED</code> raises those heap caps to 512 MiB and 256 MiB. Very large stylesheet buffers may be rejected.</p>
 <h1><a class="anchor" id="autotoc_md1"></a>
 API groups</h1>
 <ul>
@@ -112,7 +114,7 @@ API groups</h1>
 <li><a class="el" href="group__rsvg__version.html">Version</a> — <code>LIBRSVG_CHECK_VERSION</code>, <code>LIBRSVG_VERSION</code></li>
 <li><a class="el" href="group__rsvg__deprecated.html">Deprecated</a> — older calls kept for compatibility</li>
 </ul>
-<p>The last new public C function is <code>rsvg_handle_set_cancellable_for_rendering</code> (2.59). The library version is 2.62.5.</p>
+<p>The last new public C function is <code>rsvg_handle_set_cancellable_for_rendering</code> (2.59). The library version is 2.62.6.</p>
 <p><a class="el" href="thanks.html">Thank you</a> — the people who built librsvg.</p>
 <h1><a class="anchor" id="licence"></a>
 Licence</h1>
