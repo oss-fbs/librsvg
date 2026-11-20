@@ -1333,6 +1333,24 @@ struct _RsvgFilterPrimitiveConvolveMatrix {
     gint edgemode;
 };
 
+/* SVG Filter Effects: orderX/orderY must be integers greater than zero.
+ * This tree also caps at 20 (400 kernel entries), matching 2.62. */
+#define RSVG_MAX_CONVOLVE_ORDER 20
+
+static gboolean
+convolve_order_component_is_valid (double n, gint *out)
+{
+    gint i;
+
+    if (!isfinite (n) || n < 1.0 || n > (double) RSVG_MAX_CONVOLVE_ORDER)
+        return FALSE;
+    i = (gint) n;
+    if (i < 1 || i > RSVG_MAX_CONVOLVE_ORDER)
+        return FALSE;
+    *out = i;
+    return TRUE;
+}
+
 static void
 rsvg_filter_primitive_convolve_matrix_render (RsvgFilterPrimitive * self, RsvgFilterContext * ctx)
 {
@@ -1367,7 +1385,8 @@ rsvg_filter_primitive_convolve_matrix_render (RsvgFilterPrimitive * self, RsvgFi
     if (in == NULL)
         return;
 
-    /* 2.62: kernel size mismatch or missing matrix is a pass-through. */
+    /* Invalid order (zero, negative, non-finite, or > 20), missing
+     * kernel, or kernel length mismatch is a pass-through. Do not abort. */
     if (upself->orderx < 1 || upself->ordery < 1 || upself->KernelMatrix == NULL) {
         rsvg_filter_store_result (self->result, in, ctx);
         cairo_surface_destroy (in);
@@ -1690,19 +1709,19 @@ rsvg_filter_primitive_convolve_matrix_set_atts (RsvgNode * self,
             filter->divisor = atof (value);
         if ((value = rsvg_property_bag_lookup (atts, "order"))) {
             double tempx, tempy;
+            gint ox, oy;
+
             rsvg_css_parse_number_optional_number (value, &tempx, &tempy);
-            /* Was MAX(n, G_MAXINT) which forced order to INT_MAX and
-             * then zeroed it in the length check. Cap like 2.62 (20). */
-            filter->orderx = (gint) tempx;
-            filter->ordery = (gint) tempy;
-            if (filter->orderx < 1)
-                filter->orderx = 1;
-            if (filter->ordery < 1)
-                filter->ordery = 1;
-            if (filter->orderx > 20)
-                filter->orderx = 20;
-            if (filter->ordery > 20)
-                filter->ordery = 20;
+            /* Zero, negative, non-finite, or larger than 20 is invalid.
+             * Do not clamp: a clamped size can still apply a kernel. */
+            if (convolve_order_component_is_valid (tempx, &ox)
+                && convolve_order_component_is_valid (tempy, &oy)) {
+                filter->orderx = ox;
+                filter->ordery = oy;
+            } else {
+                filter->orderx = 0;
+                filter->ordery = 0;
+            }
         }
         if ((value = rsvg_property_bag_lookup (atts, "kernelUnitLength")))
             rsvg_css_parse_number_optional_number (value, &filter->dx, &filter->dy);
@@ -1722,10 +1741,13 @@ rsvg_filter_primitive_convolve_matrix_set_atts (RsvgNode * self,
             rsvg_defs_register_name (ctx->priv->defs, value, &filter->super.super);
     }
 
-    if ((gint64) listlen != (gint64) filter->orderx * filter->ordery)
+    if (filter->orderx < 1
+        || filter->ordery < 1
+        || filter->KernelMatrix == NULL
+        || (gint64) listlen != (gint64) filter->orderx * filter->ordery)
         filter->orderx = filter->ordery = 0;
 
-    if (filter->divisor == 0) {
+    if (filter->divisor == 0 && filter->KernelMatrix != NULL) {
         for (j = 0; j < filter->orderx; j++)
             for (i = 0; i < filter->ordery; i++)
                 filter->divisor += filter->KernelMatrix[j + i * filter->orderx];

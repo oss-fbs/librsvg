@@ -27,6 +27,9 @@ forces a later patch.
 - --unlimited is accepted for API compatibility with GNOME librsvg
   2.63.x. Resource limits remain enforced. The matching C API is
   RSVG_HANDLE_FLAG_UNLIMITED.
+- feConvolveMatrix with an invalid kernel size (order zero, negative,
+  or larger than 20) is a no-op. The rest of the document still
+  renders.
 
 
 Version 2.62.5

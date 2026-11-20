@@ -1455,6 +1455,36 @@ cairo_huge_text_coords_are_skipped (void)
     g_object_unref (handle);
 }
 
+static void
+convolve_invalid_order_is_noop (void)
+{
+    /* Invalid feConvolveMatrix order is a pass-through. The filtered
+     * rect still paints and the unfiltered sibling still renders. */
+    const char *svg =
+        "<svg xmlns='http://www.w3.org/2000/svg' width='16' height='8'>"
+        "<filter id='bad'>"
+        "<feConvolveMatrix order='0' kernelMatrix='0'/>"
+        "</filter>"
+        "<rect x='0' y='0' width='8' height='8' fill='#00ff00' filter='url(#bad)'/>"
+        "<rect x='8' y='0' width='8' height='8' fill='#ff0000'/>"
+        "</svg>";
+    RsvgHandle *handle;
+    GError *error = NULL;
+    cairo_surface_t *output;
+
+    handle = rsvg_handle_new_from_data ((const guint8 *) svg, strlen (svg), &error);
+    g_assert_no_error (error);
+    g_assert_nonnull (handle);
+
+    output = cairo_image_surface_create (CAIRO_FORMAT_ARGB32, 16, 8);
+    render_to_surface (handle, output);
+    g_assert_cmphex (pixel_argb (output, 4, 4), ==, 0xff00ff00);
+    g_assert_cmphex (pixel_argb (output, 12, 4), ==, 0xffff0000);
+
+    cairo_surface_destroy (output);
+    g_object_unref (handle);
+}
+
 /* 8×8 lossless red WebP / PNG generated with Pillow. */
 #define WEBP_RED_DATA_URI \
     "data:image/webp;base64,UklGRhwAAABXRUJQVlA4TA8AAAAvB8ABAAcQ/Y/+ByKi/wEA"
@@ -3292,6 +3322,7 @@ main (int argc, char **argv)
     g_test_add_func ("/api/layer_nesting_shallow_still_renders", layer_nesting_shallow_still_renders);
     g_test_add_func ("/api/cairo_huge_path_coords_are_skipped", cairo_huge_path_coords_are_skipped);
     g_test_add_func ("/api/cairo_huge_text_coords_are_skipped", cairo_huge_text_coords_are_skipped);
+    g_test_add_func ("/api/convolve_invalid_order_is_noop", convolve_invalid_order_is_noop);
 #ifdef HAVE_LIBWEBP
     g_test_add_func ("/api/webp_image_data_uri_renders", webp_image_data_uri_renders);
     g_test_add_func ("/api/webp_image_sniff_without_mime_renders", webp_image_sniff_without_mime_renders);
