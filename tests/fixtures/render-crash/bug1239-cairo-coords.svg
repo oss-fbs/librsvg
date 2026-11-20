@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="8" height="8">
+  <!-- GNOME #1239 / #1088: coordinates outside Cairo's 24.8 fixed range. -->
+  <rect width="8" height="8" fill="#00ff00"/>
+  <path d="M 9000000 0 L 9000000 10 L -9000000 10" stroke="#000"/>
+  <text x="9000000" y="4" font-size="4">x</text>
+</svg>
