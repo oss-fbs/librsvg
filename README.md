@@ -97,7 +97,11 @@ Defaults
 --------
 
 `RsvgHandle` and `rsvg-convert` default to 96 DPI.
-Use `rsvg-convert -d 90 -p 90` for the previous CLI default.
+96 DPI has been the default since librsvg 2.52.  The previous
+default (pre-2.52) was 90 DPI.  For compatibility with older
+scripts or expected output, use:
+
+    rsvg-convert -d 90 -p 90
 
 Building
 --------
