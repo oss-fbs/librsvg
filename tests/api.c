@@ -2038,6 +2038,34 @@ unlimited_does_not_raise_image_side (void)
 }
 
 static void
+unlimited_does_not_raise_image_pixels (void)
+{
+    char *svg;
+    RsvgHandle *handle;
+    GError *error = NULL;
+    cairo_surface_t *output;
+
+    svg = g_strdup_printf (
+        "<svg xmlns='http://www.w3.org/2000/svg' width='8' height='8'>"
+        "<rect width='8' height='8' fill='#00ff00'/>"
+        "<image href='%s' width='8' height='8'/>"
+        "</svg>", BMP_OVERSIZE_PIXELS_URI);
+    handle = rsvg_handle_new_with_flags (RSVG_HANDLE_FLAG_UNLIMITED);
+    g_assert_nonnull (handle);
+    g_assert_true (rsvg_handle_write (handle, (const guint8 *) svg, strlen (svg), &error));
+    g_assert_true (rsvg_handle_close (handle, &error));
+    g_assert_no_error (error);
+    g_free (svg);
+
+    output = cairo_image_surface_create (CAIRO_FORMAT_ARGB32, 8, 8);
+    render_to_surface (handle, output);
+    g_assert_cmphex (pixel_argb (output, 4, 4), ==, 0xff00ff00);
+
+    cairo_surface_destroy (output);
+    g_object_unref (handle);
+}
+
+static void
 bmp_oversized_pixels_does_not_abort (void)
 {
     assert_href_paints_center (BMP_OVERSIZE_PIXELS_URI, 0xff00ff00);
@@ -2597,6 +2625,29 @@ convert_assert_failure (gint status, GError *error)
 #else
     g_assert_cmpint (status, !=, 0);
 #endif
+}
+
+static void
+convert_unlimited_is_accepted (void)
+{
+    gchar *png = convert_temp_png ();
+    gchar *svg = get_test_filename ("stylesheet.svg");
+    cairo_surface_t *s;
+    GError *error = NULL;
+    gint status = -1;
+    gchar *argv[] = {
+        (gchar *) CONVERT_PROGRAM, "--unlimited", "-o", png, svg, NULL
+    };
+
+    g_assert_true (convert_spawn (argv, NULL, &status, &error));
+    convert_assert_success (status, error);
+
+    s = cairo_image_surface_create_from_png (png);
+    g_assert_cmpint (cairo_surface_status (s), ==, CAIRO_STATUS_SUCCESS);
+    cairo_surface_destroy (s);
+    g_unlink (png);
+    g_free (png);
+    g_free (svg);
 }
 
 static void
@@ -3282,6 +3333,7 @@ main (int argc, char **argv)
     g_test_add_func ("/api/bmp_decode_failure_does_not_abort", bmp_decode_failure_does_not_abort);
     g_test_add_func ("/api/bmp_oversized_dimensions_does_not_abort", bmp_oversized_dimensions_does_not_abort);
     g_test_add_func ("/api/unlimited_does_not_raise_image_side", unlimited_does_not_raise_image_side);
+    g_test_add_func ("/api/unlimited_does_not_raise_image_pixels", unlimited_does_not_raise_image_pixels);
     g_test_add_func ("/api/bmp_oversized_pixels_does_not_abort", bmp_oversized_pixels_does_not_abort);
     g_test_add_func ("/api/bmp_bad_offbits_does_not_abort", bmp_bad_offbits_does_not_abort);
     g_test_add_func ("/api/bmp_rle_oob_does_not_abort", bmp_rle_oob_does_not_abort);
@@ -3312,6 +3364,7 @@ main (int argc, char **argv)
     g_test_add_func ("/convert/stdin_dash", convert_stdin_dash);
     g_test_add_func ("/convert/pdf1.4", convert_pdf1_4);
     g_test_add_func ("/convert/pdf1.7", convert_pdf1_7);
+    g_test_add_func ("/convert/unlimited_is_accepted", convert_unlimited_is_accepted);
     g_test_add_func ("/convert/page_default_png", convert_page_default_png);
     g_test_add_func ("/convert/page_size_png", convert_page_size_png);
     g_test_add_func ("/convert/page_offset_png", convert_page_offset_png);

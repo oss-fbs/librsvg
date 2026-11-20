@@ -88,10 +88,8 @@ typedef struct _RsvgNodeChars RsvgNodeChars;
  * refs, CSS @import). Decoded <image> pixels. Layer nesting. Cairo
  * fixed-point coordinate range. */
 #define RSVG_MAX_DATA_URI_BYTES              ((gsize) 64 * 1024 * 1024)
-#define RSVG_MAX_DATA_URI_BYTES_UNLIMITED    ((gsize) 256 * 1024 * 1024)
 #define RSVG_MAX_IMAGE_DIMENSION             32767
 #define RSVG_MAX_IMAGE_PIXEL_BYTES           ((gsize) 128 * 1024 * 1024)
-#define RSVG_MAX_IMAGE_PIXEL_BYTES_UNLIMITED ((gsize) 512 * 1024 * 1024)
 #define RSVG_MAX_FILE_NESTING_DEPTH          20
 /* GNOME #1224 / 2.63.0: nested discrete layers. musl's default thread
  * stack is small, so the cap is 50 there; glibc and other libcs use
@@ -566,18 +564,18 @@ RsvgHandle *rsvg_handle_new_child (RsvgHandle *parent);
 
 #ifdef RSVG_COMPILATION
 static inline gsize
-rsvg_handle_max_data_uri_bytes (const RsvgHandle *handle)
+rsvg_handle_max_data_uri_bytes (const RsvgHandle *handle G_GNUC_UNUSED)
 {
-    if (handle && (handle->priv->flags & RSVG_HANDLE_FLAG_UNLIMITED))
-        return RSVG_MAX_DATA_URI_BYTES_UNLIMITED;
+    /* RSVG_HANDLE_FLAG_UNLIMITED is stored for API compatibility.
+     * It does not raise this cap. */
     return RSVG_MAX_DATA_URI_BYTES;
 }
 
 static inline gsize
-rsvg_handle_max_image_pixel_bytes (const RsvgHandle *handle)
+rsvg_handle_max_image_pixel_bytes (const RsvgHandle *handle G_GNUC_UNUSED)
 {
-    if (handle && (handle->priv->flags & RSVG_HANDLE_FLAG_UNLIMITED))
-        return RSVG_MAX_IMAGE_PIXEL_BYTES_UNLIMITED;
+    /* RSVG_HANDLE_FLAG_UNLIMITED is stored for API compatibility.
+     * It does not raise this cap. */
     return RSVG_MAX_IMAGE_PIXEL_BYTES;
 }
 

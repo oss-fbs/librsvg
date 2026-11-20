@@ -21,11 +21,12 @@ forces a later patch.
   --unlimited / RSVG_HANDLE_FLAG_UNLIMITED does not lift this limit.
 - Path and text coordinates outside Cairo's 24.8 fixed-point range
   (a bit over ±8 million) are skipped and never passed to Cairo.
-- SVG <image> rasters: maximum side 32767 pixels (never raised).
-  Decoded pixels default 128 MiB; data: URI size default 64 MiB.
-  With --unlimited / RSVG_HANDLE_FLAG_UNLIMITED: 512 MiB decoded
-  pixels and 256 MiB data: URIs. Dimensions and data: size are
+- SVG <image> rasters: maximum side 32767 pixels. Decoded pixels
+  128 MiB; data: URI size 64 MiB. Dimensions and data: size are
   checked before allocating the decode buffer.
+- --unlimited is accepted for API compatibility with GNOME librsvg
+  2.63.x. Resource limits remain enforced. The matching C API is
+  RSVG_HANDLE_FLAG_UNLIMITED.
 
 
 Version 2.62.5

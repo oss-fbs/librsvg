@@ -65,8 +65,8 @@
 /* Cairo ARGB32 premultiplication, same as rsvg_cairo_surface_from_pixbuf. */
 #define RSVG_PREMUL(d,c,a,t) G_STMT_START { t = (c) * (a) + 0x7f; (d) = (((t) >> 8) + (t)) >> 8; } G_STMT_END
 
-/* Untrusted <image> rasters. Cairo ARGB32 max side is 32767 (never
- * raised). Decoded buffer cap is 128 MiB, or 512 MiB with UNLIMITED. */
+/* Untrusted <image> rasters. Cairo ARGB32 max side is 32767.
+ * Decoded buffer cap is 128 MiB. UNLIMITED does not raise these. */
 static gboolean
 rsvg_image_dims_ok (gint64 width, gint64 height, gsize max_pixel_bytes)
 {

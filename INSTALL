@@ -107,14 +107,13 @@ Raster decoders in SVG `<image>`
    uses libavif (`pkg-config libavif`).  `libpixbufloader-svg.so`
    is unchanged.
 
-   SVG `<image>` rasters: maximum side 32767 pixels (never raised).
-   Decoded pixels default 128 MiB; `data:` URI size default 64 MiB.
-   `RSVG_HANDLE_FLAG_UNLIMITED` / `rsvg-convert --unlimited` raises
-   those heap caps to 512 MiB and 256 MiB.  File nesting (XInclude,
-   cross-document references, CSS `@import`) is limited to 20 and is
-   not raised by `--unlimited`.  Layer nesting is 500 discrete layers
-   on glibc and 50 on musl; `--unlimited` does not raise it.  Path and
-   text coordinates outside Cairo's 24.8 fixed-point range are skipped.
+   SVG `<image>` rasters: maximum side 32767 pixels. Decoded pixels
+   128 MiB; `data:` URI size 64 MiB. File nesting (XInclude,
+   cross-document references, CSS `@import`) is limited to 20.
+   Layer nesting is 500 discrete layers on glibc and 50 on musl.
+   Path and text coordinates outside Cairo's 24.8 fixed-point range
+   are skipped. `--unlimited` is accepted for API compatibility with
+   GNOME librsvg 2.63.x. Resource limits remain enforced.
 
 Tests and docs
 --------------

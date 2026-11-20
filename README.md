@@ -61,29 +61,30 @@ PNG/JPEG/GIF/WebP/AVIF.  `--enable-bmp` needs no extra library.
 Limits
 ------
 
+`--unlimited` is accepted for API compatibility with GNOME librsvg
+2.63.x. Resource limits remain enforced.
+
 File nesting (XInclude, cross-document references, CSS `@import`) is
 limited to 20.  Exceeding it is a load error: “maximum nesting depth
-exceeded”.  `RSVG_HANDLE_FLAG_UNLIMITED` / `rsvg-convert --unlimited`
-does not lift this limit.  CSS `@import` also keeps a tighter
-sub-limit of 8.
+exceeded”.  CSS `@import` also keeps a tighter sub-limit of 8.
 
 Layer nesting during drawing is limited to 500 discrete layers on
 glibc and 50 on musl.  Exceeding it is a render error: “maximum layer
-nesting depth exceeded”.  `--unlimited` does not lift this limit.
+nesting depth exceeded”.
 
 Path and text coordinates outside Cairo’s 24.8 fixed-point range (a
 bit over ±8 million) are skipped.
 
 SVG `<image>` rasters:
 
-| Cap               | Default                 | With `--unlimited`      |
-| ----------------- | ----------------------- | ----------------------- |
-| Side length       | 32767 px                | 32767 px (never raised) |
-| Decoded pixels    | 128 MiB                 | 512 MiB                 |
-| `data:` URI size  | 64 MiB                  | 256 MiB                 |
-| File nesting      | 20                      | 20 (never raised)       |
-| Layer nesting     | 500 (glibc) / 50 (musl) | same                    |
-| Cairo coordinates | ±8,388,608              | same                    |
+| Cap               | Default                 | With `--unlimited` |
+| ----------------- | ----------------------- | ------------------ |
+| Side length       | 32767 px                | same               |
+| Decoded pixels    | 128 MiB                 | same               |
+| `data:` URI size  | 64 MiB                  | same               |
+| File nesting      | 20                      | same               |
+| Layer nesting     | 500 (glibc) / 50 (musl) | same               |
+| Cairo coordinates | ±8,388,608              | same               |
 
 Dimensions and `data:` size are checked before allocating the decode
 buffer.  Stylesheet buffers may still be rejected.
