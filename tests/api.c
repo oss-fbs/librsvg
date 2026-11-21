@@ -2354,6 +2354,46 @@ morphology_unit_radius_still_dilates (void)
 }
 
 static void
+turbulence_huge_octaves_does_not_hang (void)
+{
+    const char *svg =
+        "<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32'>"
+        "<filter id='f' x='0' y='0' width='1' height='1'>"
+        "<feTurbulence type='turbulence' baseFrequency='0.1' numOctaves='100000000'/>"
+        "</filter>"
+        "<rect width='32' height='32' filter='url(#f)'/>"
+        "</svg>";
+    RsvgHandle *handle = handle_from_svg_string (svg);
+    cairo_surface_t *output = cairo_image_surface_create (CAIRO_FORMAT_ARGB32, 32, 32);
+
+    render_to_surface (handle, output);
+    g_assert_cmpuint (pixel_argb (output, 16, 16) >> 24, >, 0);
+
+    cairo_surface_destroy (output);
+    g_object_unref (handle);
+}
+
+static void
+turbulence_one_octave_still_applies (void)
+{
+    const char *svg =
+        "<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32'>"
+        "<filter id='f' x='0' y='0' width='1' height='1'>"
+        "<feTurbulence type='turbulence' baseFrequency='0.1' numOctaves='1' seed='0'/>"
+        "</filter>"
+        "<rect width='32' height='32' filter='url(#f)'/>"
+        "</svg>";
+    RsvgHandle *handle = handle_from_svg_string (svg);
+    cairo_surface_t *output = cairo_image_surface_create (CAIRO_FORMAT_ARGB32, 32, 32);
+
+    render_to_surface (handle, output);
+    g_assert_cmpuint (pixel_argb (output, 16, 16) >> 24, >, 0);
+
+    cairo_surface_destroy (output);
+    g_object_unref (handle);
+}
+
+static void
 filter_pixel_offset_uses_gsize (void)
 {
     /* 30000 * 128000 overflows a 32-bit int (B3-1 feOffset case). */
@@ -3468,6 +3508,8 @@ main (int argc, char **argv)
     g_test_add_func ("/api/color_matrix_20_values_still_applies", color_matrix_20_values_still_applies);
     g_test_add_func ("/api/morphology_huge_radius_does_not_hang", morphology_huge_radius_does_not_hang);
     g_test_add_func ("/api/morphology_unit_radius_still_dilates", morphology_unit_radius_still_dilates);
+    g_test_add_func ("/api/turbulence_huge_octaves_does_not_hang", turbulence_huge_octaves_does_not_hang);
+    g_test_add_func ("/api/turbulence_one_octave_still_applies", turbulence_one_octave_still_applies);
     g_test_add_func ("/api/filter_pixel_offset_uses_gsize", filter_pixel_offset_uses_gsize);
     g_test_add_func ("/api/huge_filtered_canvas_does_not_crash", huge_filtered_canvas_does_not_crash);
     g_test_add_func ("/api/unlimited_raises_image_and_data_caps", unlimited_raises_image_and_data_caps);

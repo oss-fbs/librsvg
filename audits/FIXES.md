@@ -35,3 +35,19 @@ Ranked from `00-SUMMARY.md`. High first. Noise skipped.
 - Change: `RSVG_MAX_MORPHOLOGY_RADIUS` in `rsvg-limits.h`. `rsvg_morphology_kernel_radius` converts `rx * affine` to a finite gint in 0..500.
 - Tests: `make check` 264 PASS including `/api/morphology_huge_radius_does_not_hang` and `/api/morphology_unit_radius_still_dilates`. `make check-parity` pass=723 fail=0 skip=27 (filters-morph-01-f still green).
 - Outcome: **fixed**.
+
+### H2-11 — feTurbulence numOctaves cap (try 1, committed)
+
+- Site: `atoi` into `nNumOctaves`; loop in `feTurbulence_turbulence`.
+- Plan: clamp to 0..`RSVG_MAX_TURBULENCE_OCTAVES` (8) at parse and in the octave loop.
+- Change: `RSVG_MAX_TURBULENCE_OCTAVES` in `rsvg-limits.h`. Parse uses `g_ascii_strtoll` then clamps. The octave loop clamps again.
+- Tests: `make check` 266 PASS including `/api/turbulence_huge_octaves_does_not_hang` and `/api/turbulence_one_octave_still_applies`. `make check-parity` pass=723 fail=0 skip=27 (filters-turb-01-f and filters-turb-02-f still green).
+- Outcome: **fixed**.
+
+## Remaining (not this batch)
+
+High batch is done. Next, in suggested order:
+
+- Medium: E4-1 / SA-1 (`volatile` PNG/JPEG `setjmp`), H2-7 / H2-8 / H2-1 (decoder/file size before decode), E4-2 / E4-9 / H2-16 / E4-8 (error-path robustness). H2-16 remainder: non-filter `cairo_surface_create_similar` still uses uncapped `render->width/height`.
+- Also medium: H2-4, H2-12, B3-2, B3-3, E4-4.
+- Low / note: see `00-SUMMARY.md`.

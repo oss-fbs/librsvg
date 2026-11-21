@@ -4131,7 +4131,7 @@ feTurbulence_turbulence (RsvgFilterPrimitiveTurbulence * filter,
     struct feTurbulence_StitchInfo *pStitchInfo = NULL; /* Not stitching when NULL. */
 
     double fSum = 0.0f, vec[2], ratio = 1.;
-    int nOctave;
+    int nOctave, n_octaves;
 
     /* Adjust the base frequencies if necessary for stitching. */
     if (filter->bDoStitching) {
@@ -4166,7 +4166,13 @@ feTurbulence_turbulence (RsvgFilterPrimitiveTurbulence * filter,
     vec[0] = point[0] * filter->fBaseFreqX;
     vec[1] = point[1] * filter->fBaseFreqY;
 
-    for (nOctave = 0; nOctave < filter->nNumOctaves; nOctave++) {
+    n_octaves = filter->nNumOctaves;
+    if (n_octaves < 0)
+        n_octaves = 0;
+    if (n_octaves > RSVG_MAX_TURBULENCE_OCTAVES)
+        n_octaves = RSVG_MAX_TURBULENCE_OCTAVES;
+
+    for (nOctave = 0; nOctave < n_octaves; nOctave++) {
         if (filter->bFractalSum)
             fSum +=
                 (double) (feTurbulence_noise2 (filter, nColorChannel, vec, pStitchInfo) / ratio);
@@ -4294,8 +4300,15 @@ rsvg_filter_primitive_turbulence_set_atts (RsvgNode * self, RsvgHandle * ctx,
             filter->super.height = _rsvg_css_parse_length (value);
         if ((value = rsvg_property_bag_lookup (atts, "baseFrequency")))
             rsvg_css_parse_number_optional_number (value, &filter->fBaseFreqX, &filter->fBaseFreqY);
-        if ((value = rsvg_property_bag_lookup (atts, "numOctaves")))
-            filter->nNumOctaves = atoi (value);
+        if ((value = rsvg_property_bag_lookup (atts, "numOctaves"))) {
+            gint64 n = g_ascii_strtoll (value, NULL, 10);
+
+            if (n < 0)
+                n = 0;
+            if (n > RSVG_MAX_TURBULENCE_OCTAVES)
+                n = RSVG_MAX_TURBULENCE_OCTAVES;
+            filter->nNumOctaves = (int) n;
+        }
         if ((value = rsvg_property_bag_lookup (atts, "seed")))
             filter->seed = atoi (value);
         if ((value = rsvg_property_bag_lookup (atts, "stitchTiles")))
