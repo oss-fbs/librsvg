@@ -39,6 +39,7 @@ Ranked from `00-SUMMARY.md`. High first. Noise skipped.
 33. **E4-14** — check xmlCreatePushParserCtxt NULL before using the parser
 34. **SA-8** — do not read a CLOSE_PATH header as the current point
 35. **H2-6** — keep decoded data: length so %00 does not truncate
+36. **H2-Pango** — clamp font-size and letter-spacing before × PANGO_SCALE
 
 ## Attempts
 
@@ -345,10 +346,20 @@ Ranked from `00-SUMMARY.md`. High first. Noise skipped.
 - A correct fix would load via the resolved path, which is a larger behavior change. It needs write access in the document directory at the same time as the load.
 - Outcome: **skipped**. Theoretical race, not a simple local defect.
 
-### H2-Pango — font size / letter spacing × PANGO_SCALE not range-checked (skipped)
+### H2-Pango — font size / letter spacing × PANGO_SCALE overflow (try 1, failed)
 
-- Overflow into Pango ints only for absurd sizes. Clamping would change huge-but-valid text.
-- Outcome: **skipped**. Note-level, not a demonstrated defect.
+- Site: `rsvg-text.c` `rsvg_text_create_layout`. Font-size was `_rsvg_css_normalize_font_size * PANGO_SCALE / dpi_y * 72`. Letter-spacing was `length * PANGO_SCALE`. A huge or NaN CSS length is UB when cast to gint.
+- Plan: clamp after `value * PANGO_SCALE` against `(double) G_MAXINT`.
+- Change: helper `rsvg_pango_units` returning G_MAXINT pango units (~2e6 points).
+- Tests: `/api/text_huge_font_size_does_not_abort` aborted with `Pango-FATAL-CRITICAL: pango_font_description_set_size: assertion 'size >= 0' failed` (exit 133). G_MAXINT pango units later convert with `dpi/72` (`G_MAXINT * 96 / 72 ≈ 2.86e9`) which overflows gint to negative. `(double) G_MAXINT` is also not exactly representable.
+- Outcome: **failed**. Cap was too high.
+
+### H2-Pango — font size / letter spacing × PANGO_SCALE overflow (try 2, committed)
+
+- Site: same. Cap at `RSVG_MAX_IMAGE_DIMENSION * PANGO_SCALE` (33,553,408), which is exact in double and still in gint after a later `dpi/72` convert at typical DPI. NaN → 0. Font-size negative → 0. Letter-spacing may stay negative.
+- Change: `rsvg_pango_units` in `rsvg-text.c`. Font-size uses `rsvg_pango_units(size / dpi_y * 72)` then clamps below 0. Letter-spacing uses `rsvg_pango_units(length)` (the helper multiplies by PANGO_SCALE).
+- Tests: `make check` 315 PASS including `/api/text_huge_font_size_does_not_abort` and `/api/text_huge_letter_spacing_does_not_abort` (`font-size='1e20'` / `letter-spacing='1e20'` still draw the blue overlay). `make check-parity` pass=723 fail=0 skip=27.
+- Outcome: **fixed**.
 
 ### B3-4 — reliance on Cairo zero-filling new image surfaces (skipped)
 
@@ -368,4 +379,4 @@ Ranked from `00-SUMMARY.md`. High first. Noise skipped.
 ## Remaining (not this batch)
 
 - Medium: none.
-- Low / note: audit remediation of the clearer defects is complete. Skipped as style / not reproducible / theoretical: SA-7, H2-3, H2-5, H2-14, H2-Pango, B3-4, E4-15, E4-16.
+- Low / note: H2-Pango committed. Next: SA-7. Skipped as style / not reproducible / theoretical: SA-7, H2-3, H2-5, H2-14, B3-4, E4-15, E4-16.

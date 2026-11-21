@@ -613,6 +613,27 @@ rsvg_text_layout_free (RsvgTextLayout * layout)
     g_free (layout);
 }
 
+/* Pango size and letter-spacing take gint units (1/PANGO_SCALE of a
+ * point). Clamp before the convert so huge or NaN CSS lengths are
+ * not UB (H2-Pango). Cap at the image side so a later dpi/72
+ * convert cannot overflow gint (G_MAXINT × dpi / 72 does). */
+#define RSVG_MAX_PANGO_UNITS ((gint) RSVG_MAX_IMAGE_DIMENSION * PANGO_SCALE)
+
+static gint
+rsvg_pango_units (double value)
+{
+    double units;
+
+    if (value != value)
+        return 0;
+    units = value * (double) PANGO_SCALE;
+    if (units >= (double) RSVG_MAX_PANGO_UNITS)
+        return RSVG_MAX_PANGO_UNITS;
+    if (units <= (double) -RSVG_MAX_PANGO_UNITS)
+        return -RSVG_MAX_PANGO_UNITS;
+    return (gint) units;
+}
+
 static PangoLayout *
 rsvg_text_create_layout (RsvgDrawingCtx * ctx,
                          RsvgState * state, const char *text, PangoContext * context)
@@ -640,17 +661,24 @@ rsvg_text_create_layout (RsvgDrawingCtx * ctx,
     pango_font_description_set_variant (font_desc, state->font_variant);
     pango_font_description_set_weight (font_desc, state->font_weight);
     pango_font_description_set_stretch (font_desc, state->font_stretch);
-    pango_font_description_set_size (font_desc,
-                                     _rsvg_css_normalize_font_size (state, ctx) *
-                                     PANGO_SCALE / ctx->dpi_y * 72);
+    {
+        gint pango_size;
+
+        pango_size = rsvg_pango_units (_rsvg_css_normalize_font_size (state, ctx)
+                                       / ctx->dpi_y * 72);
+        if (pango_size < 0)
+            pango_size = 0;
+        pango_font_description_set_size (font_desc, pango_size);
+    }
 
     layout = pango_layout_new (context);
     pango_layout_set_font_description (layout, font_desc);
     pango_font_description_free (font_desc);
 
     attr_list = pango_attr_list_new ();
-    attribute = pango_attr_letter_spacing_new (_rsvg_css_normalize_length (&state->letter_spacing,
-                                                                           ctx, 'h') * PANGO_SCALE);
+    attribute = pango_attr_letter_spacing_new (
+        rsvg_pango_units (_rsvg_css_normalize_length (&state->letter_spacing,
+                                                      ctx, 'h')));
     attribute->start_index = 0;
     attribute->end_index = G_MAXINT;
     pango_attr_list_insert (attr_list, attribute); 

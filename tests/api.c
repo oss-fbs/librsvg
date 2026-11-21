@@ -2142,6 +2142,57 @@ path_closepath_without_moveto_does_not_abort (void)
 }
 
 static void
+text_huge_font_size_does_not_abort (void)
+{
+    /* font-size × PANGO_SCALE used to overflow gint (H2-Pango). */
+    const char *svg =
+        "<svg xmlns='http://www.w3.org/2000/svg' width='8' height='8'>"
+        "<rect width='8' height='8' fill='#00ff00'/>"
+        "<text x='0' y='8' font-size='1e20' fill='#ff0000'>x</text>"
+        "<rect width='8' height='4' fill='#0000ff'/>"
+        "</svg>";
+    GError *error = NULL;
+    RsvgHandle *handle;
+    cairo_surface_t *output;
+
+    handle = rsvg_handle_new_from_data ((const guint8 *) svg, strlen (svg), &error);
+    g_assert_no_error (error);
+    g_assert_nonnull (handle);
+
+    output = cairo_image_surface_create (CAIRO_FORMAT_ARGB32, 8, 8);
+    render_to_surface (handle, output);
+    g_assert_cmphex (pixel_argb (output, 4, 2), ==, 0xff0000ff);
+
+    cairo_surface_destroy (output);
+    g_object_unref (handle);
+}
+
+static void
+text_huge_letter_spacing_does_not_abort (void)
+{
+    const char *svg =
+        "<svg xmlns='http://www.w3.org/2000/svg' width='8' height='8'>"
+        "<rect width='8' height='8' fill='#00ff00'/>"
+        "<text x='0' y='8' font-size='8' letter-spacing='1e20' fill='#ff0000'>xx</text>"
+        "<rect width='8' height='4' fill='#0000ff'/>"
+        "</svg>";
+    GError *error = NULL;
+    RsvgHandle *handle;
+    cairo_surface_t *output;
+
+    handle = rsvg_handle_new_from_data ((const guint8 *) svg, strlen (svg), &error);
+    g_assert_no_error (error);
+    g_assert_nonnull (handle);
+
+    output = cairo_image_surface_create (CAIRO_FORMAT_ARGB32, 8, 8);
+    render_to_surface (handle, output);
+    g_assert_cmphex (pixel_argb (output, 4, 2), ==, 0xff0000ff);
+
+    cairo_surface_destroy (output);
+    g_object_unref (handle);
+}
+
+static void
 cairo_huge_text_coords_are_skipped (void)
 {
     const char *svg =
@@ -4781,6 +4832,8 @@ main (int argc, char **argv)
     g_test_add_func ("/api/path_scientific_number_still_applies", path_scientific_number_still_applies);
     g_test_add_func ("/api/path_unit_fill_still_applies", path_unit_fill_still_applies);
     g_test_add_func ("/api/path_closepath_without_moveto_does_not_abort", path_closepath_without_moveto_does_not_abort);
+    g_test_add_func ("/api/text_huge_font_size_does_not_abort", text_huge_font_size_does_not_abort);
+    g_test_add_func ("/api/text_huge_letter_spacing_does_not_abort", text_huge_letter_spacing_does_not_abort);
     g_test_add_func ("/api/cairo_huge_text_coords_are_skipped", cairo_huge_text_coords_are_skipped);
     g_test_add_func ("/api/convolve_invalid_order_is_noop", convolve_invalid_order_is_noop);
 #ifdef HAVE_LIBWEBP
