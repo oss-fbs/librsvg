@@ -1535,6 +1535,57 @@ xinclude_malformed_xml_uses_fallback (void)
     g_free (dir);
 }
 
+/* E4-3: g_convert failure on xi:include parse="text" must use xi:fallback. */
+static void
+xinclude_text_convert_failure_uses_fallback (void)
+{
+    const char *svg =
+        "<svg xmlns='http://www.w3.org/2000/svg'"
+        " xmlns:xi='http://www.w3.org/2001/XInclude'"
+        " width='8' height='8'>"
+        "<rect width='8' height='8' fill='#00ff00'/>"
+        "<xi:include href='data:text/plain,hello' parse='text' encoding='not-an-encoding'>"
+        "<xi:fallback>"
+        "<rect id='from-fallback' width='8' height='8' fill='#ff0000'/>"
+        "</xi:fallback>"
+        "</xi:include>"
+        "</svg>";
+    GError *error = NULL;
+    RsvgHandle *handle;
+
+    handle = rsvg_handle_new_from_data ((const guint8 *) svg, strlen (svg), &error);
+    g_assert_nonnull (handle);
+    g_assert_no_error (error);
+    g_assert_true (rsvg_handle_has_sub (handle, "#from-fallback"));
+    g_assert_cmphex (center_pixel_of_handle (handle), ==, 0xffff0000);
+    g_object_unref (handle);
+}
+
+static void
+xinclude_text_convert_still_applies (void)
+{
+    const char *svg =
+        "<svg xmlns='http://www.w3.org/2000/svg'"
+        " xmlns:xi='http://www.w3.org/2001/XInclude'"
+        " width='8' height='8'>"
+        "<rect width='8' height='8' fill='#00ff00'/>"
+        "<xi:include href='data:text/plain,hello' parse='text' encoding='iso8859-1'>"
+        "<xi:fallback>"
+        "<rect id='from-fallback' width='8' height='8' fill='#ff0000'/>"
+        "</xi:fallback>"
+        "</xi:include>"
+        "</svg>";
+    GError *error = NULL;
+    RsvgHandle *handle;
+
+    handle = rsvg_handle_new_from_data ((const guint8 *) svg, strlen (svg), &error);
+    g_assert_nonnull (handle);
+    g_assert_no_error (error);
+    g_assert_false (rsvg_handle_has_sub (handle, "#from-fallback"));
+    g_assert_cmphex (center_pixel_of_handle (handle), ==, 0xff00ff00);
+    g_object_unref (handle);
+}
+
 /* A SAX error (self xi:include) can make write return FALSE while
  * xmlParseChunk still returns 0. Close must not then set CLOSED_OK
  * (E4-4); the write docs say a failed write closes the loader. */
@@ -4390,6 +4441,8 @@ main (int argc, char **argv)
     g_test_add_func ("/api/xinclude_self_include_fails_with_nesting_error", xinclude_self_include_fails_with_nesting_error);
     g_test_add_func ("/api/xinclude_self_include_unlimited_still_fails", xinclude_self_include_unlimited_still_fails);
     g_test_add_func ("/api/xinclude_malformed_xml_uses_fallback", xinclude_malformed_xml_uses_fallback);
+    g_test_add_func ("/api/xinclude_text_convert_failure_uses_fallback", xinclude_text_convert_failure_uses_fallback);
+    g_test_add_func ("/api/xinclude_text_convert_still_applies", xinclude_text_convert_still_applies);
     g_test_add_func ("/api/failed_write_then_close_does_not_succeed", failed_write_then_close_does_not_succeed);
     g_test_add_func ("/api/write_then_close_still_renders", write_then_close_still_renders);
     g_test_add_func ("/api/truncated_write_then_close_does_not_succeed", truncated_write_then_close_does_not_succeed);

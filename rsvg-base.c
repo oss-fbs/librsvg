@@ -688,6 +688,8 @@ rsvg_start_xinclude (RsvgHandle * ctx, RsvgPropertyBag * atts)
             text_data = g_convert (data, data_len, "utf-8", encoding, NULL,
                                    &text_data_len, NULL);
             g_free (data);
+            if (text_data == NULL)
+                goto fallback;
 
             data = text_data;
             data_len = text_data_len;

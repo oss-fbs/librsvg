@@ -30,6 +30,7 @@ Ranked from `00-SUMMARY.md`. High first. Noise skipped.
 24. **SA-6** — clear priv->error on close_impl xmlParseChunk failure
 25. **H2-2** — cap @import stylesheet bodies at RSVG_MAX_STYLESHEET_BYTES
 26. **H2-13** — range-check feConvolveMatrix targetX/targetY
+27. **E4-3** — honor g_convert failure on xi:include parse="text"
 
 ## Attempts
 
@@ -241,7 +242,15 @@ Ranked from `00-SUMMARY.md`. High first. Noise skipped.
 - Tests: `make check` 300 PASS including `/api/convolve_huge_target_does_not_abort` (`targetX='-2147483648'`, identity 3×3 still red) and `/api/convolve_unit_target_still_applies`. `make check-parity` pass=723 fail=0 skip=27.
 - Outcome: **fixed**.
 
+### E4-3 — xi:include parse="text" ignores g_convert failure (try 1, committed)
+
+- Site: `rsvg-base.c` `rsvg_start_xinclude`. When `encoding` is not UTF-8, `g_convert` can return NULL. The original buffer is freed, `data` becomes NULL, `rsvg_characters_impl` returns early on `!ch`, then `success = TRUE` still skips `xi:fallback`.
+- Plan: after `g_free (data)`, if `text_data` is NULL go to fallback. Do not use `text_data_len` on the failure path.
+- Change: that NULL check only.
+- Tests: `make check` 302 PASS including `/api/xinclude_text_convert_failure_uses_fallback` (`encoding='not-an-encoding'` paints the red fallback) and `/api/xinclude_text_convert_still_applies` (`encoding='iso8859-1'` skips fallback, green remains). `make check-parity` pass=723 fail=0 skip=27 (include-text, include-fallback, xinclude-non-utf8 still green).
+- Outcome: **fixed**.
+
 ## Remaining (not this batch)
 
 - Medium: none.
-- Low / note: see `00-SUMMARY.md`. This batch (SA-5/H2-15, SA-6, H2-2, H2-13) is done. Next: E4-3, E4-6, E4-10, E4-11, E4-12, E4-13, E4-14.
+- Low / note: see `00-SUMMARY.md`. Working E4-3, E4-6, E4-10, E4-11, E4-12. Next after this batch: E4-13, E4-14.
