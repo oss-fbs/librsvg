@@ -288,7 +288,8 @@ rsvg_handle_render_cairo_sub (RsvgHandle * handle, cairo_t * cr, const char *id)
     rsvg_node_draw ((RsvgNode *) handle->priv->treebase, draw, 0);
 
     if (rsvg_drawing_ctx_check_cancelled (draw) ||
-        rsvg_drawing_ctx_limits_exceeded (draw)) {
+        rsvg_drawing_ctx_limits_exceeded (draw) ||
+        cairo_status (cr) != CAIRO_STATUS_SUCCESS) {
         retval = FALSE;
     } else {
         retval = TRUE;
@@ -468,8 +469,19 @@ rsvg_handle_measure (RsvgHandle *handle,
         rsvg_draw_node_isolated (draw, node);
     }
 
+    if (rsvg_drawing_ctx_check_cancelled (draw)) {
+        g_set_error (error, G_IO_ERROR, G_IO_ERROR_CANCELLED, "rendering cancelled");
+        goto out;
+    }
+
     if (rsvg_drawing_ctx_limits_exceeded (draw)) {
         rsvg_drawing_ctx_set_limits_error (draw, error);
+        goto out;
+    }
+
+    if (cairo_status (cr) != CAIRO_STATUS_SUCCESS) {
+        g_set_error (error, RSVG_ERROR, RSVG_ERROR_FAILED,
+                     "cairo error: %s", cairo_status_to_string (cairo_status (cr)));
         goto out;
     }
 

@@ -266,6 +266,36 @@ render_cairo_sub (void)
 }
 
 static void
+render_cairo_error_context_fails (void)
+{
+    const char *svg =
+        "<svg xmlns='http://www.w3.org/2000/svg' width='8' height='8'>"
+        "<rect width='8' height='8' fill='#ff0000'/>"
+        "</svg>";
+    GError *error = NULL;
+    RsvgHandle *handle;
+    cairo_surface_t *output;
+    cairo_t *cr;
+    RsvgRectangle viewport = { 0, 0, 8, 8 };
+
+    handle = rsvg_handle_new_from_data ((const guint8 *) svg, strlen (svg), &error);
+    g_assert_nonnull (handle);
+    g_assert_no_error (error);
+
+    output = cairo_image_surface_create (CAIRO_FORMAT_ARGB32, 8, 8);
+    cr = cairo_create (output);
+    cairo_restore (cr);
+    g_assert_cmpint (cairo_status (cr), !=, CAIRO_STATUS_SUCCESS);
+    g_assert_false (rsvg_handle_render_cairo (handle, cr));
+    g_assert_false (rsvg_handle_render_document (handle, cr, &viewport, &error));
+    g_clear_error (&error);
+
+    cairo_destroy (cr);
+    cairo_surface_destroy (output);
+    g_object_unref (handle);
+}
+
+static void
 handle_get_pixbuf (void)
 {
     RsvgHandle *handle = load_test_document ("example.svg");
@@ -4449,6 +4479,7 @@ main (int argc, char **argv)
     g_test_add_func ("/api/handle_has_sub", handle_has_sub);
     g_test_add_func ("/api/handle_new_from_data", handle_new_from_data);
     g_test_add_func ("/api/render_cairo_sub", render_cairo_sub);
+    g_test_add_func ("/api/render_cairo_error_context_fails", render_cairo_error_context_fails);
     g_test_add_func ("/api/handle_get_pixbuf", handle_get_pixbuf);
     g_test_add_func ("/api/library_version_defines", library_version_defines);
     g_test_add_func ("/api/library_version_check", library_version_check);

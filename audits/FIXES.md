@@ -32,6 +32,7 @@ Ranked from `00-SUMMARY.md`. High first. Noise skipped.
 26. **H2-13** — range-check feConvolveMatrix targetX/targetY
 27. **E4-3** — honor g_convert failure on xi:include parse="text"
 28. **E4-6** — check cairo_matrix_invert on gradients and feImage
+29. **E4-10** — return FALSE from measure/render_cairo when cairo_status fails
 
 ## Attempts
 
@@ -259,7 +260,15 @@ Ranked from `00-SUMMARY.md`. High first. Noise skipped.
 - Tests: `make check` 304 PASS including `/api/gradient_singular_transform_does_not_abort` (zero-area paths, cairo_status SUCCESS, green remains) and `/api/gradient_unit_fill_still_applies`. First smoke used `gradientTransform='scale(0)'`, which parse already maps to identity, so the gradient still painted. `make check-parity` pass=723 fail=0 skip=27 (pservers-grad-* and filters-image-* still green). The feImage invert-fail paint skip is not unit-tested (dw/dh/img size already > 0 before invert).
 - Outcome: **fixed**.
 
+### E4-10 — measure/render return TRUE without cairo_status (try 1, committed)
+
+- Sites: `rsvg-cairo-render.c` `rsvg_handle_render_cairo_sub` and `rsvg_handle_measure`. `rsvg_handle_draw_node` (used by render_document) already checked cairo_status. The deprecated cairo render and the geometry measure path did not.
+- Plan: treat non-SUCCESS cairo_status as failure. Measure also honors a cancelled drawing ctx, matching draw_node.
+- Change: those two checks. Measure sets a GError; render_cairo_sub only returns FALSE (no GError in that API).
+- Tests: `make check` 305 PASS including `/api/render_cairo_error_context_fails` (unmatched cairo_restore, both render_cairo and render_document FALSE) and existing `/api/render_cairo_sub` / `/api/get_geometry_for_layer`. `make check-parity` pass=723 fail=0 skip=27. The measure cancelled/cairo-error branches are not unit-tested from the public API.
+- Outcome: **fixed**.
+
 ## Remaining (not this batch)
 
 - Medium: none.
-- Low / note: see `00-SUMMARY.md`. Working E4-3, E4-6, E4-10, E4-11, E4-12. Next after this batch: E4-13, E4-14.
+- Low / note: see `00-SUMMARY.md`. Working E4-3, E4-6, E4-10, E4-11. Next after this batch: E4-11 leftover if not reached, E4-12, E4-13, E4-14.
