@@ -1,15 +1,9 @@
 # Staged DESTDIR installs — never commit a prefix tree
 /stage/
-/rust/
 /build-*/
 # /build/ is source (Makefile.in, win32). Ignore only generated Makefiles
 # (pattern Makefile below). /build-*/ is a leftover configure dir.
 
-# Maintainer notes — never in the tarball or a public commit
-AGENTS.md
-AGENTS_*.md
-PLAN.md
-.grok/
 
 # Autotools leftovers from out-of-tree or in-tree configures
 /config.log
@@ -50,7 +44,6 @@ autom4te.cache/
 /tests/fuzz/out/
 
 *~
-grok-start
 *.o
 *.log
 *.trs
