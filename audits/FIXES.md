@@ -9,7 +9,8 @@ Ranked from `00-SUMMARY.md`. High first. Noise skipped.
 3. **H2-10** — cap feMorphology radius
 4. **H2-11** — cap feTurbulence `numOctaves`
 5. **E4-1 / SA-1 / H2-9** — volatile locals in PNG/JPEG `setjmp`
-6. Medium left: H2-7 / H2-8 / H2-1, then E4-2 / E4-9 / H2-16 / E4-8, then H2-4 / H2-12 / B3-2 / B3-3 / E4-4
+6. **H2-7** — GIF first-frame size check before RasterBits
+7. Medium left: H2-8 / H2-1, then E4-2 / E4-9 / H2-16 / E4-8, then H2-4 / H2-12 / B3-2 / B3-3 / E4-4
 
 ## Attempts
 
@@ -53,8 +54,16 @@ Ranked from `00-SUMMARY.md`. High first. Noise skipped.
 - Tests: `make check` 267 PASS including `/api/png_truncated_idat_does_not_abort`. `make check-parity` pass=723 fail=0 skip=27.
 - Outcome: **fixed**.
 
+### H2-7 — GIF first-frame size check (try 1, committed)
+
+- Site: `rsvg-image.c` `rsvg_cairo_surface_from_gif` called `DGifSlurp` before any per-frame size check, so a small GIF with a huge first frame (or many frames) allocated `RasterBits` unbounded.
+- Plan: decode only frame 0; check `ImageDesc` with `rsvg_image_dims_ok` before `malloc`.
+- Change: `rsvg_gif_load_first_frame` walks records, parses GCE for the transparent index, then `DGifGetImageDesc` + capped raster + `DGifGetLine` (with giflib’s interlace passes). Later frames are not read.
+- Tests: `make check` 268 PASS including `/api/gif_huge_frame_does_not_abort` (8×8 screen, 40000×8 frame) and the existing red GIF tests. `make check-parity` pass=723 fail=0 skip=27.
+- Outcome: **fixed**.
+
 ## Remaining (not this batch)
 
-- Medium: H2-7 / H2-8 / H2-1 (decoder/file size before decode), E4-2 / E4-9 / H2-16 / E4-8 (error-path robustness). H2-16 remainder: non-filter `cairo_surface_create_similar` still uses uncapped `render->width/height`.
+- Medium: H2-8 / H2-1 (AVIF decode and file size before decode), E4-2 / E4-9 / H2-16 / E4-8 (error-path robustness). H2-16 remainder: non-filter `cairo_surface_create_similar` still uses uncapped `render->width/height`.
 - Also medium: H2-4, H2-12, B3-2, B3-3, E4-4.
 - Low / note: see `00-SUMMARY.md`.

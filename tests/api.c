@@ -1518,6 +1518,10 @@ convolve_invalid_order_is_noop (void)
     "data:application/octet-stream;base64,R0lGODdhCAAIAIEAAP8AAAAAAAAAAAAAACwAAAAACAAIAAAIDwABCBxIsKDBgwgTKkwYEAA7"
 #define GIF_BAD_DATA_URI \
     "data:image/gif;base64,R0lGODlh"
+/* 8×8 logical screen, 40000×8 first frame: ImageDesc is checked
+ * before RasterBits so DGifSlurp cannot allocate a huge buffer (H2-7). */
+#define GIF_HUGE_FRAME_URI \
+    "data:image/gif;base64,R0lGODdhCAAIAIAAAP8AAAAAACwAAAAAQJwIAAACADs="
 #define BMP_RED_DATA_URI \
     "data:image/bmp;base64,Qk32AAAAAAAAADYAAAAoAAAACAAAAAgAAAABABgAAAAAAMAAAAAAAAAAAAAAAAAAAAAAAAAAAAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/"
 #define BMP_RED_SNIFF_URI \
@@ -2006,6 +2010,12 @@ static void
 gif_decode_failure_does_not_abort (void)
 {
     assert_href_paints_center (GIF_BAD_DATA_URI, 0xff00ff00);
+}
+
+static void
+gif_huge_frame_does_not_abort (void)
+{
+    assert_href_paints_center (GIF_HUGE_FRAME_URI, 0xff00ff00);
 }
 #else
 static void
@@ -3487,6 +3497,7 @@ main (int argc, char **argv)
     g_test_add_func ("/api/gif_image_sniff_without_mime_renders", gif_image_sniff_without_mime_renders);
     g_test_add_func ("/api/gif_image_file_href_renders", gif_image_file_href_renders);
     g_test_add_func ("/api/gif_decode_failure_does_not_abort", gif_decode_failure_does_not_abort);
+    g_test_add_func ("/api/gif_huge_frame_does_not_abort", gif_huge_frame_does_not_abort);
 #else
     g_test_add_func ("/api/gif_without_libgif_is_ignored", gif_without_libgif_is_ignored);
 #endif

@@ -56,6 +56,7 @@
 
 #ifdef HAVE_LIBGIF
 #include <gif_lib.h>
+#include <stdlib.h>
 #endif
 
 #ifdef HAVE_LIBAVIF
@@ -992,6 +993,93 @@ rsvg_gif_read (GifFileType *gif, GifByteType *out, int n)
     return n;
 }
 
+/* First frame only. DGifSlurp would allocate RasterBits for every
+ * frame before any size check (H2-7). ImageDesc is checked here
+ * before the raster malloc. giflib frees RasterBits on close. */
+static gboolean
+rsvg_gif_load_first_frame (GifFileType *gif, int *trans, gsize max_pixel_bytes)
+{
+    static const int interlaced_offset[] = { 0, 4, 2, 1 };
+    static const int interlaced_jumps[] = { 8, 8, 4, 2 };
+
+    *trans = NO_TRANSPARENT_COLOR;
+
+    for (;;) {
+        GifRecordType rec;
+        GifByteType *ext;
+        int ext_code;
+        SavedImage *img;
+        int fw, fh;
+
+        if (DGifGetRecordType (gif, &rec) != GIF_OK)
+            return FALSE;
+
+        if (rec == TERMINATE_RECORD_TYPE)
+            return gif->ImageCount >= 1 &&
+                   gif->SavedImages != NULL &&
+                   gif->SavedImages[0].RasterBits != NULL;
+
+        if (rec == EXTENSION_RECORD_TYPE) {
+            if (DGifGetExtension (gif, &ext_code, &ext) != GIF_OK)
+                return FALSE;
+            if (ext_code == GRAPHICS_EXT_FUNC_CODE &&
+                ext != NULL && ext[0] >= 4) {
+                if (ext[1] & 0x01)
+                    *trans = ext[4];
+                else
+                    *trans = NO_TRANSPARENT_COLOR;
+            }
+            while (ext != NULL) {
+                if (DGifGetExtensionNext (gif, &ext) != GIF_OK)
+                    return FALSE;
+            }
+            continue;
+        }
+
+        if (rec != IMAGE_DESC_RECORD_TYPE)
+            continue;
+
+        if (gif->ImageCount >= 1)
+            return TRUE;
+
+        if (DGifGetImageDesc (gif) != GIF_OK || gif->ImageCount < 1)
+            return FALSE;
+
+        img = &gif->SavedImages[0];
+        fw = img->ImageDesc.Width;
+        fh = img->ImageDesc.Height;
+        if (fw <= 0 || fh <= 0 ||
+            !rsvg_image_dims_ok (fw, fh, max_pixel_bytes))
+            return FALSE;
+
+        {
+            gsize n = (gsize) fw * (gsize) fh;
+
+            img->RasterBits = (GifByteType *) malloc (n);
+        }
+        if (img->RasterBits == NULL)
+            return FALSE;
+
+        if (img->ImageDesc.Interlace) {
+            int pass, row;
+
+            for (pass = 0; pass < 4; pass++) {
+                for (row = interlaced_offset[pass]; row < fh;
+                     row += interlaced_jumps[pass]) {
+                    if (DGifGetLine (gif,
+                                     img->RasterBits + (gsize) row * (gsize) fw,
+                                     fw) != GIF_OK)
+                        return FALSE;
+                }
+            }
+        } else if (DGifGetLine (gif, img->RasterBits, fw * fh) != GIF_OK) {
+            return FALSE;
+        }
+
+        return TRUE;
+    }
+}
+
 static cairo_surface_t *
 rsvg_cairo_surface_from_gif (const guint8 *data,
                              gsize data_len,
@@ -1004,7 +1092,6 @@ rsvg_cairo_surface_from_gif (const guint8 *data,
     int err = 0;
     SavedImage *img;
     ColorMapObject *cmap;
-    GraphicsControlBlock gcb;
     int trans = NO_TRANSPARENT_COLOR;
     int width, height, left, top, fw, fh;
     guint8 *rgba = NULL;
@@ -1034,22 +1121,19 @@ rsvg_cairo_surface_from_gif (const guint8 *data,
         !rsvg_image_dims_ok (gif->SWidth, gif->SHeight, max_pixel_bytes))
         goto fail;
 
-    if (DGifSlurp (gif) != GIF_OK || gif->ImageCount < 1)
+    /* First frame only. rust 2.62 still <image> is image 0.25
+     * GifDecoder::read_image (ColorOutput::RGBA, logical screen,
+     * uncovered pixels [0,0,0,0], LSD background ignored). Local
+     * colormap then global; GCB transparent index skipped.
+     * Animation/disposal and painting the LSD background are out of
+     * scope. */
+    if (!rsvg_gif_load_first_frame (gif, &trans, max_pixel_bytes))
         goto fail;
 
     img = &gif->SavedImages[0];
     cmap = img->ImageDesc.ColorMap ? img->ImageDesc.ColorMap : gif->SColorMap;
     if (cmap == NULL || cmap->Colors == NULL || img->RasterBits == NULL)
         goto fail;
-
-    /* First frame only. rust 2.62 still <image> is image 0.25
-     * GifDecoder::read_image (ColorOutput::RGBA, logical screen,
-     * uncovered pixels [0,0,0,0], LSD background ignored). Local
-     * colormap then global; GCB transparent index skipped.
-     * DGifSlurp deinterlaces RasterBits. Animation/disposal and
-     * painting the LSD background are out of scope. */
-    if (DGifSavedExtensionToGCB (gif, 0, &gcb) == GIF_OK)
-        trans = gcb.TransparentColor;
 
     width = gif->SWidth;
     height = gif->SHeight;
