@@ -37,6 +37,7 @@ Ranked from `00-SUMMARY.md`. High first. Noise skipped.
 31. **E4-12** — do not commit a malformed path number; stop that command
 32. **E4-13** — report file-nesting errors from external SVG references
 33. **E4-14** — check xmlCreatePushParserCtxt NULL before using the parser
+34. **SA-8** — do not read a CLOSE_PATH header as the current point
 
 ## Attempts
 
@@ -304,7 +305,15 @@ Ranked from `00-SUMMARY.md`. High first. Noise skipped.
 - Tests: `make check` 311 PASS including existing `/api/write_then_close_still_renders`. `make check-parity` pass=723 fail=0 skip=27. The OOM NULL path is not unit-testable without mocking libxml2.
 - Outcome: **fixed**.
 
+### SA-8 — d="z" with no moveto reads uninitialized coordinates (try 1, committed)
+
+- Site: `rsvg-path.c` `rsvg_parse_path_data`. After `z`/`Z`, the last path element was treated as a point. With no prior moveto, that element is a CLOSE_PATH header; `point.y` is uninitialized stack.
+- Plan: set the current point from `last_move_to_index` when a subpath exists. Leave `cp` at the origin when it does not.
+- Change: that lookup. Existing `path_unit_fill_still_applies` covers a normal closepath.
+- Tests: `make check` 312 PASS including `/api/path_closepath_without_moveto_does_not_abort` (`d='z M 0 0 H 8 V 8 H 0 Z'` still red). `make check-parity` pass=723 fail=0 skip=27 (paths-data-* still green).
+- Outcome: **fixed**.
+
 ## Remaining (not this batch)
 
 - Medium: none.
-- Low / note: see `00-SUMMARY.md`. Clearer low/note list finished (through E4-14). Skip still: SA-7, SA-8, H2-3, H2-5, H2-6, H2-14, H2-Pango, B3-4, E4-15, E4-16.
+- Low / note: working H2-6, H2-14. Skip: SA-7, H2-3, H2-5, H2-Pango, B3-4, E4-15, E4-16.

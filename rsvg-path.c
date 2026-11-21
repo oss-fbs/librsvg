@@ -743,10 +743,14 @@ rsvg_parse_path_data (RSVGParsePathCtx * ctx, const char *data)
                 rsvg_parse_path_do_cmd (ctx, TRUE);
             rsvg_path_builder_close_path (&ctx->builder);
 
-            {
-                cairo_path_data_t pt = g_array_index (ctx->builder.path_data, cairo_path_data_t,
-                                                      ctx->builder.path_data->len - 1);
-                set_current_point (ctx, pt.point.x, pt.point.y);
+            /* close_path with no prior moveto only stores a CLOSE_PATH
+             * header. Do not read that union as a point (SA-8). */
+            if (ctx->builder.last_move_to_index >= 0) {
+                cairo_path_data_t *moveto;
+
+                moveto = &g_array_index (ctx->builder.path_data, cairo_path_data_t,
+                                         ctx->builder.last_move_to_index);
+                set_current_point (ctx, moveto[1].point.x, moveto[1].point.y);
             }
         } else if (c >= 'A' && c < 'Z' && c != 'E') {
             if (ctx->param)

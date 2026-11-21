@@ -2114,6 +2114,33 @@ path_unit_fill_still_applies (void)
     g_object_unref (handle);
 }
 
+/* SA-8: d="z" with no moveto used to read the CLOSE_PATH header as a
+ * point (point.y was uninitialized stack). Later commands must still
+ * apply. */
+static void
+path_closepath_without_moveto_does_not_abort (void)
+{
+    const char *svg =
+        "<svg xmlns='http://www.w3.org/2000/svg' width='8' height='8'>"
+        "<rect width='8' height='8' fill='#00ff00'/>"
+        "<path d='z M 0 0 H 8 V 8 H 0 Z' fill='#ff0000'/>"
+        "</svg>";
+    GError *error = NULL;
+    RsvgHandle *handle;
+    cairo_surface_t *output;
+
+    handle = rsvg_handle_new_from_data ((const guint8 *) svg, strlen (svg), &error);
+    g_assert_no_error (error);
+    g_assert_nonnull (handle);
+
+    output = cairo_image_surface_create (CAIRO_FORMAT_ARGB32, 8, 8);
+    render_to_surface (handle, output);
+    g_assert_cmphex (pixel_argb (output, 4, 4), ==, 0xffff0000);
+
+    cairo_surface_destroy (output);
+    g_object_unref (handle);
+}
+
 static void
 cairo_huge_text_coords_are_skipped (void)
 {
@@ -4727,6 +4754,7 @@ main (int argc, char **argv)
     g_test_add_func ("/api/path_malformed_number_stops_path", path_malformed_number_stops_path);
     g_test_add_func ("/api/path_scientific_number_still_applies", path_scientific_number_still_applies);
     g_test_add_func ("/api/path_unit_fill_still_applies", path_unit_fill_still_applies);
+    g_test_add_func ("/api/path_closepath_without_moveto_does_not_abort", path_closepath_without_moveto_does_not_abort);
     g_test_add_func ("/api/cairo_huge_text_coords_are_skipped", cairo_huge_text_coords_are_skipped);
     g_test_add_func ("/api/convolve_invalid_order_is_noop", convolve_invalid_order_is_noop);
 #ifdef HAVE_LIBWEBP
