@@ -1298,6 +1298,10 @@ rsvg_handle_write_impl (RsvgHandle * handle, const guchar * buf, gsize count, GE
     result = xmlParseChunk (handle->priv->ctxt, (char *) buf, count, 0);
     if (result != 0) {
         rsvg_set_error (error, handle->priv->ctxt);
+        handle->priv->error = NULL;
+        g_clear_error (&real_error);
+        handle->priv->ctxt = rsvg_free_xml_parser_and_doc (handle->priv->ctxt);
+        handle->priv->state = RSVG_HANDLE_STATE_CLOSED_ERROR;
         return FALSE;
     }
 
@@ -1305,6 +1309,8 @@ rsvg_handle_write_impl (RsvgHandle * handle, const guchar * buf, gsize count, GE
 
     if (real_error != NULL) {
         g_propagate_error (error, real_error);
+        handle->priv->ctxt = rsvg_free_xml_parser_and_doc (handle->priv->ctxt);
+        handle->priv->state = RSVG_HANDLE_STATE_CLOSED_ERROR;
         return FALSE;
     }
 

@@ -20,7 +20,7 @@ Ranked from `00-SUMMARY.md`. High first. Noise skipped.
 14. **H2-12** — skip non-finite feDisplacementMap scale before the interpolator cast
 15. **B3-2** — clamp feOffset dx/dy to gint and subtract in gint64
 16. **B3-3** — skip kernelUnitLength scaling that would overflow the int canvas size
-17. Medium left: E4-4
+17. **E4-4** — failed write closes the loader so close cannot set CLOSED_OK
 
 ## Attempts
 
@@ -152,7 +152,15 @@ Ranked from `00-SUMMARY.md`. High first. Noise skipped.
 - Tests: `make check` 284 PASS including `/api/convolve_tiny_kernel_unit_does_not_abort` (2200×8 identity 3×3, `kernelUnitLength='1e-6'`) and `/api/convolve_unit_kernel_length_still_applies`. `make check-parity` pass=723 fail=0 skip=27.
 - Outcome: **fixed**.
 
+### E4-4 — failed write then close CLOSED_OK (try 1, committed)
+
+- Site: `rsvg-base.c` `rsvg_handle_write_impl`. A SAX callback can set `real_error` while `xmlParseChunk` returns 0 (self `xi:include` nesting). Write returned FALSE, left the handle in READING, and cleared `priv->error`. Close then used a fresh stack error; the finishing chunk succeeded and set `CLOSED_OK`, so render/get_pixbuf still worked. Docs for `rsvg_handle_write` say a FALSE result closes the loader. `gdk-pixbuf-loader/io-svg.c` still calls close after a failed write.
+- Plan: on any write_impl failure, free the parser and set `CLOSED_ERROR`. Close stays idempotent TRUE; render stays blocked.
+- Change: both `xmlParseChunk != 0` and SAX `real_error` paths set `CLOSED_ERROR`, free `ctxt`, and clear `priv->error` (avoids the dangling pointer on the xml-error path). Loader `io-svg.c` unchanged.
+- Tests: `make check` 286 PASS including `/api/failed_write_then_close_does_not_succeed` (self xi:include via write, close, get_pixbuf NULL) and `/api/write_then_close_still_renders`. `make check-parity` pass=723 fail=0 skip=27.
+- Outcome: **fixed**.
+
 ## Remaining (not this batch)
 
-- Medium: E4-4.
+- Medium: none.
 - Low / note: see `00-SUMMARY.md`.
