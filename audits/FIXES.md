@@ -16,7 +16,8 @@ Ranked from `00-SUMMARY.md`. High first. Noise skipped.
 10. **E4-9** — remember push/pop offscreen layer instead of re-acquiring clip-path
 11. **H2-16 leftover** — cap non-filter offscreen `create_similar`
 12. **E4-8** — check gdk_pixbuf_new NULL in surface_to_pixbuf
-13. Medium left: H2-4 / H2-12 / B3-2 / B3-3 / E4-4
+13. **H2-4** — do not set XML_PARSE_HUGE unless UNLIMITED on libxml2 2.12+
+14. Medium left: H2-12 / B3-2 / B3-3 / E4-4
 
 ## Attempts
 
@@ -116,7 +117,15 @@ Ranked from `00-SUMMARY.md`. High first. Noise skipped.
 - Tests: `make check` 276 PASS including `/api/get_pixbuf_one_pixel_red` (public `rsvg_handle_get_pixbuf` still converts a 1×1 red surface). `make check-parity` pass=723 fail=0 skip=27. A first test draft called the internal symbol and failed to link (`G_GNUC_INTERNAL`); rewritten to use the public API. The OOM/overflow NULL path is not unit-tested (needs a multi-GiB surface after B3-5).
 - Outcome: **fixed**.
 
+### H2-4 — XML_PARSE_HUGE only with UNLIMITED (try 1, committed)
+
+- Site: `rsvg-base.c` `rsvg_set_xml_parse_options`. The `#else` (libxml2 2.12+, `xmlParserMaxDepth` is `#define 256`) always ORed `XML_PARSE_HUGE`, which raises element depth 256→2048 and also drops the 10 MiB text-node, 50 KiB name, 100 MiB dict, and entity-nesting caps. Not taken on this host (libxml2 2.9.14). There is no `xmlCtxtSetMaxDepth`.
+- Plan: never set HUGE unless `RSVG_HANDLE_FLAG_UNLIMITED`. On 2.12+ default documents stay at libxml's 256-element depth. Lower `css_deep_tree` to 240 so it stays portable. Older-libxml2 `#ifndef xmlParserMaxDepth` global raise to 384 is unchanged.
+- Change: removed `options |= XML_PARSE_HUGE;` from the `#else`. UNLIMITED still ORs HUGE before the `#ifndef`. Tests: `css_deep_tree` depth `RSVG_MAX_CSS_TREE_DEPTH - 16`; new unlimited 320-deep load; new 60k-char name rejected without UNLIMITED.
+- Tests: `make check` 278 PASS including `/api/css_deep_tree_does_not_abort`, `/api/css_deep_tree_unlimited_still_loads`, `/api/xml_huge_name_is_rejected_without_unlimited`. `make check-parity` pass=723 fail=0 skip=27. The 2.12+ `#else` is not compiled on this machine (2.9.14); the name-length test still covers HUGE-off caps here.
+- Outcome: **fixed**.
+
 ## Remaining (not this batch)
 
-- Medium: H2-4, H2-12, B3-2, B3-3, E4-4.
+- Medium: H2-12, B3-2, B3-3, E4-4.
 - Low / note: see `00-SUMMARY.md`.

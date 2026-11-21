@@ -603,17 +603,13 @@ rsvg_set_xml_parse_options(xmlParserCtxtPtr xml_parser,
     /* Keep default text/entity caps: do not set XML_PARSE_HUGE here. */
     xmlCtxtUseOptions (xml_parser, options);
 #else
-    /* libxml2 2.12/2.14+: xmlParserMaxDepth is #define 256, not
+    /* libxml2 2.12+: xmlParserMaxDepth is #define 256, not
      * assignable. xmlParseElementStart() uses
      *   maxDepth = (options & XML_PARSE_HUGE) ? 2048 : 256
-     * There is no xmlCtxtSetMaxDepth (2.15.3 has none). HUGE is the
-     * supported API to accept CSS-walk-depth + slack (~384) without
-     * failing at 257. Do not enable HUGE on older libxml2 (the global
-     * raise above is enough and keeps text/entity caps).
-     *
-     * Rsvg still applies its own resource and instancing limits;
-     * xmlCtxtSetMaxAmplification default remains in effect. */
-    options |= XML_PARSE_HUGE;
+     * There is no xmlCtxtSetMaxDepth. HUGE also drops the 10 MiB
+     * text-node and 50 KiB name caps, so it is only set for
+     * RSVG_HANDLE_FLAG_UNLIMITED (H2-4). Default documents stay at
+     * libxml's 256-element depth. */
     xmlCtxtUseOptions (xml_parser, options);
 #endif
 

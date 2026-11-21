@@ -842,10 +842,10 @@ css_deep_tree_does_not_abort (void)
     GError *error = NULL;
     cairo_surface_t *output;
     int i;
-    const int depth = RSVG_MAX_CSS_TREE_DEPTH + 64;
+    /* Stay under libxml2's default 256-element depth (no XML_PARSE_HUGE
+     * unless UNLIMITED, H2-4). CSS walk is also 256. */
+    const int depth = RSVG_MAX_CSS_TREE_DEPTH - 16;
 
-    /* Nest past cascade_walk's cap. Presentation fill still paints;
-     * author CSS on the deep leaf may not. Process must stay up. */
     svg = g_string_new ("<svg xmlns='http://www.w3.org/2000/svg' width='8' height='8'>");
     g_string_append (svg, "<style>rect{fill:lime}</style>");
     for (i = 0; i < depth; i++)
@@ -868,6 +868,64 @@ css_deep_tree_does_not_abort (void)
 
     cairo_surface_destroy (output);
     g_object_unref (handle);
+}
+
+static void
+css_deep_tree_unlimited_still_loads (void)
+{
+    /* Past the default 256-element cap. UNLIMITED sets XML_PARSE_HUGE
+     * (2048) or, on older libxml2, the raised xmlParserMaxDepth. */
+    GString *svg;
+    RsvgHandle *handle;
+    GError *error = NULL;
+    cairo_surface_t *output;
+    int i;
+    const int depth = RSVG_MAX_CSS_TREE_DEPTH + 64;
+
+    svg = g_string_new ("<svg xmlns='http://www.w3.org/2000/svg' width='8' height='8'>");
+    for (i = 0; i < depth; i++)
+        g_string_append (svg, "<g>");
+    g_string_append (svg, "<rect width='8' height='8' fill='#00ff00'/>");
+    for (i = 0; i < depth; i++)
+        g_string_append (svg, "</g>");
+    g_string_append (svg, "</svg>");
+
+    handle = rsvg_handle_new_with_flags (RSVG_HANDLE_FLAG_UNLIMITED);
+    g_assert_nonnull (handle);
+    alarm (8);
+    g_assert_true (rsvg_handle_write (handle, (const guint8 *) svg->str, svg->len, &error));
+    g_assert_true (rsvg_handle_close (handle, &error));
+    alarm (0);
+    g_assert_no_error (error);
+    g_string_free (svg, TRUE);
+
+    output = cairo_image_surface_create (CAIRO_FORMAT_ARGB32, 8, 8);
+    render_to_surface (handle, output);
+    g_assert_cmphex (pixel_argb (output, 4, 4), ==, 0xff00ff00);
+
+    cairo_surface_destroy (output);
+    g_object_unref (handle);
+}
+
+static void
+xml_huge_name_is_rejected_without_unlimited (void)
+{
+    /* XML_MAX_NAME_LENGTH is 50000 without XML_PARSE_HUGE. */
+    GString *svg;
+    RsvgHandle *handle;
+    GError *error = NULL;
+    int i;
+
+    svg = g_string_new ("<svg xmlns='http://www.w3.org/2000/svg' width='8' height='8'><");
+    for (i = 0; i < 60000; i++)
+        g_string_append_c (svg, 'a');
+    g_string_append (svg, "/></svg>");
+
+    handle = rsvg_handle_new_from_data ((const guint8 *) svg->str, svg->len, &error);
+    g_string_free (svg, TRUE);
+    g_assert_null (handle);
+    g_assert_nonnull (error);
+    g_clear_error (&error);
 }
 
 static void
@@ -3756,6 +3814,8 @@ main (int argc, char **argv)
     g_test_add_func ("/api/css_deep_decl_parens_does_not_abort", css_deep_decl_parens_does_not_abort);
     g_test_add_func ("/api/css_stray_close_brace_does_not_abort", css_stray_close_brace_does_not_abort);
     g_test_add_func ("/api/css_deep_tree_does_not_abort", css_deep_tree_does_not_abort);
+    g_test_add_func ("/api/css_deep_tree_unlimited_still_loads", css_deep_tree_unlimited_still_loads);
+    g_test_add_func ("/api/xml_huge_name_is_rejected_without_unlimited", xml_huge_name_is_rejected_without_unlimited);
     g_test_add_func ("/api/href_use", href_use);
     g_test_add_func ("/api/xlink_href_use_still_works", xlink_href_use_still_works);
     g_test_add_func ("/api/href_overrides_xlink_href", href_overrides_xlink_href);
