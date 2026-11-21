@@ -2406,6 +2406,19 @@ struct _RsvgFilterPrimitiveOffset {
     RsvgCssLength dx, dy;
 };
 
+/* Truncate a device-pixel offset to gint without float-cast UB (B3-2). */
+static gint
+rsvg_offset_to_gint (double v)
+{
+    if (!isfinite (v))
+        return 0;
+    if (v >= (double) G_MAXINT)
+        return G_MAXINT;
+    if (v <= (double) G_MININT)
+        return G_MININT;
+    return (gint) v;
+}
+
 static void
 rsvg_filter_primitive_offset_render (RsvgFilterPrimitive * self, RsvgFilterContext * ctx)
 {
@@ -2423,7 +2436,7 @@ rsvg_filter_primitive_offset_render (RsvgFilterPrimitive * self, RsvgFilterConte
     cairo_surface_t *output, *in;
 
     double dx, dy;
-    int ox, oy;
+    gint ox, oy;
 
     upself = (RsvgFilterPrimitiveOffset *) self;
     boundarys = rsvg_filter_primitive_get_bounds (self, ctx);
@@ -2452,19 +2465,22 @@ rsvg_filter_primitive_offset_render (RsvgFilterPrimitive * self, RsvgFilterConte
     dx = _rsvg_css_normalize_length (&upself->dx, ctx->ctx, 'w');
     dy = _rsvg_css_normalize_length (&upself->dy, ctx->ctx, 'v');
 
-    ox = ctx->paffine.xx * dx + ctx->paffine.xy * dy;
-    oy = ctx->paffine.yx * dx + ctx->paffine.yy * dy;
+    ox = rsvg_offset_to_gint (ctx->paffine.xx * dx + ctx->paffine.xy * dy);
+    oy = rsvg_offset_to_gint (ctx->paffine.yx * dx + ctx->paffine.yy * dy);
 
     for (y = boundarys.y0; y < boundarys.y1; y++)
         for (x = boundarys.x0; x < boundarys.x1; x++) {
-            if (x - ox < boundarys.x0 || x - ox >= boundarys.x1)
+            gint64 sx = (gint64) x - (gint64) ox;
+            gint64 sy = (gint64) y - (gint64) oy;
+
+            if (sx < boundarys.x0 || sx >= boundarys.x1)
                 continue;
-            if (y - oy < boundarys.y0 || y - oy >= boundarys.y1)
+            if (sy < boundarys.y0 || sy >= boundarys.y1)
                 continue;
 
             for (ch = 0; ch < 4; ch++) {
                 output_pixels[rsvg_pixel_offset (y, rowstride, x) + ch] =
-                    in_pixels[rsvg_pixel_offset (y - oy, rowstride, x - ox) + ch];
+                    in_pixels[rsvg_pixel_offset ((gint) sy, rowstride, (gint) sx) + ch];
             }
         }
 

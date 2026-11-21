@@ -18,7 +18,8 @@ Ranked from `00-SUMMARY.md`. High first. Noise skipped.
 12. **E4-8** — check gdk_pixbuf_new NULL in surface_to_pixbuf
 13. **H2-4** — do not set XML_PARSE_HUGE unless UNLIMITED on libxml2 2.12+
 14. **H2-12** — skip non-finite feDisplacementMap scale before the interpolator cast
-15. Medium left: B3-2 / B3-3 / E4-4
+15. **B3-2** — clamp feOffset dx/dy to gint and subtract in gint64
+16. Medium left: B3-3 / E4-4
 
 ## Attempts
 
@@ -134,7 +135,15 @@ Ranked from `00-SUMMARY.md`. High first. Noise skipped.
 - Tests: `make check` 280 PASS including `/api/displacement_nan_scale_does_not_abort` (identity, interior red) and `/api/displacement_finite_scale_still_applies` (scale=16 on red, interior y=4 samples out of bounds). `make check-parity` pass=723 fail=0 skip=27 (filters-displace-02-f still green). First smoke used canvas-edge y=0, which `get_interp_pixel` already treats as out of bounds (`foy <= y0`); assertions moved to y=4.
 - Outcome: **fixed**.
 
+### B3-2 — feOffset dx/dy int conversion (try 1, committed)
+
+- Site: `rsvg-filter.c` `rsvg_filter_primitive_offset_render`. Affine product assigned to `int ox, oy` (float-cast UB for NaN/Inf/out-of-range). Bounds test `x - ox` is signed-overflow UB when `ox` is `G_MININT`.
+- Plan: clamp the device-pixel offset to a finite gint; do the source-index subtract in `gint64` so a huge offset is simply out of bounds.
+- Change: `rsvg_offset_to_gint` (non-finite → 0, else clamp to `G_MININT`..`G_MAXINT`). Loop uses `gint64 sx/sy`; after the bounds check they fit in `gint` for `rsvg_pixel_offset`.
+- Tests: `make check` 282 PASS including `/api/offset_huge_dx_does_not_abort` (`dx='1e20'` copies nothing) and `/api/offset_unit_dx_still_shifts`. `make check-parity` pass=723 fail=0 skip=27 (filter-offset and filters-offset-01-b still green).
+- Outcome: **fixed**.
+
 ## Remaining (not this batch)
 
-- Medium: B3-2, B3-3, E4-4.
+- Medium: B3-3, E4-4.
 - Low / note: see `00-SUMMARY.md`.
