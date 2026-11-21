@@ -1502,6 +1502,10 @@ convolve_invalid_order_is_noop (void)
     "data:application/octet-stream;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAIAAABLbSncAAAAEklEQVR4nGP8z4AdMOEQH6QSAM1BAQ/oQeJvAAAAAElFTkSuQmCC"
 #define PNG_BAD_DATA_URI \
     "data:image/png;base64,iVBORw0KGgo="
+/* 1×1 RGB IHDR only: png_read_info succeeds, then png_read_image longjmps
+ * after the decode buffer is allocated (E4-1). */
+#define PNG_TRUNCATED_IDAT_URI \
+    "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1Pe"
 #define JPEG_RED_DATA_URI \
     "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAMCAgMCAgMDAwMEAwMEBQgFBQQEBQoHBwYIDAoMDAsKCwsNDhIQDQ4RDgsLEBYQERMUFRUVDA8XGBYUGBIUFRT/2wBDAQMEBAUEBQkFBQkUDQsNFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBT/wAARCAAIAAgDAREAAhEBAxEB/8QAFAABAAAAAAAAAAAAAAAAAAAACP/EABQQAQAAAAAAAAAAAAAAAAAAAAD/xAAVAQEBAAAAAAAAAAAAAAAAAAAHCf/EABQRAQAAAAAAAAAAAAAAAAAAAAD/2gAMAwEAAhEDEQA/ADoDFU3/2Q=="
 #define JPEG_RED_SNIFF_URI \
@@ -1646,6 +1650,12 @@ static void
 png_decode_failure_does_not_abort (void)
 {
     assert_href_paints_center (PNG_BAD_DATA_URI, 0xff00ff00);
+}
+
+static void
+png_truncated_idat_does_not_abort (void)
+{
+    assert_href_paints_center (PNG_TRUNCATED_IDAT_URI, 0xff00ff00);
 }
 
 static void
@@ -3458,6 +3468,7 @@ main (int argc, char **argv)
     g_test_add_func ("/api/png_image_sniff_without_mime_renders", png_image_sniff_without_mime_renders);
     g_test_add_func ("/api/png_image_file_href_renders", png_image_file_href_renders);
     g_test_add_func ("/api/png_decode_failure_does_not_abort", png_decode_failure_does_not_abort);
+    g_test_add_func ("/api/png_truncated_idat_does_not_abort", png_truncated_idat_does_not_abort);
     g_test_add_func ("/api/png_oversized_dimensions_does_not_abort", png_oversized_dimensions_does_not_abort);
 #else
     g_test_add_func ("/api/png_without_libpng_is_ignored", png_without_libpng_is_ignored);

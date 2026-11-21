@@ -8,7 +8,8 @@ Ranked from `00-SUMMARY.md`. High first. Noise skipped.
 2. **B3-1** — `gsize` pixel index math in filter walks
 3. **H2-10** — cap feMorphology radius
 4. **H2-11** — cap feTurbulence `numOctaves`
-5. Medium / low left for later batches
+5. **E4-1 / SA-1 / H2-9** — volatile locals in PNG/JPEG `setjmp`
+6. Medium left: H2-7 / H2-8 / H2-1, then E4-2 / E4-9 / H2-16 / E4-8, then H2-4 / H2-12 / B3-2 / B3-3 / E4-4
 
 ## Attempts
 
@@ -44,10 +45,16 @@ Ranked from `00-SUMMARY.md`. High first. Noise skipped.
 - Tests: `make check` 266 PASS including `/api/turbulence_huge_octaves_does_not_hang` and `/api/turbulence_one_octave_still_applies`. `make check-parity` pass=723 fail=0 skip=27 (filters-turb-01-f and filters-turb-02-f still green).
 - Outcome: **fixed**.
 
+### E4-1 / SA-1 / H2-9 — PNG/JPEG setjmp volatiles (try 1, committed)
+
+- Sites: `rsvg-image.c` `rsvg_cairo_surface_from_png` (`rgba`/`rows`) and `rsvg_cairo_surface_from_jpeg` (`rgba`/`created`).
+- Plan: mark locals that are assigned after `setjmp` and read after `longjmp` as `volatile` (C11 7.13.2.1).
+- Change: PNG `rgba`/`rows` are `volatile`. JPEG `rgba`/`created` are `volatile`; after `jpeg_destroy_decompress` the pixels move to a non-volatile pointer for EXIF/cairo. Truncated-IDAT PNG test hits the fail path after the decode buffer is allocated. A truncated-SOS JPEG test was dropped: libjpeg accepts that payload and paints, so it does not longjmp.
+- Tests: `make check` 267 PASS including `/api/png_truncated_idat_does_not_abort`. `make check-parity` pass=723 fail=0 skip=27.
+- Outcome: **fixed**.
+
 ## Remaining (not this batch)
 
-High batch is done. Next, in suggested order:
-
-- Medium: E4-1 / SA-1 (`volatile` PNG/JPEG `setjmp`), H2-7 / H2-8 / H2-1 (decoder/file size before decode), E4-2 / E4-9 / H2-16 / E4-8 (error-path robustness). H2-16 remainder: non-filter `cairo_surface_create_similar` still uses uncapped `render->width/height`.
+- Medium: H2-7 / H2-8 / H2-1 (decoder/file size before decode), E4-2 / E4-9 / H2-16 / E4-8 (error-path robustness). H2-16 remainder: non-filter `cairo_surface_create_similar` still uses uncapped `render->width/height`.
 - Also medium: H2-4, H2-12, B3-2, B3-3, E4-4.
 - Low / note: see `00-SUMMARY.md`.

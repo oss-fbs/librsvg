@@ -537,8 +537,9 @@ rsvg_cairo_surface_from_png (const guint8 *data,
     png_structp png = NULL;
     png_infop info = NULL;
     RsvgPngMem mem;
-    guint8 *rgba = NULL;
-    png_bytep *rows = NULL;
+    /* Assigned after setjmp; fail: reads them after longjmp (C11 7.13.2.1). */
+    guint8 * volatile rgba = NULL;
+    png_bytep * volatile rows = NULL;
     png_uint_32 width = 0, height = 0;
     int y;
     cairo_surface_t *surface = NULL;
@@ -838,12 +839,15 @@ rsvg_cairo_surface_from_jpeg (const guint8 *data,
 {
     struct jpeg_decompress_struct cinfo;
     RsvgJpegError jerr;
-    guint8 *rgba = NULL;
+    /* Assigned after setjmp; the error handler reads them after longjmp
+     * (C11 7.13.2.1). Without volatile, g_free (rgba) can see a stale
+     * NULL and jpeg_destroy_decompress can be skipped. */
+    guint8 * volatile rgba = NULL;
     JSAMPARRAY buffer;
     int row_stride;
     int y;
     cairo_surface_t *surface = NULL;
-    gboolean created = FALSE;
+    volatile gboolean created = FALSE;
     int orientation = 1;
 
     if (data == NULL || data_len == 0) {
@@ -939,22 +943,27 @@ rsvg_cairo_surface_from_jpeg (const guint8 *data,
         jpeg_destroy_decompress (&cinfo);
         created = FALSE;
 
-        if (apply_orientation &&
-            !rsvg_rgba_apply_exif_orientation (&rgba, &width, &height, orientation,
-                                               max_pixel_bytes)) {
-            g_free (rgba);
-            g_set_error (error,
-                         GDK_PIXBUF_ERROR,
-                         GDK_PIXBUF_ERROR_FAILED,
-                         _("Failed to decode JPEG image '%s'"),
-                         href ? href : "");
-            return NULL;
-        }
+        {
+            guint8 *pixels = (guint8 *) rgba;
 
-        surface = rsvg_cairo_surface_from_rgba (rgba, width, height, href, "JPEG",
-                                                max_pixel_bytes, error);
-        g_free (rgba);
-        return surface;
+            rgba = NULL;
+            if (apply_orientation &&
+                !rsvg_rgba_apply_exif_orientation (&pixels, &width, &height, orientation,
+                                                   max_pixel_bytes)) {
+                g_free (pixels);
+                g_set_error (error,
+                             GDK_PIXBUF_ERROR,
+                             GDK_PIXBUF_ERROR_FAILED,
+                             _("Failed to decode JPEG image '%s'"),
+                             href ? href : "");
+                return NULL;
+            }
+
+            surface = rsvg_cairo_surface_from_rgba (pixels, width, height, href, "JPEG",
+                                                    max_pixel_bytes, error);
+            g_free (pixels);
+            return surface;
+        }
     }
 }
 #endif /* HAVE_LIBJPEG */
