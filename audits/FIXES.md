@@ -35,6 +35,7 @@ Ranked from `00-SUMMARY.md`. High first. Noise skipped.
 29. **E4-10** — return FALSE from measure/render_cairo when cairo_status fails
 30. **E4-11** — free Qual name/value when an attribute selector fails to parse
 31. **E4-12** — do not commit a malformed path number; stop that command
+32. **E4-13** — report file-nesting errors from external SVG references
 
 ## Attempts
 
@@ -284,6 +285,14 @@ Ranked from `00-SUMMARY.md`. High first. Noise skipped.
 - Plan: do not commit a malformed number. Drop the incomplete command and stop remaining path data. Treat an unexpected char (or EOF) in PREINTEGER/PREEXPONENT as the same error so `1e` does not swallow the rest of the string.
 - Change: `ctx->error` on the parser. Fail paths skip `rsvg_path_end_of_number`, zero `param`, and skip the final `do_cmd`.
 - Tests: `make check` 309 PASS including `/api/path_malformed_number_stops_path` (`L --8` and `L 1e++8`, later segments do not paint over green) and `/api/path_scientific_number_still_applies` (`H 8e0 V 8.0e0` still red). `make check-parity` pass=723 fail=0 skip=27 (paths-data-* still green).
+- Outcome: **fixed**.
+
+### E4-13 — external SVG errors swallowed (try 1, committed)
+
+- Site: `rsvg-defs.c` `rsvg_defs_load_extern`. Acquire used a NULL GError. `fill_with_data` errors were `g_clear_error`'d except a `strstr` nesting match written to `priv->error`, which is NULL at render.
+- Plan: pass a GError to acquire. On a nesting failure, set `file_nesting_exceeded` on the handle so render/measure can fail after the lazy load. Missing or malformed externs stay unresolved (SVG skip).
+- Change: that flag on `RsvgHandlePrivate`. `rsvg_handle_render_cairo_sub`, `rsvg_handle_draw_node`, and `rsvg_handle_measure` treat it as failure.
+- Tests: `make check` 311 PASS including `/api/extern_svg_nesting_error_fails_render` (`<use href='child.svg#r'/>` whose child self-xincludes) and `/api/extern_svg_use_still_applies`. `make check-parity` pass=723 fail=0 skip=27 (include-compressed still green).
 - Outcome: **fixed**.
 
 ## Remaining (not this batch)

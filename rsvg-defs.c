@@ -54,6 +54,23 @@ rsvg_defs_new (RsvgHandle *handle)
     return result;
 }
 
+static gboolean
+error_is_file_nesting (const GError *error)
+{
+    return error && error->message &&
+        strstr (error->message, "maximum nesting depth exceeded");
+}
+
+static void
+rsvg_defs_note_extern_error (const RsvgDefs *defs, GError *error)
+{
+    if (!error_is_file_nesting (error))
+        return;
+
+    defs->ctx->priv->file_nesting_exceeded = TRUE;
+    rsvg_set_nesting_error (defs->ctx->priv->error);
+}
+
 static RsvgHandle *
 rsvg_defs_load_extern (const RsvgDefs * defs, const char *uri)
 {
@@ -63,30 +80,31 @@ rsvg_defs_load_extern (const RsvgDefs * defs, const char *uri)
     GError *error = NULL;
 
     if (defs->ctx->priv->file_nesting_depth >= RSVG_MAX_FILE_NESTING_DEPTH) {
+        defs->ctx->priv->file_nesting_exceeded = TRUE;
         rsvg_set_nesting_error (defs->ctx->priv->error);
         return NULL;
     }
 
-    data = _rsvg_handle_acquire_data (defs->ctx, uri, NULL, &data_len, NULL);
-
-    if (data) {
-        handle = rsvg_handle_new_child (defs->ctx);
-        rsvg_handle_set_base_uri (handle, uri);
-
-        if (rsvg_handle_fill_with_data (handle, data, data_len, &error)) {
-            g_hash_table_insert (defs->externs, g_strdup (uri), handle);
-        } else {
-            if (error && error->message &&
-                strstr (error->message, "maximum nesting depth exceeded"))
-                rsvg_set_nesting_error (defs->ctx->priv->error);
-            g_clear_error (&error);
-            g_object_unref (handle);
-            handle = NULL;
-        }
-
-        g_free (data);
+    data = _rsvg_handle_acquire_data (defs->ctx, uri, NULL, &data_len, &error);
+    if (data == NULL) {
+        rsvg_defs_note_extern_error (defs, error);
+        g_clear_error (&error);
+        return NULL;
     }
 
+    handle = rsvg_handle_new_child (defs->ctx);
+    rsvg_handle_set_base_uri (handle, uri);
+
+    if (rsvg_handle_fill_with_data (handle, data, data_len, &error)) {
+        g_hash_table_insert (defs->externs, g_strdup (uri), handle);
+    } else {
+        rsvg_defs_note_extern_error (defs, error);
+        g_clear_error (&error);
+        g_object_unref (handle);
+        handle = NULL;
+    }
+
+    g_free (data);
     return handle;
 }
 

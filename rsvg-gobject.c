@@ -83,6 +83,7 @@ rsvg_handle_init (RsvgHandle * self)
     self->priv->defs = rsvg_defs_new (self);
     self->priv->handler_nest = 0;
     self->priv->file_nesting_depth = 0;
+    self->priv->file_nesting_exceeded = FALSE;
     self->priv->entities = g_hash_table_new_full (g_str_hash, 
                                                   g_str_equal,
                                                   g_free,

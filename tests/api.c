@@ -1648,6 +1648,93 @@ xinclude_text_convert_still_applies (void)
     g_object_unref (handle);
 }
 
+/* E4-13: an external SVG whose load hits the file-nesting cap used to
+ * be swallowed (priv->error is NULL at render). Fail the parent render. */
+static void
+extern_svg_nesting_error_fails_render (void)
+{
+    GError *error = NULL;
+    char *dir, *parent_path, *child_path;
+    RsvgHandle *handle;
+    cairo_surface_t *output;
+    cairo_t *cr;
+    RsvgRectangle viewport = { 0, 0, 8, 8 };
+
+    dir = g_dir_make_tmp ("librsvg-extern-nest-XXXXXX", &error);
+    g_assert_no_error (error);
+    g_assert_nonnull (dir);
+
+    child_path = g_build_filename (dir, "child.svg", NULL);
+    parent_path = g_build_filename (dir, "parent.svg", NULL);
+
+    write_text_file (child_path,
+                     "<svg xmlns='http://www.w3.org/2000/svg'"
+                     " xmlns:xi='http://www.w3.org/2001/XInclude'"
+                     " width='8' height='8'>"
+                     "<xi:include parse='xml' href='child.svg'/>"
+                     "<rect id='r' width='8' height='8' fill='#ff0000'/>"
+                     "</svg>");
+    write_text_file (parent_path,
+                     "<svg xmlns='http://www.w3.org/2000/svg' width='8' height='8'>"
+                     "<rect width='8' height='8' fill='#00ff00'/>"
+                     "<use href='child.svg#r'/>"
+                     "</svg>");
+
+    handle = handle_from_path (parent_path);
+    output = cairo_image_surface_create (CAIRO_FORMAT_ARGB32, 8, 8);
+    cr = cairo_create (output);
+    g_assert_false (rsvg_handle_render_document (handle, cr, &viewport, &error));
+    g_assert_nonnull (error);
+    g_assert_nonnull (strstr (error->message, "maximum nesting depth exceeded"));
+    g_clear_error (&error);
+    cairo_destroy (cr);
+    cairo_surface_destroy (output);
+    g_object_unref (handle);
+
+    g_remove (parent_path);
+    g_remove (child_path);
+    g_rmdir (dir);
+    g_free (parent_path);
+    g_free (child_path);
+    g_free (dir);
+}
+
+static void
+extern_svg_use_still_applies (void)
+{
+    GError *error = NULL;
+    char *dir, *parent_path, *child_path;
+    RsvgHandle *handle;
+
+    dir = g_dir_make_tmp ("librsvg-extern-use-XXXXXX", &error);
+    g_assert_no_error (error);
+    g_assert_nonnull (dir);
+
+    child_path = g_build_filename (dir, "child.svg", NULL);
+    parent_path = g_build_filename (dir, "parent.svg", NULL);
+
+    write_text_file (child_path,
+                     "<svg xmlns='http://www.w3.org/2000/svg' width='8' height='8'>"
+                     "<rect id='r' width='8' height='8' fill='#ff0000'/>"
+                     "</svg>");
+    write_text_file (parent_path,
+                     "<svg xmlns='http://www.w3.org/2000/svg' width='8' height='8'>"
+                     "<rect width='8' height='8' fill='#00ff00'/>"
+                     "<use href='child.svg#r'/>"
+                     "</svg>");
+
+    handle = handle_from_path (parent_path);
+    g_assert_cmphex (center_pixel_of_handle (handle), ==, 0xffff0000);
+    g_object_unref (handle);
+
+    g_remove (parent_path);
+    g_remove (child_path);
+    g_rmdir (dir);
+    g_free (parent_path);
+    g_free (child_path);
+    g_free (dir);
+}
+
 /* A SAX error (self xi:include) can make write return FALSE while
  * xmlParseChunk still returns 0. Close must not then set CLOSED_OK
  * (E4-4); the write docs say a failed write closes the loader. */
@@ -4625,6 +4712,8 @@ main (int argc, char **argv)
     g_test_add_func ("/api/xinclude_malformed_xml_uses_fallback", xinclude_malformed_xml_uses_fallback);
     g_test_add_func ("/api/xinclude_text_convert_failure_uses_fallback", xinclude_text_convert_failure_uses_fallback);
     g_test_add_func ("/api/xinclude_text_convert_still_applies", xinclude_text_convert_still_applies);
+    g_test_add_func ("/api/extern_svg_nesting_error_fails_render", extern_svg_nesting_error_fails_render);
+    g_test_add_func ("/api/extern_svg_use_still_applies", extern_svg_use_still_applies);
     g_test_add_func ("/api/failed_write_then_close_does_not_succeed", failed_write_then_close_does_not_succeed);
     g_test_add_func ("/api/write_then_close_still_renders", write_then_close_still_renders);
     g_test_add_func ("/api/truncated_write_then_close_does_not_succeed", truncated_write_then_close_does_not_succeed);

@@ -184,6 +184,9 @@ struct RsvgHandlePrivate {
      * CSS @import, nested SVG <image>. Root is 0. Cap is
      * RSVG_MAX_FILE_NESTING_DEPTH (20). UNLIMITED does not raise it. */
     guint file_nesting_depth;
+    /* Set when an external SVG hits the file-nesting cap. Checked after
+     * draw because load_extern runs lazily at render, when priv->error is NULL. */
+    gboolean file_nesting_exceeded;
     RsvgNode *currentnode;
     /* this is the root level of the displayable tree, essentially what the
        file is converted into at the end */
