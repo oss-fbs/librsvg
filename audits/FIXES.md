@@ -26,6 +26,7 @@ Ranked from `00-SUMMARY.md`. High first. Noise skipped.
 20. **SA-4** — initialize path-parser ctx.rel before reading it
 21. **E4-5** — destroy pattern tile objects even when patternTransform is singular
 22. **E4-7** — destroy the filter-input surface when cairo reports an error status
+23. **SA-5 / H2-15** — honor len in rsvg_make_valid_utf8 (g_strndup / g_string_append_len)
 
 ## Attempts
 
@@ -205,7 +206,15 @@ Ranked from `00-SUMMARY.md`. High first. Noise skipped.
 - Tests: `make check` 293 PASS including `/api/filter_missing_in_does_not_abort` (`in='nope'`, sibling green still paints) and `/api/filter_sourcegraphic_in_still_applies`. `make check-parity` pass=723 fail=0 skip=27. The error-status destroy path is not unit-tested from the public API (after B3-5, oversized surfaces become 1×1 dummies with SUCCESS).
 - Outcome: **fixed**.
 
+### SA-5 / H2-15 — rsvg_make_valid_utf8 inverted dup and ignored len (try 1, committed)
+
+- Site: `rsvg-text.c` `rsvg_make_valid_utf8`. The all-valid path used `len < 0 ? g_strndup (str, len) : g_strdup (str)` (inverted). The replacement path used `g_string_append (string, remainder)`, which reads past `len` to a NUL.
+- Plan: swap the ternary; append with `g_string_append_len (…, remaining_bytes)`.
+- Change: those two calls only.
+- Tests: `make check` 295 PASS including `/api/invalid_utf8_document_does_not_abort` (libxml2 rejects `0xff` in a title) and `/api/text_title_still_applies`. `make check-parity` pass=723 fail=0 skip=27. Current SAX callers only invoke this after `g_utf8_validate` failed, and libxml2 rejects invalid UTF-8 first, so the all-valid `g_strndup` path is still latent.
+- Outcome: **fixed**.
+
 ## Remaining (not this batch)
 
 - Medium: none.
-- Low / note: see `00-SUMMARY.md`. This low batch (SA-2, SA-3, SA-4, E4-5, E4-7) is done. Next candidates: SA-5/H2-15 inverted g_strndup, SA-6 close_impl dangling priv->error, H2-2 @import bypass 1 MiB, H2-13 convolve targetX/Y, E4-3 xi:include parse=text g_convert, E4-6 invert status, E4-10 cairo_status, E4-11 Qual leak, E4-12 path numbers, E4-13 swallowed extern errors, E4-14 xmlCreatePushParserCtxt NULL.
+- Low / note: see `00-SUMMARY.md`. This batch: SA-6, H2-2, H2-13, E4-3 next.

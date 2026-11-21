@@ -2949,6 +2949,42 @@ filter_sourcegraphic_in_still_applies (void)
 }
 
 static void
+invalid_utf8_document_does_not_abort (void)
+{
+    /* libxml2 rejects this before rsvg_make_valid_utf8 (SA-5 / H2-15). */
+    const guint8 svg[] =
+        "<svg xmlns='http://www.w3.org/2000/svg' width='8' height='8'>"
+        "<title>bad\xff</title>"
+        "<rect width='8' height='8' fill='#ff0000'/>"
+        "</svg>";
+    GError *error = NULL;
+    RsvgHandle *handle = rsvg_handle_new_from_data (svg, sizeof (svg) - 1, &error);
+
+    g_assert_null (handle);
+    g_assert_nonnull (error);
+    g_clear_error (&error);
+}
+
+static void
+text_title_still_applies (void)
+{
+    const char *svg =
+        "<svg xmlns='http://www.w3.org/2000/svg' width='8' height='8'>"
+        "<title>ok</title>"
+        "<rect width='8' height='8' fill='#ff0000'/>"
+        "</svg>";
+    RsvgHandle *handle = handle_from_svg_string (svg);
+    cairo_surface_t *output = cairo_image_surface_create (CAIRO_FORMAT_ARGB32, 8, 8);
+
+    g_assert_cmpstr (rsvg_handle_get_title (handle), ==, "ok");
+    render_to_surface (handle, output);
+    g_assert_cmphex (pixel_argb (output, 4, 4), ==, 0xffff0000);
+
+    cairo_surface_destroy (output);
+    g_object_unref (handle);
+}
+
+static void
 convolve_tiny_kernel_unit_does_not_abort (void)
 {
     /* width/ox > INT_MAX used to be (int) ceil UB (B3-3). 2200 / 1e-6. */
@@ -4298,6 +4334,8 @@ main (int argc, char **argv)
     g_test_add_func ("/api/pattern_unit_fill_still_applies", pattern_unit_fill_still_applies);
     g_test_add_func ("/api/filter_missing_in_does_not_abort", filter_missing_in_does_not_abort);
     g_test_add_func ("/api/filter_sourcegraphic_in_still_applies", filter_sourcegraphic_in_still_applies);
+    g_test_add_func ("/api/invalid_utf8_document_does_not_abort", invalid_utf8_document_does_not_abort);
+    g_test_add_func ("/api/text_title_still_applies", text_title_still_applies);
     g_test_add_func ("/api/convolve_tiny_kernel_unit_does_not_abort", convolve_tiny_kernel_unit_does_not_abort);
     g_test_add_func ("/api/convolve_unit_kernel_length_still_applies", convolve_unit_kernel_length_still_applies);
     g_test_add_func ("/api/filter_pixel_offset_uses_gsize", filter_pixel_offset_uses_gsize);

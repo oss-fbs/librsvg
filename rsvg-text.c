@@ -81,9 +81,9 @@ rsvg_make_valid_utf8 (const char *str, int len)
     }
 
     if (string == NULL)
-        return len < 0 ? g_strndup (str, len) : g_strdup (str);
+        return len < 0 ? g_strdup (str) : g_strndup (str, len);
 
-    g_string_append (string, remainder);
+    g_string_append_len (string, remainder, remaining_bytes);
 
     return g_string_free (string, FALSE);
 }
