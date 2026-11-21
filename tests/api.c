@@ -2614,6 +2614,53 @@ turbulence_one_octave_still_applies (void)
 }
 
 static void
+displacement_nan_scale_does_not_abort (void)
+{
+    /* scale=NaN used to reach (gint)NaN in get_interp_pixel (H2-12). */
+    const char *svg =
+        "<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32'>"
+        "<filter id='f' x='0' y='0' width='1' height='1'>"
+        "<feDisplacementMap in='SourceGraphic' in2='SourceGraphic' scale='NaN'"
+        " xChannelSelector='R' yChannelSelector='G'/>"
+        "</filter>"
+        "<rect width='32' height='32' fill='#ff0000' filter='url(#f)'/>"
+        "</svg>";
+    RsvgHandle *handle = handle_from_svg_string (svg);
+    cairo_surface_t *output = cairo_image_surface_create (CAIRO_FORMAT_ARGB32, 32, 32);
+
+    render_to_surface (handle, output);
+    g_assert_cmphex (pixel_argb (output, 16, 16), ==, 0xffff0000);
+    g_assert_cmphex (pixel_argb (output, 16, 4), ==, 0xffff0000);
+
+    cairo_surface_destroy (output);
+    g_object_unref (handle);
+}
+
+static void
+displacement_finite_scale_still_applies (void)
+{
+    /* Red R=255 G=0: ox = x + scale/2, oy = y - scale/2. scale=16 → (x+8, y-8). */
+    const char *svg =
+        "<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32'>"
+        "<filter id='f' x='0' y='0' width='1' height='1'>"
+        "<feDisplacementMap in='SourceGraphic' in2='SourceGraphic' scale='16'"
+        " xChannelSelector='R' yChannelSelector='G'/>"
+        "</filter>"
+        "<rect width='32' height='32' fill='#ff0000' filter='url(#f)'/>"
+        "</svg>";
+    RsvgHandle *handle = handle_from_svg_string (svg);
+    cairo_surface_t *output = cairo_image_surface_create (CAIRO_FORMAT_ARGB32, 32, 32);
+
+    render_to_surface (handle, output);
+    g_assert_cmphex (pixel_argb (output, 16, 16), ==, 0xffff0000);
+    /* Interior at y=4 is in-bounds for identity; displaced sample y-8 is not. */
+    g_assert_cmphex (pixel_argb (output, 16, 4), ==, 0x00000000);
+
+    cairo_surface_destroy (output);
+    g_object_unref (handle);
+}
+
+static void
 filter_pixel_offset_uses_gsize (void)
 {
     /* 30000 * 128000 overflows a 32-bit int (B3-1 feOffset case). */
@@ -3907,6 +3954,8 @@ main (int argc, char **argv)
     g_test_add_func ("/api/morphology_unit_radius_still_dilates", morphology_unit_radius_still_dilates);
     g_test_add_func ("/api/turbulence_huge_octaves_does_not_hang", turbulence_huge_octaves_does_not_hang);
     g_test_add_func ("/api/turbulence_one_octave_still_applies", turbulence_one_octave_still_applies);
+    g_test_add_func ("/api/displacement_nan_scale_does_not_abort", displacement_nan_scale_does_not_abort);
+    g_test_add_func ("/api/displacement_finite_scale_still_applies", displacement_finite_scale_still_applies);
     g_test_add_func ("/api/filter_pixel_offset_uses_gsize", filter_pixel_offset_uses_gsize);
     g_test_add_func ("/api/huge_filtered_canvas_does_not_crash", huge_filtered_canvas_does_not_crash);
     g_test_add_func ("/api/huge_opacity_canvas_does_not_crash", huge_opacity_canvas_does_not_crash);

@@ -379,6 +379,11 @@ get_interp_pixel (guchar * src, gdouble ox, gdouble oy, guchar ch, RsvgIRect bou
     double c, c1, c2, c3, c4;
     double fox, foy, cox, coy;
 
+    /* NaN/Inf comparisons are all false, so the bounds test would fall
+     * through to (gint) NaN (H2-12). Lighting also calls this. */
+    if (!isfinite (ox) || !isfinite (oy))
+        return 0;
+
     xmod = fmod (ox, 1.0);
     ymod = fmod (oy, 1.0);
 
@@ -3927,8 +3932,11 @@ rsvg_filter_primitive_displacement_map_set_atts (RsvgNode * self, RsvgHandle * c
             filter->xChannelSelector = (value)[0];
         if ((value = rsvg_property_bag_lookup (atts, "yChannelSelector")))
             filter->yChannelSelector = (value)[0];
-        if ((value = rsvg_property_bag_lookup (atts, "scale")))
-            filter->scale = g_ascii_strtod (value, NULL);
+        if ((value = rsvg_property_bag_lookup (atts, "scale"))) {
+            double scale = g_ascii_strtod (value, NULL);
+            if (isfinite (scale))
+                filter->scale = scale;
+        }
         if ((value = rsvg_property_bag_lookup (atts, "id")))
             rsvg_defs_register_name (ctx->priv->defs, value, &filter->super.super);
     }

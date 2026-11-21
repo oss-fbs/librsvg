@@ -17,7 +17,8 @@ Ranked from `00-SUMMARY.md`. High first. Noise skipped.
 11. **H2-16 leftover** — cap non-filter offscreen `create_similar`
 12. **E4-8** — check gdk_pixbuf_new NULL in surface_to_pixbuf
 13. **H2-4** — do not set XML_PARSE_HUGE unless UNLIMITED on libxml2 2.12+
-14. Medium left: H2-12 / B3-2 / B3-3 / E4-4
+14. **H2-12** — skip non-finite feDisplacementMap scale before the interpolator cast
+15. Medium left: B3-2 / B3-3 / E4-4
 
 ## Attempts
 
@@ -125,7 +126,15 @@ Ranked from `00-SUMMARY.md`. High first. Noise skipped.
 - Tests: `make check` 278 PASS including `/api/css_deep_tree_does_not_abort`, `/api/css_deep_tree_unlimited_still_loads`, `/api/xml_huge_name_is_rejected_without_unlimited`. `make check-parity` pass=723 fail=0 skip=27. The 2.12+ `#else` is not compiled on this machine (2.9.14); the name-length test still covers HUGE-off caps here.
 - Outcome: **fixed**.
 
+### H2-12 — feDisplacementMap scale=NaN interpolator cast (try 1, committed)
+
+- Site: `rsvg-filter.c` `rsvg_filter_primitive_displacement_map_set_atts` (`g_ascii_strtod` into `scale`) and `get_interp_pixel`. NaN comparisons are all false, so the bounds test fell through to `(gint) NaN` (UB). Lighting also calls `get_interp_pixel`. After B3-1 the index uses `(gint)` rather than `(guint)`; still UB.
+- Plan: keep the default scale 0 when the attribute is not finite; return 0 from `get_interp_pixel` when `ox`/`oy` are not finite.
+- Change: `if (isfinite (scale)) filter->scale = scale;` at parse. Early `return 0` in `get_interp_pixel` when `!isfinite (ox) || !isfinite (oy)`.
+- Tests: `make check` 280 PASS including `/api/displacement_nan_scale_does_not_abort` (identity, interior red) and `/api/displacement_finite_scale_still_applies` (scale=16 on red, interior y=4 samples out of bounds). `make check-parity` pass=723 fail=0 skip=27 (filters-displace-02-f still green). First smoke used canvas-edge y=0, which `get_interp_pixel` already treats as out of bounds (`foy <= y0`); assertions moved to y=4.
+- Outcome: **fixed**.
+
 ## Remaining (not this batch)
 
-- Medium: H2-12, B3-2, B3-3, E4-4.
+- Medium: B3-2, B3-3, E4-4.
 - Low / note: see `00-SUMMARY.md`.
