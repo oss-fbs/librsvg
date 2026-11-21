@@ -27,6 +27,7 @@ Ranked from `00-SUMMARY.md`. High first. Noise skipped.
 21. **E4-5** — destroy pattern tile objects even when patternTransform is singular
 22. **E4-7** — destroy the filter-input surface when cairo reports an error status
 23. **SA-5 / H2-15** — honor len in rsvg_make_valid_utf8 (g_strndup / g_string_append_len)
+24. **SA-6** — clear priv->error on close_impl xmlParseChunk failure
 
 ## Attempts
 
@@ -214,7 +215,15 @@ Ranked from `00-SUMMARY.md`. High first. Noise skipped.
 - Tests: `make check` 295 PASS including `/api/invalid_utf8_document_does_not_abort` (libxml2 rejects `0xff` in a title) and `/api/text_title_still_applies`. `make check-parity` pass=723 fail=0 skip=27. Current SAX callers only invoke this after `g_utf8_validate` failed, and libxml2 rejects invalid UTF-8 first, so the all-valid `g_strndup` path is still latent.
 - Outcome: **fixed**.
 
+### SA-6 — close_impl dangling priv->error (try 1, committed)
+
+- Site: `rsvg-base.c` `rsvg_handle_close_impl`. `write_impl` already clears `priv->error` and `real_error` on `xmlParseChunk != 0` (E4-4). Close's finishing chunk still returned with `priv->error` pointing at the stack `real_error`, and leaked any SAX GError already stored there.
+- Plan: match write_impl: NULL the pointer, `g_clear_error`, then free the parser. `rsvg_handle_close` still sets `CLOSED_ERROR` when close_impl returns FALSE.
+- Change: those two lines on the `result != 0` path only.
+- Tests: `make check` 296 PASS including `/api/truncated_write_then_close_does_not_succeed` (unclosed `<svg>`, close FALSE, get_pixbuf NULL, second close idempotent) and `/api/write_then_close_still_renders`. `make check-parity` pass=723 fail=0 skip=27.
+- Outcome: **fixed**.
+
 ## Remaining (not this batch)
 
 - Medium: none.
-- Low / note: see `00-SUMMARY.md`. This batch: SA-6, H2-2, H2-13, E4-3 next.
+- Low / note: see `00-SUMMARY.md`. This batch: H2-2, H2-13, E4-3 next.

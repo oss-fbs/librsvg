@@ -1547,6 +1547,35 @@ write_then_close_still_renders (void)
     g_object_unref (handle);
 }
 
+static void
+truncated_write_then_close_does_not_succeed (void)
+{
+    /* Unclosed root: write succeeds, the finishing xmlParseChunk in close
+     * fails. close_impl used to leave priv->error pointing at a stack
+     * GError (SA-6). */
+    const char *svg =
+        "<svg xmlns='http://www.w3.org/2000/svg' width='8' height='8'>"
+        "<rect width='8' height='8' fill='#ff0000'/>";
+    GError *error = NULL;
+    RsvgHandle *handle;
+    GdkPixbuf *pixbuf;
+
+    handle = rsvg_handle_new ();
+    g_assert_true (rsvg_handle_write (handle, (const guint8 *) svg, strlen (svg), &error));
+    g_assert_no_error (error);
+    g_assert_false (rsvg_handle_close (handle, &error));
+    g_assert_nonnull (error);
+    g_clear_error (&error);
+
+    pixbuf = rsvg_handle_get_pixbuf (handle);
+    g_assert_null (pixbuf);
+
+    g_assert_true (rsvg_handle_close (handle, &error));
+    g_assert_no_error (error);
+
+    g_object_unref (handle);
+}
+
 static char *
 make_nested_groups_svg (int ngroups)
 {
@@ -4247,6 +4276,7 @@ main (int argc, char **argv)
     g_test_add_func ("/api/xinclude_malformed_xml_uses_fallback", xinclude_malformed_xml_uses_fallback);
     g_test_add_func ("/api/failed_write_then_close_does_not_succeed", failed_write_then_close_does_not_succeed);
     g_test_add_func ("/api/write_then_close_still_renders", write_then_close_still_renders);
+    g_test_add_func ("/api/truncated_write_then_close_does_not_succeed", truncated_write_then_close_does_not_succeed);
     g_test_add_func ("/api/layer_nesting_over_limit_does_not_crash", layer_nesting_over_limit_does_not_crash);
     g_test_add_func ("/api/layer_nesting_unlimited_still_fails", layer_nesting_unlimited_still_fails);
     g_test_add_func ("/api/layer_nesting_shallow_still_renders", layer_nesting_shallow_still_renders);

@@ -1330,6 +1330,8 @@ rsvg_handle_close_impl (RsvgHandle * handle, GError ** error)
         result = xmlParseChunk (handle->priv->ctxt, "", 0, TRUE);
         if (result != 0) {
             rsvg_set_error (error, handle->priv->ctxt);
+            handle->priv->error = NULL;
+            g_clear_error (&real_error);
             handle->priv->ctxt = rsvg_free_xml_parser_and_doc (handle->priv->ctxt);
             return FALSE;
         }
