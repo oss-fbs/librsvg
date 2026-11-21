@@ -905,7 +905,11 @@ rsvg_filter_get_in (GString * name, RsvgFilterContext * ctx)
     cairo_surface_t *surface;
 
     surface = rsvg_filter_get_result (name, ctx).surface;
-    if (surface == NULL || cairo_surface_status (surface) != CAIRO_STATUS_SUCCESS) {
+    if (surface == NULL)
+        return NULL;
+
+    if (cairo_surface_status (surface) != CAIRO_STATUS_SUCCESS) {
+        cairo_surface_destroy (surface);
         return NULL;
     }
 

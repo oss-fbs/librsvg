@@ -25,6 +25,7 @@ Ranked from `00-SUMMARY.md`. High first. Noise skipped.
 19. **SA-3** — free the drawing ctx if rsvg_cairo_render_new fails
 20. **SA-4** — initialize path-parser ctx.rel before reading it
 21. **E4-5** — destroy pattern tile objects even when patternTransform is singular
+22. **E4-7** — destroy the filter-input surface when cairo reports an error status
 
 ## Attempts
 
@@ -196,7 +197,15 @@ Ranked from `00-SUMMARY.md`. High first. Noise skipped.
 - Tests: `make check` 291 PASS including `/api/pattern_singular_transform_does_not_abort` (`patternTransform='scale(0)'`) and `/api/pattern_unit_fill_still_applies`. `make check-parity` pass=723 fail=0 skip=27. No pixel assert on the singular path: the fill does not set a source, so the prior cairo source remains.
 - Outcome: **fixed**.
 
+### E4-7 — filter get_in leaks error-status surface (try 1, committed)
+
+- Site: `rsvg-filter.c` `rsvg_filter_get_in`. `rsvg_filter_get_result` returns a new surface reference. A non-NULL surface with `cairo_surface_status != SUCCESS` returned NULL without destroying that reference.
+- Plan: destroy the surface on the error-status path, then return NULL. Leave the NULL-result path as a plain return.
+- Change: split the combined NULL/status test so the error-status branch calls `cairo_surface_destroy`.
+- Tests: `make check` 293 PASS including `/api/filter_missing_in_does_not_abort` (`in='nope'`, sibling green still paints) and `/api/filter_sourcegraphic_in_still_applies`. `make check-parity` pass=723 fail=0 skip=27. The error-status destroy path is not unit-tested from the public API (after B3-5, oversized surfaces become 1×1 dummies with SUCCESS).
+- Outcome: **fixed**.
+
 ## Remaining (not this batch)
 
 - Medium: none.
-- Low / note: see `00-SUMMARY.md`. This batch: E4-7 next.
+- Low / note: see `00-SUMMARY.md`. This low batch (SA-2, SA-3, SA-4, E4-5, E4-7) is done. Next candidates: SA-5/H2-15 inverted g_strndup, SA-6 close_impl dangling priv->error, H2-2 @import bypass 1 MiB, H2-13 convolve targetX/Y, E4-3 xi:include parse=text g_convert, E4-6 invert status, E4-10 cairo_status, E4-11 Qual leak, E4-12 path numbers, E4-13 swallowed extern errors, E4-14 xmlCreatePushParserCtxt NULL.

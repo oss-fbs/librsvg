@@ -2905,6 +2905,50 @@ pattern_unit_fill_still_applies (void)
 }
 
 static void
+filter_missing_in_does_not_abort (void)
+{
+    /* Unknown in= is a NULL get_result. An error-status surface used to leak
+     * the new reference from get_result (E4-7). */
+    const char *svg =
+        "<svg xmlns='http://www.w3.org/2000/svg' width='16' height='8'>"
+        "<filter id='f' filterUnits='userSpaceOnUse' x='0' y='0' width='8' height='8'>"
+        "<feOffset in='nope' dx='0' dy='0'/>"
+        "</filter>"
+        "<rect x='0' y='0' width='8' height='8' fill='#ff0000' filter='url(#f)'/>"
+        "<rect x='8' y='0' width='8' height='8' fill='#00ff00'/>"
+        "</svg>";
+    RsvgHandle *handle = handle_from_svg_string (svg);
+    cairo_surface_t *output = cairo_image_surface_create (CAIRO_FORMAT_ARGB32, 16, 8);
+
+    render_to_surface (handle, output);
+    g_assert_cmphex (pixel_argb (output, 12, 4), ==, 0xff00ff00);
+
+    cairo_surface_destroy (output);
+    g_object_unref (handle);
+}
+
+static void
+filter_sourcegraphic_in_still_applies (void)
+{
+    const char *svg =
+        "<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32'>"
+        "<filter id='f' filterUnits='userSpaceOnUse' x='0' y='0' width='32' height='32'>"
+        "<feOffset in='SourceGraphic' dx='8' dy='0'/>"
+        "</filter>"
+        "<rect x='0' y='8' width='8' height='8' fill='#ff0000' filter='url(#f)'/>"
+        "</svg>";
+    RsvgHandle *handle = handle_from_svg_string (svg);
+    cairo_surface_t *output = cairo_image_surface_create (CAIRO_FORMAT_ARGB32, 32, 32);
+
+    render_to_surface (handle, output);
+    g_assert_cmphex (pixel_argb (output, 8, 12), ==, 0xffff0000);
+    g_assert_cmphex (pixel_argb (output, 4, 12), ==, 0x00000000);
+
+    cairo_surface_destroy (output);
+    g_object_unref (handle);
+}
+
+static void
 convolve_tiny_kernel_unit_does_not_abort (void)
 {
     /* width/ox > INT_MAX used to be (int) ceil UB (B3-3). 2200 / 1e-6. */
@@ -4252,6 +4296,8 @@ main (int argc, char **argv)
     g_test_add_func ("/api/filter_named_result_still_applies", filter_named_result_still_applies);
     g_test_add_func ("/api/pattern_singular_transform_does_not_abort", pattern_singular_transform_does_not_abort);
     g_test_add_func ("/api/pattern_unit_fill_still_applies", pattern_unit_fill_still_applies);
+    g_test_add_func ("/api/filter_missing_in_does_not_abort", filter_missing_in_does_not_abort);
+    g_test_add_func ("/api/filter_sourcegraphic_in_still_applies", filter_sourcegraphic_in_still_applies);
     g_test_add_func ("/api/convolve_tiny_kernel_unit_does_not_abort", convolve_tiny_kernel_unit_does_not_abort);
     g_test_add_func ("/api/convolve_unit_kernel_length_still_applies", convolve_unit_kernel_length_still_applies);
     g_test_add_func ("/api/filter_pixel_offset_uses_gsize", filter_pixel_offset_uses_gsize);
