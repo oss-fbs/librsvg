@@ -116,7 +116,7 @@ EXCLUDE_SYMBOLS        = rsvg_handle_internal_set_testing \
                          RSVG_DEPRECATED_FOR \
                          rsvg_handle_render_cairo \
                          rsvg_handle_render_cairo_sub
-EXAMPLE_PATH           =
+EXAMPLE_PATH           = cpp
 EXAMPLE_PATTERNS       =
 EXAMPLE_RECURSIVE      = NO
 IMAGE_PATH             =

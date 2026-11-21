@@ -66,7 +66,9 @@ From `cpp/`:
 
 Run from `cpp/` so `../examples/icon.svg` is found.  The sample loads
 that file, sets 96 DPI, queries pixel size, calls `render_document`,
-and writes `example-out.png`.
+and writes `example-out.png`.  Source: `cpp/example.cpp`.
+
+@include example.cpp
 
 [Thank you](@ref thanks) — the people who built librsvg.
 

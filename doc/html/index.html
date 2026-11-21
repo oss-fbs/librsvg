@@ -132,8 +132,64 @@ API</h2>
 Example</h2>
 <p>From <code>cpp/</code>: </p><pre class="fragment">c++ -std=c++11 -I. example.cpp \
     $(pkg-config --cflags --libs librsvg-2.0 cairo cairo-png)
-</pre><p> Run from <code>cpp/</code> so <code>../examples/icon.svg</code> is found. The sample loads that file, sets 96 DPI, queries pixel size, calls <code>render_document</code>, and writes <code>example-out.png</code>.</p>
-<p><a class="el" href="thanks.html">Thank you</a> — the people who built librsvg.</p>
+</pre><p> Run from <code>cpp/</code> so <code>../examples/icon.svg</code> is found. The sample loads that file, sets 96 DPI, queries pixel size, calls <code>render_document</code>, and writes <code>example-out.png</code>. Source: <code>cpp/example.cpp</code>.</p>
+<div class="fragment"><div class="line"><span class="comment">/*</span></div>
+<div class="line"><span class="comment"> * Copyright (C) 2026 Randy Butler</span></div>
+<div class="line"><span class="comment"> *</span></div>
+<div class="line"><span class="comment"> * This program is free software; you can redistribute it and/or</span></div>
+<div class="line"><span class="comment"> * modify it under the terms of the GNU Library General Public License as</span></div>
+<div class="line"><span class="comment"> * published by the Free Software Foundation; either version 2 of the</span></div>
+<div class="line"><span class="comment"> * License, or (at your option) any later version.</span></div>
+<div class="line"><span class="comment"> *</span></div>
+<div class="line"><span class="comment"> * This program is distributed in the hope that it will be useful,</span></div>
+<div class="line"><span class="comment"> * but WITHOUT ANY WARRANTY; without even the implied warranty of</span></div>
+<div class="line"><span class="comment"> * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU</span></div>
+<div class="line"><span class="comment"> * Library General Public License for more details.</span></div>
+<div class="line"><span class="comment"> *</span></div>
+<div class="line"><span class="comment"> * You should have received a copy of the GNU Library General Public</span></div>
+<div class="line"><span class="comment"> * License along with this program; if not, see LICENCE-LIB.</span></div>
+<div class="line"><span class="comment"> *</span></div>
+<div class="line"><span class="comment"> * Tiny C++ sample: load an SVG, query size, draw it, write a PNG.</span></div>
+<div class="line"><span class="comment"> * Not part of make / make check. See cpp/README.</span></div>
+<div class="line"><span class="comment"> *</span></div>
+<div class="line"><span class="comment"> * c++ -std=c++11 -I. example.cpp \</span></div>
+<div class="line"><span class="comment"> *     $(pkg-config --cflags --libs librsvg-2.0 cairo cairo-png)</span></div>
+<div class="line"><span class="comment"> */</span></div>
+<div class="line"> </div>
+<div class="line"><span class="preprocessor">#include &quot;librsvg.hpp&quot;</span></div>
+<div class="line"> </div>
+<div class="line"><span class="preprocessor">#include &lt;cairo.h&gt;</span></div>
+<div class="line"><span class="preprocessor">#include &lt;iostream&gt;</span></div>
+<div class="line"> </div>
+<div class="line"><span class="keywordtype">int</span></div>
+<div class="line">main (<span class="keywordtype">void</span>)</div>
+<div class="line">{</div>
+<div class="line">    <span class="keywordflow">try</span> {</div>
+<div class="line">        <span class="comment">/* Load; Handle unrefs the C object when this block ends. */</span></div>
+<div class="line">        rsvg::Handle svg = rsvg::Handle::from_file (<span class="stringliteral">&quot;../examples/icon.svg&quot;</span>);</div>
+<div class="line">        svg.set_dpi (96.0);</div>
+<div class="line"> </div>
+<div class="line">        <span class="keywordtype">double</span> px_w = 256.0, px_h = 256.0;</div>
+<div class="line">        svg.intrinsic_size_in_pixels (px_w, px_h);</div>
+<div class="line"> </div>
+<div class="line">        RsvgRectangle viewport = { 0.0, 0.0, px_w, px_h };</div>
+<div class="line">        cairo_surface_t *surface =</div>
+<div class="line">            cairo_image_surface_create (CAIRO_FORMAT_ARGB32,</div>
+<div class="line">                                        (<span class="keywordtype">int</span>) px_w, (<span class="keywordtype">int</span>) px_h);</div>
+<div class="line">        cairo_t *cr = cairo_create (surface);</div>
+<div class="line"> </div>
+<div class="line">        svg.render_document (cr, viewport);</div>
+<div class="line">        cairo_surface_write_to_png (surface, <span class="stringliteral">&quot;example-out.png&quot;</span>);</div>
+<div class="line"> </div>
+<div class="line">        cairo_destroy (cr);</div>
+<div class="line">        cairo_surface_destroy (surface);</div>
+<div class="line">        <span class="keywordflow">return</span> 0;</div>
+<div class="line">    } <span class="keywordflow">catch</span> (<span class="keyword">const</span> rsvg::Error &amp;e) {</div>
+<div class="line">        std::cerr &lt;&lt; e.what () &lt;&lt; <span class="charliteral">&#39;\n&#39;</span>;</div>
+<div class="line">        <span class="keywordflow">return</span> 1;</div>
+<div class="line">    }</div>
+<div class="line">}</div>
+</div><!-- fragment --><p><a class="el" href="thanks.html">Thank you</a> — the people who built librsvg.</p>
 <h1><a class="anchor" id="licence"></a>
 Licence</h1>
 <p>The <b>library</b> (<code>librsvg-2.so</code>) is licensed under the GNU Library General Public License, version 2 or later. You may link this library from other programs; the library itself stays under this license. The full text is <a href="LICENCE-LIB">LICENCE-LIB</a>.</p>

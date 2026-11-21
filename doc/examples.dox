@@ -180,6 +180,8 @@ c++ -std=c++11 -I. example.cpp \
 
 Run from `cpp/` so `../examples/icon.svg` is found.
 
+@include example.cpp
+
 @section ex_other Other in-tree programs
 
 These are not copy-paste public API samples:
