@@ -2655,6 +2655,32 @@ opacity_group_still_blends (void)
 }
 
 static void
+get_pixbuf_one_pixel_red (void)
+{
+    const char *svg =
+        "<svg xmlns='http://www.w3.org/2000/svg' width='1' height='1'>"
+        "<rect width='1' height='1' fill='#ff0000'/>"
+        "</svg>";
+    RsvgHandle *handle = handle_from_svg_string (svg);
+    GdkPixbuf *pixbuf;
+    const guchar *p;
+
+    pixbuf = rsvg_handle_get_pixbuf (handle);
+    g_assert_nonnull (pixbuf);
+    g_assert_cmpint (gdk_pixbuf_get_width (pixbuf), ==, 1);
+    g_assert_cmpint (gdk_pixbuf_get_height (pixbuf), ==, 1);
+    g_assert_true (gdk_pixbuf_get_has_alpha (pixbuf));
+    p = gdk_pixbuf_get_pixels (pixbuf);
+    g_assert_cmpint (p[0], ==, 255);
+    g_assert_cmpint (p[1], ==, 0);
+    g_assert_cmpint (p[2], ==, 0);
+    g_assert_cmpint (p[3], ==, 255);
+
+    g_object_unref (pixbuf);
+    g_object_unref (handle);
+}
+
+static void
 unlimited_raises_image_and_data_caps (void)
 {
     RsvgHandle *def;
@@ -3825,6 +3851,7 @@ main (int argc, char **argv)
     g_test_add_func ("/api/huge_filtered_canvas_does_not_crash", huge_filtered_canvas_does_not_crash);
     g_test_add_func ("/api/huge_opacity_canvas_does_not_crash", huge_opacity_canvas_does_not_crash);
     g_test_add_func ("/api/opacity_group_still_blends", opacity_group_still_blends);
+    g_test_add_func ("/api/get_pixbuf_one_pixel_red", get_pixbuf_one_pixel_red);
     g_test_add_func ("/api/unlimited_raises_image_and_data_caps", unlimited_raises_image_and_data_caps);
     g_test_add_func ("/api/oversized_data_uri_does_not_abort", oversized_data_uri_does_not_abort);
     g_test_add_func ("/api/oversized_file_href_does_not_abort", oversized_file_href_does_not_abort);

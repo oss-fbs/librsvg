@@ -1671,6 +1671,8 @@ rsvg_cairo_surface_to_pixbuf (cairo_surface_t *surface)
                           !!(content & CAIRO_CONTENT_ALPHA),
                           8,
                           width, height);
+    if (dest == NULL)
+        return NULL;
 
     if (gdk_pixbuf_get_has_alpha (dest))
       convert_alpha (gdk_pixbuf_get_pixels (dest),

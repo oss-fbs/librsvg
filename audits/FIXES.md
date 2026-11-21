@@ -15,7 +15,8 @@ Ranked from `00-SUMMARY.md`. High first. Noise skipped.
 9. **E4-2** — XInclude parse failure uses xi:fallback
 10. **E4-9** — remember push/pop offscreen layer instead of re-acquiring clip-path
 11. **H2-16 leftover** — cap non-filter offscreen `create_similar`
-12. Medium left: E4-8, then H2-4 / H2-12 / B3-2 / B3-3 / E4-4
+12. **E4-8** — check gdk_pixbuf_new NULL in surface_to_pixbuf
+13. Medium left: H2-4 / H2-12 / B3-2 / B3-3 / E4-4
 
 ## Attempts
 
@@ -107,7 +108,15 @@ Ranked from `00-SUMMARY.md`. High first. Noise skipped.
 - Tests: `make check` 275 PASS including `/api/huge_opacity_canvas_does_not_crash` (32000² identity-scale opacity group) and `/api/opacity_group_still_blends`. `make check-parity` pass=723 fail=0 skip=27.
 - Outcome: **fixed**. Pattern-tile `create_similar` at rsvg-cairo-draw.c:292 is a different allocation and was left alone.
 
+### E4-8 — gdk_pixbuf_new NULL in surface_to_pixbuf (try 1, committed)
+
+- Site: `rsvg-cairo-draw.c` `rsvg_cairo_surface_to_pixbuf`. `gdk_pixbuf_new` can return NULL on overflow or OOM; the code then called `gdk_pixbuf_get_pixels (NULL)`.
+- Plan: return NULL if the pixbuf allocation fails.
+- Change: `if (dest == NULL) return NULL;` after `gdk_pixbuf_new`.
+- Tests: `make check` 276 PASS including `/api/get_pixbuf_one_pixel_red` (public `rsvg_handle_get_pixbuf` still converts a 1×1 red surface). `make check-parity` pass=723 fail=0 skip=27. A first test draft called the internal symbol and failed to link (`G_GNUC_INTERNAL`); rewritten to use the public API. The OOM/overflow NULL path is not unit-tested (needs a multi-GiB surface after B3-5).
+- Outcome: **fixed**.
+
 ## Remaining (not this batch)
 
-- Medium: E4-8 (gdk_pixbuf_new NULL). Then H2-4, H2-12, B3-2, B3-3, E4-4.
+- Medium: H2-4, H2-12, B3-2, B3-3, E4-4.
 - Low / note: see `00-SUMMARY.md`.
