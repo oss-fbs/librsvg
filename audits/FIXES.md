@@ -322,7 +322,50 @@ Ranked from `00-SUMMARY.md`. High first. Noise skipped.
 - Tests: `make check` 313 PASS including `/api/png_percent_encoded_data_uri_renders` (same 8×8 red PNG as the base64 URI) and `/api/png_image_data_uri_renders`. `make check-parity` pass=723 fail=0 skip=27.
 - Outcome: **fixed**.
 
+### H2-14 — clamped blur kernel can have even length (skipped)
+
+- Site: `rsvg-filter.c` `make_gaussian_convolution_matrix` clamps `matrix_len` to `RSVG_MAX_BLUR_KERNEL` (500, even). The gaussian formula is always odd.
+- Convolution is only used when `stdDeviation < 2` (`gaussian_blur_surface`). That produces a kernel around 13, so the 500 clamp is unreachable. `stdDeviation >= 2` uses three box blurs, which already handle even widths. `stdDeviation > 1000` copies the input.
+- Outcome: **skipped**. Not a live defect; even box-blur kernels are intentional.
+
+### SA-7 — dead second display branch (skipped)
+
+- Site: `rsvg-styles.c`. The first `display` arm sets `has_display` / `display_none`. The later arm would set `has_visible` / `visible`, which is CSS `visibility`, not `display`.
+- `display:none` already hides via `display_none` in `rsvg-structure.c`. Removing the dead arm is style; merging it into `visibility` would be the wrong CSS meaning.
+- Outcome: **skipped**.
+
+### H2-3 — external general entities bypass rsvg_allow_load (skipped)
+
+- XXE was tested on libxml2 2.9.14 and not reproducible (external general entities rendered 0 pixels). `replaceEntities` is TRUE so internal entities keep working.
+- Outcome: **skipped**. Not reproducible on this host.
+
+### H2-5 — TOCTOU between realpath check and load (skipped)
+
+- `rsvg_allow_load` checks `realpath()` then the load uses the original URI. A symlink swap in the document directory between check and read could escape.
+- A correct fix would load via the resolved path, which is a larger behavior change. It needs write access in the document directory at the same time as the load.
+- Outcome: **skipped**. Theoretical race, not a simple local defect.
+
+### H2-Pango — font size / letter spacing × PANGO_SCALE not range-checked (skipped)
+
+- Overflow into Pango ints only for absurd sizes. Clamping would change huge-but-valid text.
+- Outcome: **skipped**. Note-level, not a demonstrated defect.
+
+### B3-4 — reliance on Cairo zero-filling new image surfaces (skipped)
+
+- Checked on Cairo 1.18.4: new ARGB32 surfaces are already zeroed. An explicit memset is extra work on the hot path for an ABI assumption that holds here.
+- Outcome: **skipped**. Not a live leak of heap contents on this host.
+
+### E4-15 — second close after a failed close returns TRUE (skipped)
+
+- `rsvg_handle_close` is idempotent by comment. Rendering is still refused (`CLOSED_ERROR`). `/api/truncated_write_then_close_does_not_succeed` asserts the second close returns TRUE.
+- Outcome: **skipped**. Changing it would break the existing API test and the documented idempotent close.
+
+### E4-16 — bbox clip/insert return early on singular matrix (skipped)
+
+- `rsvg_bbox_insert` / `rsvg_bbox_clip` return if `cairo_matrix_invert` fails, leaving the box unclipped. The FIXME has no specified correct result (empty vs unchanged). Changing it would risk geometry tests.
+- Outcome: **skipped**. Correctness-only with no clear right answer.
+
 ## Remaining (not this batch)
 
 - Medium: none.
-- Low / note: working H2-14. Skip: SA-7, H2-3, H2-5, H2-Pango, B3-4, E4-15, E4-16.
+- Low / note: audit remediation of the clearer defects is complete. Skipped as style / not reproducible / theoretical: SA-7, H2-3, H2-5, H2-14, H2-Pango, B3-4, E4-15, E4-16.
