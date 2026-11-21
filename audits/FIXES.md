@@ -38,6 +38,7 @@ Ranked from `00-SUMMARY.md`. High first. Noise skipped.
 32. **E4-13** — report file-nesting errors from external SVG references
 33. **E4-14** — check xmlCreatePushParserCtxt NULL before using the parser
 34. **SA-8** — do not read a CLOSE_PATH header as the current point
+35. **H2-6** — keep decoded data: length so %00 does not truncate
 
 ## Attempts
 
@@ -313,7 +314,15 @@ Ranked from `00-SUMMARY.md`. High first. Noise skipped.
 - Tests: `make check` 312 PASS including `/api/path_closepath_without_moveto_does_not_abort` (`d='z M 0 0 H 8 V 8 H 0 Z'` still red). `make check-parity` pass=723 fail=0 skip=27 (paths-data-* still green).
 - Outcome: **fixed**.
 
+### H2-6 — non-base64 data: payloads truncated at %00 (try 1, committed)
+
+- Site: `rsvg-io.c` `rsvg_decode_data_uri`. After percent-decode, non-base64 length used `strlen`, so a binary payload with 0x00 (PNG IHDR width) was cut short.
+- Plan: return the decoded byte count from `uri_decoded_copy` instead of scanning for a NUL.
+- Change: optional `out_len` on `uri_decoded_copy`. Base64 still uses `g_base64_decode_inplace`.
+- Tests: `make check` 313 PASS including `/api/png_percent_encoded_data_uri_renders` (same 8×8 red PNG as the base64 URI) and `/api/png_image_data_uri_renders`. `make check-parity` pass=723 fail=0 skip=27.
+- Outcome: **fixed**.
+
 ## Remaining (not this batch)
 
 - Medium: none.
-- Low / note: working H2-6, H2-14. Skip: SA-7, H2-3, H2-5, H2-Pango, B3-4, E4-15, E4-16.
+- Low / note: working H2-14. Skip: SA-7, H2-3, H2-5, H2-Pango, B3-4, E4-15, E4-16.

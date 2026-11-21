@@ -2342,6 +2342,32 @@ png_image_data_uri_renders (void)
 }
 
 static void
+png_percent_encoded_data_uri_renders (void)
+{
+    /* PNG IHDR stores width as 00 00 00 08. strlen on the decoded
+     * payload used to truncate at the first %00 (H2-6). */
+    const char *b64;
+    guchar *png;
+    gsize png_len = 0, i;
+    GString *href;
+    char *uri;
+
+    b64 = strstr (PNG_RED_DATA_URI, "base64,");
+    g_assert_nonnull (b64);
+    b64 += 7;
+    png = g_base64_decode (b64, &png_len);
+    g_assert_cmpuint (png_len, >, 0);
+
+    href = g_string_new ("data:image/png,");
+    for (i = 0; i < png_len; i++)
+        g_string_append_printf (href, "%%%02X", png[i]);
+    uri = g_string_free (href, FALSE);
+    assert_href_paints_center (uri, 0xffff0000);
+    g_free (uri);
+    g_free (png);
+}
+
+static void
 png_image_sniff_without_mime_renders (void)
 {
     assert_href_paints_center (PNG_RED_SNIFF_URI, 0xffff0000);
@@ -4767,6 +4793,7 @@ main (int argc, char **argv)
 #endif
 #ifdef HAVE_LIBPNG
     g_test_add_func ("/api/png_image_data_uri_renders", png_image_data_uri_renders);
+    g_test_add_func ("/api/png_percent_encoded_data_uri_renders", png_percent_encoded_data_uri_renders);
     g_test_add_func ("/api/png_image_sniff_without_mime_renders", png_image_sniff_without_mime_renders);
     g_test_add_func ("/api/png_image_file_href_renders", png_image_file_href_renders);
     g_test_add_func ("/api/png_decode_failure_does_not_abort", png_decode_failure_does_not_abort);

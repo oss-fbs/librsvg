@@ -41,7 +41,8 @@
 
 static char *
 uri_decoded_copy (const char *part, 
-                  gsize length)
+                  gsize length,
+                  gsize *out_len)
 {
     unsigned char *s, *d;
     char *decoded = g_strndup (part, length);
@@ -60,6 +61,11 @@ uri_decoded_copy (const char *part,
             *d++ = *s;
         }
     } while (*s++);
+
+    /* The loop copies the trailing NUL. Length excludes it so a
+     * percent-encoded 0x00 (H2-6) is not cut by strlen. */
+    if (out_len)
+        *out_len = (gsize) (d - (unsigned char *) decoded) - 1;
 
     return decoded;
 }
@@ -100,7 +106,7 @@ rsvg_decode_data_uri (const char *uri,
         }
 
         if (end != start) {
-            mime_type = uri_decoded_copy (start, end - start);
+            mime_type = uri_decoded_copy (start, end - start, NULL);
         }
     }
 
@@ -120,12 +126,10 @@ rsvg_decode_data_uri (const char *uri,
             return NULL;
         }
 
-        data = uri_decoded_copy (start, encoded_len);
+        data = uri_decoded_copy (start, encoded_len, &data_len);
 
         if (base64)
             data = (char *) g_base64_decode_inplace (data, &data_len);
-        else
-            data_len = strlen (data);
     } else {
         data = NULL;
         data_len = 0;
