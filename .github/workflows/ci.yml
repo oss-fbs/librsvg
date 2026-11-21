@@ -1,6 +1,5 @@
 # Build and test. Does not install onto the runner prefix.
-# Fuzzing stays optional and local: make fuzz-css / fuzz-afl / fuzz-bmp
-# (tests/fuzz/README). A CI fuzz job would belong next to asan-ubsan.
+# Fuzz job is a short smoke (seeds + ~1 minute), not a long campaign.
 
 name: CI
 
@@ -71,3 +70,54 @@ jobs:
         run: |
           make check \
             TESTS_ENVIRONMENT="G_TEST_SRCDIR=$(pwd)/tests G_TEST_BUILDDIR=$(pwd)/tests G_DEBUG=gc-friendly ASAN_OPTIONS=detect_leaks=0:abort_on_error=1:allocator_may_return_null=1 UBSAN_OPTIONS=halt_on_error=1:print_stacktrace=1"
+
+  fuzz:
+    name: fuzz smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+            build-essential pkg-config afl++ \
+            libcairo2-dev libgdk-pixbuf-2.0-dev libglib2.0-dev \
+            libpango1.0-dev libxml2-dev libpng-dev libjpeg-dev \
+            libgif-dev libwebp-dev libavif-dev
+      - name: Configure
+        run: |
+          ./configure --prefix=/usr \
+            --disable-introspection \
+            --disable-vala \
+            --disable-maintainer-mode
+      - name: Build
+        run: make -j"$(nproc)" all
+      - name: fuzz-css
+        run: |
+          make fuzz-css
+          ./tests/fuzz/rsvg-fuzz-css tests/fuzz/seeds tests/fuzz/regress
+          ./tests/fuzz/rsvg-fuzz-css --seconds 60
+      - name: fuzz-bmp
+        run: |
+          make -C tests fuzz-bmp
+          ./tests/fuzz-bmp --mutate 32
+      - name: fuzz-afl
+        env:
+          LD_PRELOAD: ""
+          AFL_SKIP_CPUFREQ: "1"
+          AFL_I_DONT_CARE_ABOUT_MISSING_CRASHES: "1"
+          AFL_NO_AFFINITY: "1"
+          AFL_NO_UI: "1"
+        run: |
+          make fuzz-afl
+          test -x tests/fuzz/rsvg-fuzz-css-afl
+          rm -rf /tmp/rsvg-fuzz-afl-out
+          afl-fuzz -i tests/fuzz/seeds -o /tmp/rsvg-fuzz-afl-out -V 60 -- \
+            ./tests/fuzz/rsvg-fuzz-css-afl @@
+          crashes=$(find /tmp/rsvg-fuzz-afl-out -type f -path '*/crashes/id*' 2>/dev/null | wc -l)
+          if [ "$crashes" -gt 0 ]; then
+            echo "afl-fuzz recorded $crashes crash file(s)" >&2
+            find /tmp/rsvg-fuzz-afl-out -type f -path '*/crashes/id*'
+            exit 1
+          fi

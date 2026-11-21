@@ -122,7 +122,8 @@ Tests and docs
 
    `make check` runs the test suite.  Optional `make fuzz-css`,
    `make fuzz-afl`, and `make fuzz-bmp` are not part of `make check`.
-   `make fuzz-afl` skips if AFL++ is not installed.
+   `make fuzz-afl` skips if AFL++ is not installed.  GitHub Actions
+   runs a short smoke of those harnesses on pull requests and `main`.
 
    AddressSanitizer and UndefinedBehaviorSanitizer are optional and
    do not change the default build:

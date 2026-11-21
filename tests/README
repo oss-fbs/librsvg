@@ -18,6 +18,8 @@ Optional targets (not `make check`)
     # skips if AFL++ is missing; not make check; Ctrl-C to stop; crashes/hangs under out/
 
 CSS/SVG harness on the css/ path. See `tests/fuzz/README`.
+GitHub Actions runs a short smoke of these targets on pull requests
+and `main`.
 
     make -C tests fuzz-bmp
     ./tests/fuzz-bmp [--mutate N]
