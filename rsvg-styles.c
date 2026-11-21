@@ -864,15 +864,7 @@ rsvg_parse_style_pair (RsvgHandle * ctx,
             state->mask_type = RSVG_MASK_TYPE_ALPHA;
         else
             state->mask_type = RSVG_MASK_TYPE_LUMINANCE;
-    } else if (g_str_equal (name, "display")) {
-        state->has_visible = TRUE;
-        if (g_str_equal (value, "none"))
-            state->visible = FALSE;
-        else if (!g_str_equal (value, "inherit") != 0)
-            state->visible = TRUE;
-        else
-            state->has_visible = FALSE;
-	} else if (g_str_equal (name, "xml:space")) {
+    } else if (g_str_equal (name, "xml:space")) {
         state->has_space_preserve = TRUE;
         if (g_str_equal (value, "default"))
             state->space_preserve = FALSE;

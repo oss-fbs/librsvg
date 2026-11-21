@@ -40,6 +40,7 @@ Ranked from `00-SUMMARY.md`. High first. Noise skipped.
 34. **SA-8** — do not read a CLOSE_PATH header as the current point
 35. **H2-6** — keep decoded data: length so %00 does not truncate
 36. **H2-Pango** — clamp font-size and letter-spacing before × PANGO_SCALE
+37. **SA-7** — remove the dead second display branch
 
 ## Attempts
 
@@ -329,11 +330,13 @@ Ranked from `00-SUMMARY.md`. High first. Noise skipped.
 - Convolution is only used when `stdDeviation < 2` (`gaussian_blur_surface`). That produces a kernel around 13, so the 500 clamp is unreachable. `stdDeviation >= 2` uses three box blurs, which already handle even widths. `stdDeviation > 1000` copies the input.
 - Outcome: **skipped**. Not a live defect; even box-blur kernels are intentional.
 
-### SA-7 — dead second display branch (skipped)
+### SA-7 — dead second display branch (try 1, committed)
 
-- Site: `rsvg-styles.c`. The first `display` arm sets `has_display` / `display_none`. The later arm would set `has_visible` / `visible`, which is CSS `visibility`, not `display`.
-- `display:none` already hides via `display_none` in `rsvg-structure.c`. Removing the dead arm is style; merging it into `visibility` would be the wrong CSS meaning.
-- Outcome: **skipped**.
+- Site: `rsvg-styles.c`. First `display` arm (~713) sets `has_display` / `display_none`. Second arm (~867) was unreachable (`else if` after the first match) and would have set `has_visible` / `visible` (CSS `visibility`).
+- Plan: delete the dead arm. Leave `visibility` and the live `display` path alone. `display:none` already hides via `display_none` in `rsvg-structure.c`.
+- Change: removed the second `else if (name, "display")` block. Next live branch is `xml:space`.
+- Tests: `make check` 315 PASS including `/text/tspan-display-none`. `make check-parity` pass=723 fail=0 skip=27 (`bugs/bug667-tspan-visibility` still green).
+- Outcome: **fixed**.
 
 ### H2-3 — external general entities bypass rsvg_allow_load (skipped)
 
@@ -379,4 +382,4 @@ Ranked from `00-SUMMARY.md`. High first. Noise skipped.
 ## Remaining (not this batch)
 
 - Medium: none.
-- Low / note: H2-Pango committed. Next: SA-7. Skipped as style / not reproducible / theoretical: SA-7, H2-3, H2-5, H2-14, B3-4, E4-15, E4-16.
+- Low / note: audit remediation of the items worth doing is complete. Skipped as not reproducible / theoretical / API-locked: H2-3, H2-5, H2-14, B3-4, E4-15, E4-16.
