@@ -64,13 +64,6 @@ RSVG_TYPE_HANDLE_FLAGS
 </SECTION>
 
 <SECTION>
-<FILE>rsvg-cairo</FILE>
-<TITLE>Using RSVG with cairo</TITLE>
-rsvg_handle_render_cairo
-rsvg_handle_render_cairo_sub
-</SECTION>
-
-<SECTION>
 <FILE>rsvg-pixbuf</FILE>
 <TITLE>Using RSVG with GdkPixbuf</TITLE>
 rsvg_handle_get_pixbuf

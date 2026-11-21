@@ -1,6 +1,6 @@
 var searchData=
 [
-  ['cairo_20render_0',['Deprecated Cairo render',['../examples.html#ex_deprecated',1,'']]],
+  ['c_0',['c',['../index.html#cpp',1,'C++'],['../examples.html#ex_cpp',1,'C++']]],
   ['cancel_1',['Cancel',['../group__rsvg__cancel.html',1,'']]],
   ['catalogue_2',['Catalogue',['../examples.html#ex_overview',1,'']]],
   ['convert_3',['rsvg-convert',['../examples.html#ex_convert',1,'']]],

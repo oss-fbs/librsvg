@@ -21,7 +21,8 @@ Run from this directory so `icon.svg` is found.
   04-geometry.c          print intrinsic size and #dot geometry
   05-from-memory.c       rsvg_handle_new_from_data with an SVG string
   06-pixbuf.c            rsvg_handle_get_pixbuf_and_error, write PNG
-  deprecated/render-cairo.c
-                         rsvg_handle_render_cairo (deprecated; prefer 01)
+
+C++ sample (header-only wrapper; not built by `make`): `cpp/example.cpp`.
+See `cpp/README`.
 
 HTML catalogue: doc/html/examples.html (doxygen doc/Doxyfile or make html).

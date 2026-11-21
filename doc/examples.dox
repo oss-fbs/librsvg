@@ -25,7 +25,7 @@ shown here: `rsvg_handle_render_document()`,
 | `examples/04-geometry.c` | Intrinsic size and layer geometry |
 | `examples/05-from-memory.c` | Load SVG bytes, not a file |
 | `examples/06-pixbuf.c` | Render to a GdkPixbuf |
-| `examples/deprecated/render-cairo.c` | Deprecated Cairo call (kept for old code) |
+| `cpp/example.cpp` | Optional C++ wrapper (`rsvg::Handle`) |
 | `rsvg-convert` | Command-line converter |
 
 Shared fixture: `examples/icon.svg` (64×64; `#bg` uses `currentColor`,
@@ -166,23 +166,19 @@ rsvg-convert -d 90 -p 90 in.svg -o out.png
 rsvg-convert -f pdf in.svg -o out.pdf
 @endverbatim
 
-@section ex_deprecated Deprecated Cairo render
+@section ex_cpp C++
 
-`rsvg_handle_render_cairo()` has no viewport and no #GError.  New
-code should use `rsvg_handle_render_document()` (see
-@ref ex_render_document).  This file is only a translation aid.
+Optional header-only wrapper in `cpp/` (`librsvg.hpp`).  It is not
+built by `make`.  Class `rsvg::Handle`; failures throw `rsvg::Error`.
 
-APIs: `rsvg_handle_render_cairo()` (deprecated since 2.52).
+Source: `cpp/example.cpp`.  See `cpp/README`.
 
-Source: `examples/deprecated/render-cairo.c`
+@verbatim
+c++ -std=c++11 -I. example.cpp \
+    $(pkg-config --cflags --libs librsvg-2.0 cairo cairo-png)
+@endverbatim
 
-@code{.c}
-#define RSVG_DISABLE_DEPRECATION_WARNINGS
-#include <librsvg/rsvg.h>
-
-if (!rsvg_handle_render_cairo (handle, cr))
-    return 1;
-@endcode
+Run from `cpp/` so `../examples/icon.svg` is found.
 
 @section ex_other Other in-tree programs
 

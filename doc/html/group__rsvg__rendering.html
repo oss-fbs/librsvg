@@ -102,12 +102,6 @@ $(document).ready(function(){initNavTree('group__rsvg__rendering.html',''); init
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="func-members" name="func-members"></a>
 Functions</h2></td></tr>
-<tr class="memitem:gab6dc4a225f95970e6b6d78ecf6195249" id="r_gab6dc4a225f95970e6b6d78ecf6195249"><td class="memItemLeft" align="right" valign="top">gboolean&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__rsvg__rendering.html#gab6dc4a225f95970e6b6d78ecf6195249">rsvg_handle_render_cairo</a> (RsvgHandle *handle, cairo_t *cr)</td></tr>
-<tr class="memdesc:gab6dc4a225f95970e6b6d78ecf6195249"><td class="mdescLeft">&#160;</td><td class="mdescRight">rsvg_handle_render_cairo: @handle: an #RsvgHandle @cr: a Cairo context  <br /></td></tr>
-<tr class="separator:gab6dc4a225f95970e6b6d78ecf6195249"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga13b79cc0f5396ce9c84809417e425898" id="r_ga13b79cc0f5396ce9c84809417e425898"><td class="memItemLeft" align="right" valign="top">gboolean&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__rsvg__rendering.html#ga13b79cc0f5396ce9c84809417e425898">rsvg_handle_render_cairo_sub</a> (RsvgHandle *handle, cairo_t *cr, const char *id)</td></tr>
-<tr class="memdesc:ga13b79cc0f5396ce9c84809417e425898"><td class="mdescLeft">&#160;</td><td class="mdescRight">rsvg_handle_render_cairo_sub: @handle: an #RsvgHandle @cr: a Cairo context @id: (nullable): element id starting with <code>#</code>, or NULL for the whole SVG  <br /></td></tr>
-<tr class="separator:ga13b79cc0f5396ce9c84809417e425898"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga410511165f0ceaf7b63fa8101a60c8d6" id="r_ga410511165f0ceaf7b63fa8101a60c8d6"><td class="memItemLeft" align="right" valign="top">gboolean&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__rsvg__rendering.html#ga410511165f0ceaf7b63fa8101a60c8d6">rsvg_handle_render_document</a> (RsvgHandle *handle, cairo_t *cr, const RsvgRectangle *viewport, GError **error)</td></tr>
 <tr class="memdesc:ga410511165f0ceaf7b63fa8101a60c8d6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Draw the whole SVG into @viewport on @cr.  <br /></td></tr>
 <tr class="separator:ga410511165f0ceaf7b63fa8101a60c8d6"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -120,84 +114,8 @@ Functions</h2></td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <p>Draw an SVG onto a Cairo context. </p>
-<p>Prefer <a class="el" href="group__rsvg__rendering.html#ga410511165f0ceaf7b63fa8101a60c8d6" title="Draw the whole SVG into @viewport on @cr.">rsvg_handle_render_document()</a>. <a class="el" href="group__rsvg__rendering.html#gab6dc4a225f95970e6b6d78ecf6195249" title="rsvg_handle_render_cairo: @handle: an #RsvgHandle @cr: a Cairo context">rsvg_handle_render_cairo()</a> is deprecated. </p>
+<p>Prefer <a class="el" href="group__rsvg__rendering.html#ga410511165f0ceaf7b63fa8101a60c8d6" title="Draw the whole SVG into @viewport on @cr.">rsvg_handle_render_document()</a>, <a class="el" href="group__rsvg__rendering.html#gaa55d7213a4b40da8bf1e12ac61dd1fc6" title="rsvg_handle_render_layer: @handle: an #RsvgHandle @cr: a Cairo context @id: (nullable): element id st...">rsvg_handle_render_layer()</a>, and <a class="el" href="group__rsvg__rendering.html#ga5e08f6ca323b803585cd0c48084c8e0a" title="rsvg_handle_render_element: @handle: an #RsvgHandle @cr: a Cairo context @id: (nullable): element id ...">rsvg_handle_render_element()</a>. </p>
 <h2 class="groupheader">Function Documentation</h2>
-<a id="gab6dc4a225f95970e6b6d78ecf6195249" name="gab6dc4a225f95970e6b6d78ecf6195249"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#gab6dc4a225f95970e6b6d78ecf6195249">&#9670;&#160;</a></span>rsvg_handle_render_cairo()</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">gboolean rsvg_handle_render_cairo </td>
-          <td>(</td>
-          <td class="paramtype">RsvgHandle *&#160;</td>
-          <td class="paramname"><em>handle</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">cairo_t *&#160;</td>
-          <td class="paramname"><em>cr</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p><code>#include &lt;<a class="el" href="rsvg-cairo_8h.html">rsvg-cairo.h</a>&gt;</code></p>
-
-<p>rsvg_handle_render_cairo: @handle: an #RsvgHandle @cr: a Cairo context </p>
-<p>Draw the whole SVG to @cr. The size is taken from the document; you cannot pass a viewport.</p>
-<dl class="deprecated"><dt><b><a class="el" href="deprecated.html#_deprecated000019">Deprecated:</a></b></dt><dd>Since 2.52: use <a class="el" href="group__rsvg__rendering.html#ga410511165f0ceaf7b63fa8101a60c8d6" title="Draw the whole SVG into @viewport on @cr.">rsvg_handle_render_document()</a> instead. </dd></dl>
-<dl class="section since"><dt>Since</dt><dd>2.14 </dd></dl>
-
-</div>
-</div>
-<a id="ga13b79cc0f5396ce9c84809417e425898" name="ga13b79cc0f5396ce9c84809417e425898"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ga13b79cc0f5396ce9c84809417e425898">&#9670;&#160;</a></span>rsvg_handle_render_cairo_sub()</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">gboolean rsvg_handle_render_cairo_sub </td>
-          <td>(</td>
-          <td class="paramtype">RsvgHandle *&#160;</td>
-          <td class="paramname"><em>handle</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">cairo_t *&#160;</td>
-          <td class="paramname"><em>cr</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">const char *&#160;</td>
-          <td class="paramname"><em>id</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p><code>#include &lt;<a class="el" href="rsvg-cairo_8h.html">rsvg-cairo.h</a>&gt;</code></p>
-
-<p>rsvg_handle_render_cairo_sub: @handle: an #RsvgHandle @cr: a Cairo context @id: (nullable): element id starting with <code>#</code>, or NULL for the whole SVG </p>
-<p>Draw one element (and its children) to @cr.</p>
-<dl class="deprecated"><dt><b><a class="el" href="deprecated.html#_deprecated000020">Deprecated:</a></b></dt><dd>Since 2.52: use <a class="el" href="group__rsvg__rendering.html#gaa55d7213a4b40da8bf1e12ac61dd1fc6" title="rsvg_handle_render_layer: @handle: an #RsvgHandle @cr: a Cairo context @id: (nullable): element id st...">rsvg_handle_render_layer()</a> instead. </dd></dl>
-<dl class="section since"><dt>Since</dt><dd>2.14 </dd></dl>
-
-</div>
-</div>
 <a id="ga410511165f0ceaf7b63fa8101a60c8d6" name="ga410511165f0ceaf7b63fa8101a60c8d6"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#ga410511165f0ceaf7b63fa8101a60c8d6">&#9670;&#160;</a></span>rsvg_handle_render_document()</h2>
 

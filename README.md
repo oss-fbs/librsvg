@@ -18,9 +18,6 @@ cancellable-render, and the other 2.46–2.59 entry points are present.
 Programs written against librsvg 2.40 through 2.63 keep the same
 headers and link line.
 
-An optional C++ wrapper lives in `cpp/` (header-only).  It is not
-built or installed by `make`.  See `cpp/README`.
-
 It renders non-animated SVG and SVGZ: CSS styling, filters, masks,
 clip paths, and SVG `<image>` rasters (PNG, JPEG, GIF, WebP, BMP;
 optional AVIF).  A gdk-pixbuf loader (`libpixbufloader-svg`) and
@@ -112,6 +109,33 @@ See `INSTALL`.  Typical sequence:
     make DESTDIR="$PWD/stage" install
 
 Do not run plain `make install` onto a live system prefix.
+
+C++
+---
+
+Optional header-only wrapper in `cpp/` (`librsvg.hpp`).  It is not
+built, linked, or installed by `make`.  Link the C library as usual.
+
+**API.** `rsvg::Handle` is a move-only owner of an `RsvgHandle`.  The
+destructor calls `g_object_unref`.  Failures throw `rsvg::Error`
+(`std::runtime_error`).
+
+Load: `from_file`, `from_data`, `from_gfile`, `from_stream`,
+`read_stream`.
+Setup: `set_dpi`, `set_base_uri`, `set_base_gfile`, `set_stylesheet`,
+`set_cancellable_for_rendering`.
+Render: `render_document`, `render_layer`, `render_element`.
+Geometry: `geometry_for_layer`, `geometry_for_element`,
+`intrinsic_size_in_pixels`, `intrinsic_dimensions`, `has_sub`.
+
+**Example.** From `cpp/`:
+
+    c++ -std=c++11 -I. example.cpp \
+        $(pkg-config --cflags --libs librsvg-2.0 cairo cairo-png)
+
+Run from `cpp/` so `../examples/icon.svg` is found.  The sample loads
+that file, sets 96 DPI, queries pixel size, calls `render_document`,
+and writes `example-out.png`.
 
 Licence
 -------

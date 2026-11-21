@@ -31,7 +31,7 @@ stylesheet buffers may be rejected.
 
 - [Types](@ref rsvg_types) — #RsvgHandle, #RsvgRectangle, #RsvgLength, #RsvgUnit
 - [Loading](@ref rsvg_loading) — `new_from_file`, `new_from_data`, GIO
-- [Rendering](@ref rsvg_rendering) — `render_document` (prefer this over `render_cairo`)
+- [Rendering](@ref rsvg_rendering) — `render_document`, `render_layer`, `render_element`
 - [Geometry](@ref rsvg_geometry) — `get_geometry_for_*`, `get_intrinsic_*`
 - [Stylesheet](@ref rsvg_stylesheet) — `set_stylesheet`
 - [Pixbuf](@ref rsvg_pixbuf) — `get_pixbuf_and_error`
@@ -41,6 +41,32 @@ stylesheet buffers may be rejected.
 
 The last new public C function is `rsvg_handle_set_cancellable_for_rendering`
 (2.59).  The library version is 2.63.5.
+
+## C++ {#cpp}
+
+Optional header-only wrapper in `cpp/` (`librsvg.hpp`).  It is not
+built or installed by `make`.  Link the C library as usual.
+
+### API
+
+`rsvg::Handle` is a move-only owner of an `RsvgHandle`.  The destructor
+calls `g_object_unref`.  Failures throw `rsvg::Error` (`std::runtime_error`).
+
+- Load: `from_file`, `from_data`, `from_gfile`, `from_stream`, `read_stream`
+- Setup: `set_dpi`, `set_base_uri`, `set_base_gfile`, `set_stylesheet`, `set_cancellable_for_rendering`
+- Render: `render_document`, `render_layer`, `render_element`
+- Geometry: `geometry_for_layer`, `geometry_for_element`, `intrinsic_size_in_pixels`, `intrinsic_dimensions`, `has_sub`
+
+### Example
+
+From `cpp/`:
+
+    c++ -std=c++11 -I. example.cpp \
+        $(pkg-config --cflags --libs librsvg-2.0 cairo cairo-png)
+
+Run from `cpp/` so `../examples/icon.svg` is found.  The sample loads
+that file, sets 96 DPI, queries pixel size, calls `render_document`,
+and writes `example-out.png`.
 
 [Thank you](@ref thanks) — the people who built librsvg.
 

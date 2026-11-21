@@ -124,7 +124,7 @@ Functions</h2></td></tr>
 <tr class="memdesc:gad0480d2862330732006b5e6e437fb91f"><td class="mdescLeft">&#160;</td><td class="mdescRight">rsvg_handle_set_base_uri: @handle: an #RsvgHandle @base_uri: base URI for resolving relative references  <br /></td></tr>
 <tr class="separator:gad0480d2862330732006b5e6e437fb91f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga42f131d62a29f556536f326fe1791a1d" id="r_ga42f131d62a29f556536f326fe1791a1d"><td class="memItemLeft" align="right" valign="top">RsvgHandle *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__rsvg__loading.html#ga42f131d62a29f556536f326fe1791a1d">rsvg_handle_new_with_flags</a> (<a class="el" href="group__rsvg__types.html#ga7c05821c0ad6a0051cc32860bb76c80d">RsvgHandleFlags</a> flags)</td></tr>
-<tr class="memdesc:ga42f131d62a29f556536f326fe1791a1d"><td class="mdescLeft">&#160;</td><td class="mdescRight">rsvg_handle_new_with_flags: @flags: <a class="el" href="group__rsvg__types.html#ga7c05821c0ad6a0051cc32860bb76c80d" title="RsvgHandleFlags: @RSVG_HANDLE_FLAGS_NONE: no flags @RSVG_HANDLE_FLAG_UNLIMITED: no limits on XML size...">RsvgHandleFlags</a>  <br /></td></tr>
+<tr class="memdesc:ga42f131d62a29f556536f326fe1791a1d"><td class="mdescLeft">&#160;</td><td class="mdescRight">rsvg_handle_new_with_flags: @flags: <a class="el" href="group__rsvg__types.html#ga7c05821c0ad6a0051cc32860bb76c80d" title="RsvgHandleFlags: @RSVG_HANDLE_FLAGS_NONE: no flags @RSVG_HANDLE_FLAG_UNLIMITED: raise decoded-pixel c...">RsvgHandleFlags</a>  <br /></td></tr>
 <tr class="separator:ga42f131d62a29f556536f326fe1791a1d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga823a6b5b8f974b58824935c2782234bc" id="r_ga823a6b5b8f974b58824935c2782234bc"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__rsvg__loading.html#ga823a6b5b8f974b58824935c2782234bc">rsvg_handle_set_base_gfile</a> (RsvgHandle *handle, GFile *base_file)</td></tr>
 <tr class="memdesc:ga823a6b5b8f974b58824935c2782234bc"><td class="mdescLeft">&#160;</td><td class="mdescRight">rsvg_handle_set_base_gfile: @handle: an #RsvgHandle @base_file: a #GFile used as the base for relative URIs  <br /></td></tr>
@@ -133,7 +133,7 @@ Functions</h2></td></tr>
 <tr class="memdesc:ga6c933843fe43d7e51a0e9d21fd266579"><td class="mdescLeft">&#160;</td><td class="mdescRight">rsvg_handle_read_stream_sync: @handle: an #RsvgHandle @stream: SVG data @cancellable: (nullable): a #GCancellable @error: return location for a #GError  <br /></td></tr>
 <tr class="separator:ga6c933843fe43d7e51a0e9d21fd266579"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga309b38eb9afc5fb8fdebdca26256aa15" id="r_ga309b38eb9afc5fb8fdebdca26256aa15"><td class="memItemLeft" align="right" valign="top">RsvgHandle *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__rsvg__loading.html#ga309b38eb9afc5fb8fdebdca26256aa15">rsvg_handle_new_from_gfile_sync</a> (GFile *file, <a class="el" href="group__rsvg__types.html#ga7c05821c0ad6a0051cc32860bb76c80d">RsvgHandleFlags</a> flags, GCancellable *cancellable, GError **error)</td></tr>
-<tr class="memdesc:ga309b38eb9afc5fb8fdebdca26256aa15"><td class="mdescLeft">&#160;</td><td class="mdescRight">rsvg_handle_new_from_gfile_sync: @gfile: a #GFile @flags: <a class="el" href="group__rsvg__types.html#ga7c05821c0ad6a0051cc32860bb76c80d" title="RsvgHandleFlags: @RSVG_HANDLE_FLAGS_NONE: no flags @RSVG_HANDLE_FLAG_UNLIMITED: no limits on XML size...">RsvgHandleFlags</a> @cancellable: (nullable): a #GCancellable @error: return location for a #GError  <br /></td></tr>
+<tr class="memdesc:ga309b38eb9afc5fb8fdebdca26256aa15"><td class="mdescLeft">&#160;</td><td class="mdescRight">rsvg_handle_new_from_gfile_sync: @gfile: a #GFile @flags: <a class="el" href="group__rsvg__types.html#ga7c05821c0ad6a0051cc32860bb76c80d" title="RsvgHandleFlags: @RSVG_HANDLE_FLAGS_NONE: no flags @RSVG_HANDLE_FLAG_UNLIMITED: raise decoded-pixel c...">RsvgHandleFlags</a> @cancellable: (nullable): a #GCancellable @error: return location for a #GError  <br /></td></tr>
 <tr class="separator:ga309b38eb9afc5fb8fdebdca26256aa15"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga9ebce0acc9a6d23491db88517d9fb25d" id="r_ga9ebce0acc9a6d23491db88517d9fb25d"><td class="memItemLeft" align="right" valign="top">RsvgHandle *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__rsvg__loading.html#ga9ebce0acc9a6d23491db88517d9fb25d">rsvg_handle_new_from_stream_sync</a> (GInputStream *input_stream, GFile *base_file, <a class="el" href="group__rsvg__types.html#ga7c05821c0ad6a0051cc32860bb76c80d">RsvgHandleFlags</a> flags, GCancellable *cancellable, GError **error)</td></tr>
 <tr class="memdesc:ga9ebce0acc9a6d23491db88517d9fb25d"><td class="mdescLeft">&#160;</td><td class="mdescRight">rsvg_handle_new_from_stream_sync:  <br /></td></tr>
@@ -344,7 +344,7 @@ Functions</h2></td></tr>
 
 <p><code>#include &lt;<a class="el" href="rsvg_8h.html">rsvg.h</a>&gt;</code></p>
 
-<p>rsvg_handle_new_from_gfile_sync: @gfile: a #GFile @flags: <a class="el" href="group__rsvg__types.html#ga7c05821c0ad6a0051cc32860bb76c80d" title="RsvgHandleFlags: @RSVG_HANDLE_FLAGS_NONE: no flags @RSVG_HANDLE_FLAG_UNLIMITED: no limits on XML size...">RsvgHandleFlags</a> @cancellable: (nullable): a #GCancellable @error: return location for a #GError </p>
+<p>rsvg_handle_new_from_gfile_sync: @gfile: a #GFile @flags: <a class="el" href="group__rsvg__types.html#ga7c05821c0ad6a0051cc32860bb76c80d" title="RsvgHandleFlags: @RSVG_HANDLE_FLAGS_NONE: no flags @RSVG_HANDLE_FLAG_UNLIMITED: raise decoded-pixel c...">RsvgHandleFlags</a> @cancellable: (nullable): a #GCancellable @error: return location for a #GError </p>
 <p>Load SVG from @gfile.</p>
 <dl class="section since"><dt>Since</dt><dd>2.32 </dd></dl>
 
@@ -420,7 +420,7 @@ Functions</h2></td></tr>
 
 <p><code>#include &lt;<a class="el" href="rsvg_8h.html">rsvg.h</a>&gt;</code></p>
 
-<p>rsvg_handle_new_with_flags: @flags: <a class="el" href="group__rsvg__types.html#ga7c05821c0ad6a0051cc32860bb76c80d" title="RsvgHandleFlags: @RSVG_HANDLE_FLAGS_NONE: no flags @RSVG_HANDLE_FLAG_UNLIMITED: no limits on XML size...">RsvgHandleFlags</a> </p>
+<p>rsvg_handle_new_with_flags: @flags: <a class="el" href="group__rsvg__types.html#ga7c05821c0ad6a0051cc32860bb76c80d" title="RsvgHandleFlags: @RSVG_HANDLE_FLAGS_NONE: no flags @RSVG_HANDLE_FLAG_UNLIMITED: raise decoded-pixel c...">RsvgHandleFlags</a> </p>
 <dl class="section since"><dt>Since</dt><dd>2.36 </dd></dl>
 
 </div>

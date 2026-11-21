@@ -30,8 +30,8 @@
  * @ingroup rsvg
  * @brief Draw an SVG onto a Cairo context.
  *
- * Prefer rsvg_handle_render_document().  rsvg_handle_render_cairo()
- * is deprecated.
+ * Prefer rsvg_handle_render_document(), rsvg_handle_render_layer(),
+ * and rsvg_handle_render_element().
  */
 
 /**

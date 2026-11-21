@@ -27,8 +27,12 @@ var NAVTREE =
   [ "LIBRSVG", "index.html", [
     [ "Limits", "index.html#autotoc_md0", null ],
     [ "API groups", "index.html#autotoc_md1", null ],
+    [ "C++", "index.html#cpp", [
+      [ "API", "index.html#autotoc_md2", null ],
+      [ "Example", "index.html#autotoc_md3", null ]
+    ] ],
     [ "Licence", "index.html#licence", null ],
-    [ "Building this HTML", "index.html#autotoc_md2", null ],
+    [ "Building this HTML", "index.html#autotoc_md4", null ],
     [ "Examples", "examples.html", [
       [ "Catalogue", "examples.html#ex_overview", null ],
       [ "Render a document", "examples.html#ex_render_document", null ],
@@ -38,7 +42,7 @@ var NAVTREE =
       [ "Load from memory", "examples.html#ex_from_memory", null ],
       [ "GdkPixbuf", "examples.html#ex_pixbuf", null ],
       [ "rsvg-convert", "examples.html#ex_convert", null ],
-      [ "Deprecated Cairo render", "examples.html#ex_deprecated", null ],
+      [ "C++", "examples.html#ex_cpp", null ],
       [ "Other in-tree programs", "examples.html#ex_other", null ]
     ] ],
     [ "Thank you", "thanks.html", null ],

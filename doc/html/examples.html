@@ -117,7 +117,7 @@ Catalogue</h1>
 <tr class="markdownTableRowEven">
 <td class="markdownTableBodyNone"><code>examples/06-pixbuf.c</code>   </td><td class="markdownTableBodyNone">Render to a GdkPixbuf    </td></tr>
 <tr class="markdownTableRowOdd">
-<td class="markdownTableBodyNone"><code>examples/deprecated/render-cairo.c</code>   </td><td class="markdownTableBodyNone">Deprecated Cairo call (kept for old code)    </td></tr>
+<td class="markdownTableBodyNone"><code>cpp/example.cpp</code>   </td><td class="markdownTableBodyNone">Optional C++ wrapper (<code>rsvg::Handle</code>)    </td></tr>
 <tr class="markdownTableRowEven">
 <td class="markdownTableBodyNone"><code>rsvg-convert</code>   </td><td class="markdownTableBodyNone">Command-line converter   </td></tr>
 </table>
@@ -213,18 +213,14 @@ rsvg-convert</h1>
 rsvg-convert -w 256 -h 256 icon.svg -o icon.png
 rsvg-convert -d 90 -p 90 in.svg -o out.png
 rsvg-convert -f pdf in.svg -o out.pdf
-</pre><h1><a class="anchor" id="ex_deprecated"></a>
-Deprecated Cairo render</h1>
-<p><code><a class="el" href="group__rsvg__rendering.html#gab6dc4a225f95970e6b6d78ecf6195249" title="rsvg_handle_render_cairo: @handle: an #RsvgHandle @cr: a Cairo context">rsvg_handle_render_cairo()</a></code> has no viewport and no #GError. New code should use <code><a class="el" href="group__rsvg__rendering.html#ga410511165f0ceaf7b63fa8101a60c8d6" title="Draw the whole SVG into @viewport on @cr.">rsvg_handle_render_document()</a></code> (see <a class="el" href="examples.html#ex_render_document">Render a document</a>). This file is only a translation aid.</p>
-<p>APIs: <code><a class="el" href="group__rsvg__rendering.html#gab6dc4a225f95970e6b6d78ecf6195249" title="rsvg_handle_render_cairo: @handle: an #RsvgHandle @cr: a Cairo context">rsvg_handle_render_cairo()</a></code> (deprecated since 2.52).</p>
-<p>Source: <code>examples/deprecated/render-cairo.c</code></p>
-<div class="fragment"><div class="line"><span class="preprocessor">#define RSVG_DISABLE_DEPRECATION_WARNINGS</span></div>
-<div class="line"><span class="preprocessor">#include &lt;librsvg/rsvg.h&gt;</span></div>
-<div class="line"> </div>
-<div class="line"><span class="keywordflow">if</span> (!<a class="code hl_function" href="group__rsvg__rendering.html#gab6dc4a225f95970e6b6d78ecf6195249">rsvg_handle_render_cairo</a> (handle, cr))</div>
-<div class="line">    <span class="keywordflow">return</span> 1;</div>
-<div class="ttc" id="agroup__rsvg__rendering_html_gab6dc4a225f95970e6b6d78ecf6195249"><div class="ttname"><a href="group__rsvg__rendering.html#gab6dc4a225f95970e6b6d78ecf6195249">rsvg_handle_render_cairo</a></div><div class="ttdeci">gboolean rsvg_handle_render_cairo(RsvgHandle *handle, cairo_t *cr)</div><div class="ttdoc">rsvg_handle_render_cairo: @handle: an #RsvgHandle @cr: a Cairo context</div></div>
-</div><!-- fragment --><h1><a class="anchor" id="ex_other"></a>
+</pre><h1><a class="anchor" id="ex_cpp"></a>
+C++</h1>
+<p>Optional header-only wrapper in <code>cpp/</code> (<code>librsvg.hpp</code>). It is not built by <code>make</code>. Class <code>rsvg::Handle</code>; failures throw <code>rsvg::Error</code>.</p>
+<p>Source: <code>cpp/example.cpp</code>. See <code>cpp/README</code>.</p>
+<pre class="fragment">c++ -std=c++11 -I. example.cpp \
+    $(pkg-config --cflags --libs librsvg-2.0 cairo cairo-png)
+</pre><p>Run from <code>cpp/</code> so <code>../examples/icon.svg</code> is found.</p>
+<h1><a class="anchor" id="ex_other"></a>
 Other in-tree programs</h1>
 <p>These are not copy-paste public API samples:</p>
 <ul>

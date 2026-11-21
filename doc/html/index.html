@@ -107,7 +107,7 @@ API groups</h1>
 <ul>
 <li><a class="el" href="group__rsvg__types.html">Types</a> — #RsvgHandle, #RsvgRectangle, <a class="el" href="structRsvgLength.html" title="RsvgLength:">RsvgLength</a>, <a class="el" href="group__rsvg__types.html#gaab4ba3783eb3f64f8c03cdda364676d9" title="RsvgUnit:">RsvgUnit</a></li>
 <li><a class="el" href="group__rsvg__loading.html">Loading</a> — <code>new_from_file</code>, <code>new_from_data</code>, GIO</li>
-<li><a class="el" href="group__rsvg__rendering.html">Rendering</a> — <code>render_document</code> (prefer this over <code>render_cairo</code>)</li>
+<li><a class="el" href="group__rsvg__rendering.html">Rendering</a> — <code>render_document</code>, <code>render_layer</code>, <code>render_element</code></li>
 <li><a class="el" href="group__rsvg__geometry.html">Geometry</a> — <code>get_geometry_for_*</code>, <code>get_intrinsic_*</code></li>
 <li><a class="el" href="group__rsvg__stylesheet.html">Stylesheet</a> — <code>set_stylesheet</code></li>
 <li><a class="el" href="group__rsvg__pixbuf.html">Pixbuf</a> — <code>get_pixbuf_and_error</code></li>
@@ -116,12 +116,29 @@ API groups</h1>
 <li><a class="el" href="group__rsvg__deprecated.html">Deprecated</a> — older calls kept for compatibility</li>
 </ul>
 <p>The last new public C function is <code>rsvg_handle_set_cancellable_for_rendering</code> (2.59). The library version is 2.63.5.</p>
+<h1><a class="anchor" id="cpp"></a>
+C++</h1>
+<p>Optional header-only wrapper in <code>cpp/</code> (<code>librsvg.hpp</code>). It is not built or installed by <code>make</code>. Link the C library as usual.</p>
+<h2><a class="anchor" id="autotoc_md2"></a>
+API</h2>
+<p><code>rsvg::Handle</code> is a move-only owner of an <code>RsvgHandle</code>. The destructor calls <code>g_object_unref</code>. Failures throw <code>rsvg::Error</code> (<code>std::runtime_error</code>).</p>
+<ul>
+<li>Load: <code>from_file</code>, <code>from_data</code>, <code>from_gfile</code>, <code>from_stream</code>, <code>read_stream</code></li>
+<li>Setup: <code>set_dpi</code>, <code>set_base_uri</code>, <code>set_base_gfile</code>, <code>set_stylesheet</code>, <code>set_cancellable_for_rendering</code></li>
+<li>Render: <code>render_document</code>, <code>render_layer</code>, <code>render_element</code></li>
+<li>Geometry: <code>geometry_for_layer</code>, <code>geometry_for_element</code>, <code>intrinsic_size_in_pixels</code>, <code>intrinsic_dimensions</code>, <code>has_sub</code></li>
+</ul>
+<h2><a class="anchor" id="autotoc_md3"></a>
+Example</h2>
+<p>From <code>cpp/</code>: </p><pre class="fragment">c++ -std=c++11 -I. example.cpp \
+    $(pkg-config --cflags --libs librsvg-2.0 cairo cairo-png)
+</pre><p> Run from <code>cpp/</code> so <code>../examples/icon.svg</code> is found. The sample loads that file, sets 96 DPI, queries pixel size, calls <code>render_document</code>, and writes <code>example-out.png</code>.</p>
 <p><a class="el" href="thanks.html">Thank you</a> — the people who built librsvg.</p>
 <h1><a class="anchor" id="licence"></a>
 Licence</h1>
 <p>The <b>library</b> (<code>librsvg-2.so</code>) is licensed under the GNU Library General Public License, version 2 or later. You may link this library from other programs; the library itself stays under this license. The full text is <a href="LICENCE-LIB">LICENCE-LIB</a>.</p>
 <p>The command-line tools (<code>rsvg-convert</code> and similar) are licensed under the GNU General Public License, version 2. The full text is <a href="LICENCE">LICENCE</a>.</p>
-<h1><a class="anchor" id="autotoc_md2"></a>
+<h1><a class="anchor" id="autotoc_md4"></a>
 Building this HTML</h1>
 <p>Doxygen is required. From the project root: </p><pre class="fragment">doxygen doc/Doxyfile
 </pre><p> or <code>make html</code>. Either command writes <code>doc/html/index.html</code>. </p>

@@ -25,8 +25,27 @@ Project-specific install (this tree)
    this machine already has another librsvg-2.0 that you must not
    replace.
 
-   The optional C++ wrapper in `cpp/` is header-only.  `make` and
-   `make install` do not build or install it.
+C++
+---
+
+   Optional header-only wrapper in `cpp/` (`librsvg.hpp`).  `make`
+   and `make install` do not build or install it.
+
+   API: `rsvg::Handle` (move-only; `g_object_unref` in the destructor).
+   Load: `from_file`, `from_data`, `from_gfile`, `from_stream`,
+   `read_stream`.  Setup: `set_dpi`, `set_base_uri`, `set_base_gfile`,
+   `set_stylesheet`, `set_cancellable_for_rendering`.  Render:
+   `render_document`, `render_layer`, `render_element`.  Geometry:
+   `geometry_for_layer`, `geometry_for_element`,
+   `intrinsic_size_in_pixels`, `intrinsic_dimensions`, `has_sub`.
+   Failures throw `rsvg::Error`.
+
+   Example, from `cpp/`:
+
+     c++ -std=c++11 -I. example.cpp \
+         $(pkg-config --cflags --libs librsvg-2.0 cairo cairo-png)
+
+   Run from `cpp/` so `../examples/icon.svg` is found.
 
 Normal install
 --------------
