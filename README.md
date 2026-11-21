@@ -149,7 +149,7 @@ Neither installs onto a live prefix or runs pkgmk.
 Further reading
 ---------------
 
-- `INSTALL` — configure flags, DESTDIR/stage, generic Autotools notes
+- `INSTALL` — configure flags, DESTDIR/stage, `make check-asan`, generic Autotools notes
 - `deb/INSTALL.md` — Debian/Devuan local-deb install (apt one-shot)
 - `tests/README` — optional `make fuzz-css` / `fuzz-afl` / `fuzz-bmp` (not `make check`)
 - `NEWS` — user-visible changes

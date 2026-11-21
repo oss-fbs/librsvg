@@ -1,0 +1,73 @@
+# Build and test. Does not install onto the runner prefix.
+# Fuzzing stays optional and local: make fuzz-css / fuzz-afl / fuzz-bmp
+# (tests/fuzz/README). A CI fuzz job would belong next to asan-ubsan.
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  make-check:
+    name: make check
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+            build-essential pkg-config \
+            libcairo2-dev libgdk-pixbuf-2.0-dev libglib2.0-dev \
+            libpango1.0-dev libxml2-dev libpng-dev libjpeg-dev \
+            libgif-dev libwebp-dev libavif-dev
+      - name: Configure
+        run: |
+          ./configure --prefix=/usr \
+            --disable-introspection \
+            --disable-vala \
+            --disable-maintainer-mode
+      - name: Build
+        run: make -j"$(nproc)" all
+      - name: Test
+        run: make check
+
+  asan-ubsan:
+    name: ASan + UBSan
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+            build-essential pkg-config \
+            libcairo2-dev libgdk-pixbuf-2.0-dev libglib2.0-dev \
+            libpango1.0-dev libxml2-dev libpng-dev libjpeg-dev \
+            libgif-dev libwebp-dev libavif-dev
+      - name: Configure
+        run: |
+          ./configure --prefix=/usr \
+            --disable-introspection \
+            --disable-vala \
+            --disable-maintainer-mode \
+            --disable-Bsymbolic \
+            CFLAGS="-O1 -g -fsanitize=address,undefined -fno-omit-frame-pointer" \
+            LDFLAGS="-fsanitize=address,undefined"
+      - name: Build
+        run: make -j"$(nproc)" all
+      - name: Test
+        # glibc MALLOC_CHECK_ fights ASan; override TESTS_ENVIRONMENT.
+        # detect_leaks=0: GLib/Cairo/Pango are not instrumented.
+        env:
+          LD_PRELOAD: ""
+        run: |
+          make check \
+            TESTS_ENVIRONMENT="G_TEST_SRCDIR=$(pwd)/tests G_TEST_BUILDDIR=$(pwd)/tests G_DEBUG=gc-friendly ASAN_OPTIONS=detect_leaks=0:abort_on_error=1:allocator_may_return_null=1 UBSAN_OPTIONS=halt_on_error=1:print_stacktrace=1"

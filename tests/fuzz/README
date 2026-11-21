@@ -40,4 +40,6 @@ Recorded pass (2026-08-21): seeds 9/9; after the stray-`}` stall fix,
 60s dumb loop tried=3400870 loaded=212481 rendered=212251, exit 0.
 No crash. Regression: `tests/fuzz/regress/stray-brace.css` and
 `/api/css_stray_close_brace_does_not_abort`. Longer AFL++ / libFuzzer
-runs are optional and not `make check`.
+runs are optional and not `make check`. GitHub Actions does not run
+these harnesses; a CI fuzz job would sit next to the ASan+UBSan job
+in `.github/workflows/ci.yml`.

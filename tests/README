@@ -1,3 +1,11 @@
+Sanitizers
+==========
+
+    make check-asan
+
+Out-of-tree ASan + UBSan `make check` (`build-asan/`). Does not
+change the default build and does not install. See `INSTALL`.
+
 Optional targets (not `make check`)
 ===================================
 

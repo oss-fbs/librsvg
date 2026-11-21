@@ -330,7 +330,9 @@ rsvg_standard_element_start (RsvgHandle * ctx, const char *name, RsvgPropertyBag
 
     if (newnode) {
         g_assert (RSVG_NODE_TYPE (newnode) != RSVG_NODE_TYPE_INVALID);
-        newnode->name = (char *) name; /* libxml will keep this while parsing */
+        /* Copy the name. Nested XInclude frees its xmlParserCtxt (and
+         * dict) while the outer parse is still walking currentnode. */
+        newnode->name = g_strdup ((const char *) name);
         newnode->parent = ctx->priv->currentnode;
         rsvg_node_set_atts (newnode, ctx, atts);
         rsvg_defs_register_memory (ctx->priv->defs, newnode);

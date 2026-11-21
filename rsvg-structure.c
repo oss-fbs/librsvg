@@ -140,12 +140,14 @@ _rsvg_node_finalize (RsvgNode * self)
     }
     if (self->children != NULL)
         g_ptr_array_free (self->children, TRUE);
+    g_free (self->name);
     g_free (self->css_tag);
     g_free (self->css_class);
     g_free (self->css_id);
     g_free (self->css_style);
     if (self->atts)
         rsvg_property_bag_free (self->atts);
+    self->name = NULL;
     self->css_tag = NULL;
     self->css_class = NULL;
     self->css_id = NULL;

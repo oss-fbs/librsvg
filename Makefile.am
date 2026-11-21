@@ -9,6 +9,7 @@ help:
 	@echo "  clean         objects and .libs only (not shipped docs or configure)"
 	@echo "  all           library + tools  (default \`make\`)"
 	@echo "  check         test suite"
+	@echo "  check-asan    ASan+UBSan out-of-tree make check (not the default build)"
 	@echo "  check-parity  rust-oracle reftests"
 	@echo "  fuzz-css      optional CSS/SVG harness (not make check)"
 	@echo "  fuzz-afl      optional AFL++ binary (skips if AFL++ missing)"
@@ -27,6 +28,9 @@ check-parity-croco:
 	@echo "check-parity-croco: libcroco is discontinued; css/ is the only engine" >&2
 	@false
 
+check-asan:
+	$(SHELL) $(srcdir)/build/check-asan.sh "$(abs_top_srcdir)"
+
 fuzz-css: librsvg-@RSVG_API_MAJOR_VERSION@.la
 	$(MAKE) -C tests fuzz-css
 
@@ -43,7 +47,7 @@ deb:
 crux: pkg
 	$(SHELL) $(srcdir)/dist/make-crux.sh
 
-.PHONY: help check-parity check-parity-engine check-parity-croco \
+.PHONY: help check-asan check-parity check-parity-engine check-parity-croco \
 	fuzz-css fuzz-afl pkg dist-release deb crux
 
 NULL =
@@ -227,6 +231,7 @@ EXTRA_DIST =				\
 	glib-tap.mk			\
 	tap-driver.sh			\
 	tap-test			\
+	build/check-asan.sh		\
 	css/README			\
 	examples/README			\
 	examples/icon.svg		\

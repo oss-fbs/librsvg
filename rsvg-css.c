@@ -424,8 +424,9 @@ parse_color_func_args (const char *inside, double c[4], gboolean pct[4], int *nc
     return n >= 3;
 }
 
-/* pack 3 [0,255] ints into one 32 bit one */
-#define PACK_RGBA(r,g,b,a) (((a) << 24) | ((r) << 16) | ((g) << 8) | (b))
+/* pack 3 [0,255] ints into one 32 bit one.
+ * Shift as guint32: `255 << 24` is undefined as a signed int. */
+#define PACK_RGBA(r,g,b,a) (((guint32) (a) << 24) | ((guint32) (r) << 16) | ((guint32) (g) << 8) | (guint32) (b))
 #define PACK_RGB(r,g,b) PACK_RGBA(r, g, b, 255)
 
 static int
@@ -631,7 +632,7 @@ css_lookup_named_color (const char *str, guint8 *r, guint8 *g, guint8 *b)
 guint32
 rsvg_css_parse_color (const char *str, gboolean * inherit)
 {
-    gint val = 0;
+    guint32 val = 0;
 
     SETINHERIT ();
 

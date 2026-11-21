@@ -46,7 +46,7 @@ G_BEGIN_DECLS
 #define RSVG_ASPECT_RATIO_XMIN_YMAX (1 << 6)
 #define RSVG_ASPECT_RATIO_XMID_YMAX (1 << 7)
 #define RSVG_ASPECT_RATIO_XMAX_YMAX (1 << 8)
-#define RSVG_ASPECT_RATIO_SLICE (1 << 31)
+#define RSVG_ASPECT_RATIO_SLICE (1u << 31)
 
 /* Not installed. Still used by rsvg-convert; not in rsvg.symbols. */
 guint32	    rsvg_css_parse_color        (const char *str, gboolean * inherit);

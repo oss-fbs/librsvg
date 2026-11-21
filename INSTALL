@@ -124,6 +124,26 @@ Tests and docs
    `make fuzz-afl`, and `make fuzz-bmp` are not part of `make check`.
    `make fuzz-afl` skips if AFL++ is not installed.
 
+   AddressSanitizer and UndefinedBehaviorSanitizer are optional and
+   do not change the default build:
+
+     make check-asan
+
+   That configures an out-of-tree `build-asan/` with
+   `-fsanitize=address,undefined` and runs `make check` there.
+   It does not install.  The same flags can be passed to
+   `./configure` directly:
+
+     ./configure --prefix=/usr \
+       --disable-introspection --disable-vala --disable-Bsymbolic \
+       CFLAGS="-O1 -g -fsanitize=address,undefined -fno-omit-frame-pointer" \
+       LDFLAGS="-fsanitize=address,undefined"
+     make
+     make check
+
+   Unset `LD_PRELOAD` if AddressSanitizer reports that its runtime
+   is not first (common with `gtk3-nocsd`).
+
    API HTML is generated with Doxygen.  If `doxygen` is missing,
    HTML generation is skipped.
 

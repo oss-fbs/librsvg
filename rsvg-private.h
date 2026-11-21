@@ -397,7 +397,7 @@ struct _RsvgNode {
     RsvgNode *parent;
     GPtrArray *children;
     RsvgNodeType type;
-    const char *name; /* owned by the xmlContext, invalid after parsing! */
+    char *name; /* g_strdup of the element name; outlives the xml parser */
     char *css_tag;    /* durable copy of the element name for restyle */
     char *css_class;
     char *css_id;

@@ -16,6 +16,9 @@ Version 2.63.4
 - feConvolveMatrix with an invalid kernel size (order zero, negative,
   or larger than 20) is a no-op. The rest of the document still
   renders.
+- Nested XInclude that hits the file nesting cap no longer reads
+  freed parser memory. The load still fails with "maximum nesting
+  depth exceeded".
 
 
 Version 2.62.6
