@@ -140,10 +140,59 @@ rsvg_decode_data_uri (const char *uri,
     return data;
 }
 
+/* Reject before the full read (H2-1). Unknown size is allowed through;
+ * the caller still checks the buffer length afterwards. */
+static gboolean
+rsvg_gfile_within_size_limit (GFile *file,
+                              gsize max_bytes,
+                              GCancellable *cancellable,
+                              GError **error)
+{
+    GFileInfo *info;
+    goffset size;
+
+    if (file == NULL)
+        return FALSE;
+    if (max_bytes == 0)
+        max_bytes = RSVG_MAX_DATA_URI_BYTES;
+
+    info = g_file_query_info (file,
+                              G_FILE_ATTRIBUTE_STANDARD_SIZE,
+                              G_FILE_QUERY_INFO_NONE,
+                              cancellable,
+                              NULL);
+    if (info == NULL)
+        return TRUE;
+
+    size = g_file_info_get_size (info);
+    g_object_unref (info);
+
+    if (size > 0 && (guint64) size > (guint64) max_bytes) {
+        g_set_error (error, G_IO_ERROR, G_IO_ERROR_FAILED,
+                     "URI is too large");
+        return FALSE;
+    }
+    return TRUE;
+}
+
+static gboolean
+rsvg_buffer_within_size_limit (gsize len, gsize max_bytes, GError **error)
+{
+    if (max_bytes == 0)
+        max_bytes = RSVG_MAX_DATA_URI_BYTES;
+    if (len > max_bytes) {
+        g_set_error (error, G_IO_ERROR, G_IO_ERROR_FAILED,
+                     "URI is too large");
+        return FALSE;
+    }
+    return TRUE;
+}
+
 static char *
 rsvg_acquire_file_data (const char *uri,
                         char **out_mime_type,
                         gsize *out_len,
+                        gsize max_bytes,
                         GCancellable *cancellable,
                         GError **error)
 {
@@ -163,7 +212,20 @@ rsvg_acquire_file_data (const char *uri,
         return NULL;
     }
 
+    if (!rsvg_gfile_within_size_limit (file, max_bytes, cancellable, error)) {
+        g_free (path);
+        g_object_unref (file);
+        return NULL;
+    }
+
     if (!g_file_get_contents (path, &data, &len, error)) {
+        g_free (path);
+        g_object_unref (file);
+        return NULL;
+    }
+
+    if (!rsvg_buffer_within_size_limit (len, max_bytes, error)) {
+        g_free (data);
         g_free (path);
         g_object_unref (file);
         return NULL;
@@ -241,6 +303,7 @@ rsvg_acquire_gvfs_data (const char *uri,
                         const char *base_uri,
                         char **out_mime_type,
                         gsize *out_len,
+                        gsize max_bytes,
                         GCancellable *cancellable,
                         GError **error)
 {
@@ -255,6 +318,11 @@ rsvg_acquire_gvfs_data (const char *uri,
 
     err = NULL;
     data = NULL;
+    if (!rsvg_gfile_within_size_limit (file, max_bytes, cancellable, &err)) {
+        g_object_unref (file);
+        g_propagate_error (error, err);
+        return NULL;
+    }
     if (!(res = g_file_load_contents (file, cancellable, &data, &len, NULL, &err)) &&
         g_error_matches (err, G_IO_ERROR, G_IO_ERROR_NOT_FOUND) &&
         base_uri != NULL) {
@@ -265,6 +333,11 @@ rsvg_acquire_gvfs_data (const char *uri,
         file = g_file_resolve_relative_path (base, uri);
         g_object_unref (base);
 
+        if (!rsvg_gfile_within_size_limit (file, max_bytes, cancellable, &err)) {
+            g_object_unref (file);
+            g_propagate_error (error, err);
+            return NULL;
+        }
         res = g_file_load_contents (file, cancellable, &data, &len, NULL, &err);
     }
 
@@ -272,6 +345,11 @@ rsvg_acquire_gvfs_data (const char *uri,
 
     if (err) {
         g_propagate_error (error, err);
+        return NULL;
+    }
+
+    if (!rsvg_buffer_within_size_limit (len, max_bytes, error)) {
+        g_free (data);
         return NULL;
     }
 
@@ -309,10 +387,10 @@ _rsvg_io_acquire_data (const char *href,
     if (strncmp (href, "data:", 5) == 0)
       return rsvg_decode_data_uri (href, mime_type, len, max_data_uri_bytes, error);
 
-    if ((data = rsvg_acquire_file_data (href, mime_type, len, cancellable, NULL)))
+    if ((data = rsvg_acquire_file_data (href, mime_type, len, max_data_uri_bytes, cancellable, NULL)))
       return data;
 
-    if ((data = rsvg_acquire_gvfs_data (href, base_uri, mime_type, len, cancellable, error)))
+    if ((data = rsvg_acquire_gvfs_data (href, base_uri, mime_type, len, max_data_uri_bytes, cancellable, error)))
       return data;
 
     return NULL;
@@ -343,7 +421,7 @@ _rsvg_io_acquire_stream (const char *href,
         return g_memory_input_stream_new_from_data (data, len, (GDestroyNotify) g_free);
     }
 
-    if ((data = rsvg_acquire_file_data (href, mime_type, &len, cancellable, NULL)))
+    if ((data = rsvg_acquire_file_data (href, mime_type, &len, max_data_uri_bytes, cancellable, NULL)))
       return g_memory_input_stream_new_from_data (data, len, (GDestroyNotify) g_free);
 
     if ((stream = rsvg_acquire_gvfs_stream (href, base_uri, mime_type, cancellable, error)))

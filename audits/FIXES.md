@@ -11,7 +11,8 @@ Ranked from `00-SUMMARY.md`. High first. Noise skipped.
 5. **E4-1 / SA-1 / H2-9** — volatile locals in PNG/JPEG `setjmp`
 6. **H2-7** — GIF first-frame size check before RasterBits
 7. **H2-8** — AVIF size limits before decode
-8. Medium left: H2-1, then E4-2 / E4-9 / H2-16 / E4-8, then H2-4 / H2-12 / B3-2 / B3-3 / E4-4
+8. **H2-1** — file size cap before full read
+9. Medium left: E4-2 / E4-9 / H2-16 / E4-8, then H2-4 / H2-12 / B3-2 / B3-3 / E4-4
 
 ## Attempts
 
@@ -71,8 +72,16 @@ Ranked from `00-SUMMARY.md`. High first. Noise skipped.
 - Tests: `make check` 269 PASS including `/api/avif_oversized_dimensions_does_not_abort` (ispe 40000×10) and the existing 10×10 AVIF tests. `make check-parity` pass=723 fail=0 skip=27.
 - Outcome: **fixed**.
 
+### H2-1 — file size cap before full read (try 1, committed)
+
+- Site: `rsvg-io.c` `rsvg_acquire_file_data` (`g_file_get_contents`) and `rsvg_acquire_gvfs_data` (`g_file_load_contents`). The `max_data_uri_bytes` argument only applied to `data:` URIs; files were read whole, then `<image>` checked length afterwards.
+- Plan: thread `max_data_uri_bytes` into both acquire helpers; reject from `G_FILE_ATTRIBUTE_STANDARD_SIZE` before the full read; check the buffer length afterwards. Unknown size (query fail or size 0, including FIFOs) is allowed through, then the post-read check still applies.
+- Change: `rsvg_gfile_within_size_limit` / `rsvg_buffer_within_size_limit`. Both file and GVFS paths cap so a huge local file is not re-read on the GVFS fallback. Main documents loaded via `rsvg_handle_new_from_file` also cap at `RSVG_MAX_DATA_URI_BYTES` (64 MiB). Stream acquire is unchanged (it does not slurp).
+- Tests: `make check` 270 PASS including `/api/oversized_file_href_does_not_abort` (red PNG `ftruncate`d past the cap stays omitted; sibling under the cap still paints). `make check-parity` pass=723 fail=0 skip=27.
+- Outcome: **fixed**. FIFOs still report size 0 so they are not rejected before the read.
+
 ## Remaining (not this batch)
 
-- Medium: H2-1 (file size before decode), E4-2 / E4-9 / H2-16 / E4-8 (error-path robustness). H2-16 remainder: non-filter `cairo_surface_create_similar` still uses uncapped `render->width/height`.
+- Medium: E4-2 / E4-9 / H2-16 / E4-8 (error-path robustness). H2-16 remainder: non-filter `cairo_surface_create_similar` still uses uncapped `render->width/height`.
 - Also medium: H2-4, H2-12, B3-2, B3-3, E4-4.
 - Low / note: see `00-SUMMARY.md`.

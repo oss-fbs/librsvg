@@ -25,6 +25,7 @@
 #include <string.h>
 #include <math.h>
 #include <unistd.h>
+#include <fcntl.h>
 #include <glib.h>
 #include <glib/gstdio.h>
 #include <cairo.h>
@@ -2550,6 +2551,84 @@ oversized_data_uri_does_not_abort (void)
     g_object_unref (handle);
 }
 
+/* Referenced files are rejected from STANDARD_SIZE before the full
+ * read (H2-1). huge.bin is a valid red PNG extended with ftruncate so
+ * the test does not write 64 MiB; if the cap were missing, libpng
+ * would still decode the leading PNG and paint red. */
+static void
+oversized_file_href_does_not_abort (void)
+{
+    GError *error = NULL;
+    char *dir, *huge, *small, *svg_huge, *svg_small, *red_src;
+    gchar *png_bytes = NULL;
+    gsize png_len = 0;
+    int fd;
+    RsvgHandle *handle;
+
+    dir = g_dir_make_tmp ("librsvg-huge-href-XXXXXX", &error);
+    g_assert_no_error (error);
+    g_assert_nonnull (dir);
+
+    huge = g_build_filename (dir, "huge.bin", NULL);
+    small = g_build_filename (dir, "small.png", NULL);
+    svg_huge = g_build_filename (dir, "huge.svg", NULL);
+    svg_small = g_build_filename (dir, "small.svg", NULL);
+
+    red_src = g_build_filename (test_utils_get_test_data_path (), "api", "red.png", NULL);
+    g_assert_true (g_file_get_contents (red_src, &png_bytes, &png_len, &error));
+    g_assert_no_error (error);
+    g_assert_cmpuint (png_len, >, 0);
+    g_free (red_src);
+
+    g_assert_true (g_file_set_contents (small, png_bytes, (gssize) png_len, &error));
+    g_assert_no_error (error);
+    g_assert_true (g_file_set_contents (huge, png_bytes, (gssize) png_len, &error));
+    g_assert_no_error (error);
+    g_free (png_bytes);
+
+    fd = g_open (huge, O_WRONLY, 0600);
+    g_assert_cmpint (fd, >=, 0);
+    g_assert_cmpint (ftruncate (fd, (off_t) (RSVG_MAX_DATA_URI_BYTES + 1)), ==, 0);
+    g_assert_true (g_close (fd, &error));
+    g_assert_no_error (error);
+
+    write_text_file (svg_small,
+                     "<svg xmlns='http://www.w3.org/2000/svg' width='8' height='8'>"
+                     "<rect width='8' height='8' fill='#00ff00'/>"
+                     "<image href='small.png' width='8' height='8'/>"
+                     "</svg>");
+    write_text_file (svg_huge,
+                     "<svg xmlns='http://www.w3.org/2000/svg' width='8' height='8'>"
+                     "<rect width='8' height='8' fill='#00ff00'/>"
+                     "<image href='huge.bin' width='8' height='8'/>"
+                     "</svg>");
+
+    handle = handle_from_path (svg_small);
+    g_assert_cmphex (center_pixel_of_handle (handle), ==, 0xffff0000);
+    g_object_unref (handle);
+
+    handle = handle_from_path (svg_huge);
+    g_assert_cmphex (center_pixel_of_handle (handle), ==, 0xff00ff00);
+    g_object_unref (handle);
+
+    handle = rsvg_handle_new_from_file (huge, &error);
+    g_assert_null (handle);
+    g_assert_error (error, G_IO_ERROR, G_IO_ERROR_FAILED);
+    g_assert_nonnull (strstr (error->message, "too large"));
+    g_clear_error (&error);
+
+    g_remove (svg_small);
+    g_remove (svg_huge);
+    g_remove (small);
+    g_remove (huge);
+    g_rmdir (dir);
+    g_free (svg_small);
+    g_free (svg_huge);
+    g_free (small);
+    g_free (huge);
+    g_free (dir);
+}
+
 /* Nested SVG in <image> rasterized at device pixels (parent CTM).
  * Inner SVG is 10×10: black 0,0 5×5 and green 5,5 5×5. Parent is
  * rendered at 2× so a CSS-pixel intermediate would bilinear-smear. */
@@ -3547,6 +3626,7 @@ main (int argc, char **argv)
     g_test_add_func ("/api/huge_filtered_canvas_does_not_crash", huge_filtered_canvas_does_not_crash);
     g_test_add_func ("/api/unlimited_raises_image_and_data_caps", unlimited_raises_image_and_data_caps);
     g_test_add_func ("/api/oversized_data_uri_does_not_abort", oversized_data_uri_does_not_abort);
+    g_test_add_func ("/api/oversized_file_href_does_not_abort", oversized_file_href_does_not_abort);
     g_test_add_func ("/api/embedded_svg_image_renders_at_device_resolution",
                      embedded_svg_image_renders_at_device_resolution);
     g_test_add_func ("/api/embedded_svg_image_invalid_is_omitted",
