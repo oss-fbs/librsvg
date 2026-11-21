@@ -4523,11 +4523,12 @@ rsvg_filter_primitive_image_render (RsvgFilterPrimitive * self, RsvgFilterContex
             {
                 cairo_matrix_t m;
                 cairo_matrix_init (&m, dw / img_w, 0, 0, dh / img_h, dx, dy);
-                cairo_matrix_invert (&m);
-                cairo_pattern_set_matrix (cairo_get_source (cr), &m);
-                cairo_pattern_set_filter (cairo_get_source (cr), CAIRO_FILTER_GOOD);
+                if (cairo_matrix_invert (&m) == CAIRO_STATUS_SUCCESS) {
+                    cairo_pattern_set_matrix (cairo_get_source (cr), &m);
+                    cairo_pattern_set_filter (cairo_get_source (cr), CAIRO_FILTER_GOOD);
+                    cairo_paint (cr);
+                }
             }
-            cairo_paint (cr);
             cairo_destroy (cr);
         }
         cairo_surface_destroy (img);

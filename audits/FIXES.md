@@ -31,6 +31,7 @@ Ranked from `00-SUMMARY.md`. High first. Noise skipped.
 25. **H2-2** — cap @import stylesheet bodies at RSVG_MAX_STYLESHEET_BYTES
 26. **H2-13** — range-check feConvolveMatrix targetX/targetY
 27. **E4-3** — honor g_convert failure on xi:include parse="text"
+28. **E4-6** — check cairo_matrix_invert on gradients and feImage
 
 ## Attempts
 
@@ -248,6 +249,14 @@ Ranked from `00-SUMMARY.md`. High first. Noise skipped.
 - Plan: after `g_free (data)`, if `text_data` is NULL go to fallback. Do not use `text_data_len` on the failure path.
 - Change: that NULL check only.
 - Tests: `make check` 302 PASS including `/api/xinclude_text_convert_failure_uses_fallback` (`encoding='not-an-encoding'` paints the red fallback) and `/api/xinclude_text_convert_still_applies` (`encoding='iso8859-1'` skips fallback, green remains). `make check-parity` pass=723 fail=0 skip=27 (include-text, include-fallback, xinclude-non-utf8 still green).
+- Outcome: **fixed**.
+
+### E4-6 — gradient / feImage ignore cairo_matrix_invert status (try 1, committed)
+
+- Sites: `rsvg-cairo-draw.c` `_set_source_rsvg_linear_gradient` / `_set_source_rsvg_radial_gradient`; `rsvg-filter.c` `rsvg_filter_primitive_image_render`. Invert status was dropped, so a singular objectBoundingBox matrix could put cairo in `INVALID_MATRIX` and the fill became a silent no-op.
+- Plan: match E4-5. Invert-success only sets the source (or paints the feImage). Invert failure leaves the prior source and does not call `cairo_pattern_set_matrix`.
+- Change: those three status checks. `rsvg_parse_transform` already rejects a singular `gradientTransform` (e.g. `scale(0)`), so the remaining case is a zero-area path with `gradientUnits="objectBoundingBox"`.
+- Tests: `make check` 304 PASS including `/api/gradient_singular_transform_does_not_abort` (zero-area paths, cairo_status SUCCESS, green remains) and `/api/gradient_unit_fill_still_applies`. First smoke used `gradientTransform='scale(0)'`, which parse already maps to identity, so the gradient still painted. `make check-parity` pass=723 fail=0 skip=27 (pservers-grad-* and filters-image-* still green). The feImage invert-fail paint skip is not unit-tested (dw/dh/img size already > 0 before invert).
 - Outcome: **fixed**.
 
 ## Remaining (not this batch)

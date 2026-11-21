@@ -154,13 +154,12 @@ _set_source_rsvg_linear_gradient (RsvgDrawingCtx * ctx,
                            bbox.rect.x, bbox.rect.y);
         cairo_matrix_multiply (&matrix, &matrix, &bboxmatrix);
     }
-    cairo_matrix_invert (&matrix);
-    cairo_pattern_set_matrix (pattern, &matrix);
-    cairo_pattern_set_extend (pattern, linear->spread);
-
-    _pattern_add_rsvg_color_stops (pattern, linear->super.children, current_color_rgb, opacity);
-
-    cairo_set_source (cr, pattern);
+    if (cairo_matrix_invert (&matrix) == CAIRO_STATUS_SUCCESS) {
+        cairo_pattern_set_matrix (pattern, &matrix);
+        cairo_pattern_set_extend (pattern, linear->spread);
+        _pattern_add_rsvg_color_stops (pattern, linear->super.children, current_color_rgb, opacity);
+        cairo_set_source (cr, pattern);
+    }
     cairo_pattern_destroy (pattern);
 }
 
@@ -201,13 +200,12 @@ _set_source_rsvg_radial_gradient (RsvgDrawingCtx * ctx,
         cairo_matrix_multiply (&matrix, &matrix, &bboxmatrix);
     }
 
-    cairo_matrix_invert (&matrix);
-    cairo_pattern_set_matrix (pattern, &matrix);
-    cairo_pattern_set_extend (pattern, radial->spread);
-
-    _pattern_add_rsvg_color_stops (pattern, radial->super.children, current_color_rgb, opacity);
-
-    cairo_set_source (cr, pattern);
+    if (cairo_matrix_invert (&matrix) == CAIRO_STATUS_SUCCESS) {
+        cairo_pattern_set_matrix (pattern, &matrix);
+        cairo_pattern_set_extend (pattern, radial->spread);
+        _pattern_add_rsvg_color_stops (pattern, radial->super.children, current_color_rgb, opacity);
+        cairo_set_source (cr, pattern);
+    }
     cairo_pattern_destroy (pattern);
 }
 
