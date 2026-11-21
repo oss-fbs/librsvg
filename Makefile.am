@@ -242,6 +242,9 @@ EXTRA_DIST =				\
 	examples/05-from-memory.c	\
 	examples/06-pixbuf.c		\
 	examples/deprecated/render-cairo.c \
+	cpp/README \
+	cpp/rsvg.hpp \
+	cpp/example.cpp \
 	dist/debian/rsvg-convert.bash-completion
 
 # Tab completion for rsvg-convert. Not a --completion CLI flag.

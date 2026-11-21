@@ -1,0 +1,19 @@
+cpp/ — optional C++ wrapper
+===========================
+
+Header-only wrapper around the librsvg-2.0 C API.  It is not compiled,
+linked, or installed by `make` / `make install` / `make check`.
+
+  rsvg.hpp     RAII `rsvg::Handle` (owns RsvgHandle, unrefs in the destructor)
+  example.cpp  load, render_document, write a PNG
+
+Include `rsvg.hpp` and link the C library as usual:
+
+    c++ -std=c++11 -I. example.cpp \
+        $(pkg-config --cflags --libs librsvg-2.0 cairo cairo-png)
+
+Run from this directory so `../examples/icon.svg` is found.
+
+Load from a file, memory, or GFile.  Failures throw `rsvg::Error`
+(a `std::runtime_error` with the GError message).  Nothing here
+changes rendering, CSS, limits, or the C ABI.

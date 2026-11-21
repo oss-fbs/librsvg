@@ -9,6 +9,8 @@ Version 2.63.5
   depth exceeded".
 - GitHub Actions runs make check, ASan+UBSan, and a short fuzz smoke
   (fuzz-css, fuzz-afl, fuzz-bmp).
+- Optional C++ wrapper in cpp/ (header-only; not built or installed
+  by default).
 
 
 Version 2.63.4

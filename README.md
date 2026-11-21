@@ -18,6 +18,9 @@ cancellable-render, and the other 2.46–2.59 entry points are present.
 Programs written against librsvg 2.40 through 2.63 keep the same
 headers and link line.
 
+An optional C++ wrapper lives in `cpp/` (header-only).  It is not
+built or installed by `make`.  See `cpp/README`.
+
 It renders non-animated SVG and SVGZ: CSS styling, filters, masks,
 clip paths, and SVG `<image>` rasters (PNG, JPEG, GIF, WebP, BMP;
 optional AVIF).  A gdk-pixbuf loader (`libpixbufloader-svg`) and
@@ -158,4 +161,5 @@ Further reading
 - `LICENCE` — tools license (GNU GPL v2)
 - `doc/html/` — API reference (Doxygen; `doxygen doc/Doxyfile` or `make html`)
 - `doc/html/examples.html` — curated C samples (`examples/` in the tree)
+- `cpp/README` — optional C++ wrapper (header-only; not in `make`)
 - `rsvg-convert(1)` — command-line converter

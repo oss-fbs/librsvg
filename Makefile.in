@@ -783,6 +783,7 @@ EXTRA_DIST = librsvg.doap AUTHORS README.md NEWS LICENCE LICENCE-LIB librsvg-zip
 	examples/02-render-element.c examples/03-stylesheet.c \
 	examples/04-geometry.c examples/05-from-memory.c \
 	examples/06-pixbuf.c examples/deprecated/render-cairo.c \
+	cpp/README cpp/rsvg.hpp cpp/example.cpp \
 	dist/debian/rsvg-convert.bash-completion \
 	$(MSVCPROJ_GENERATED)
 # AGENTS.md, AGENTS_history.md, and AGENTS_deprecated-abi.md are

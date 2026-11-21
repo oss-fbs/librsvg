@@ -25,6 +25,9 @@ Project-specific install (this tree)
    this machine already has another librsvg-2.0 that you must not
    replace.
 
+   The optional C++ wrapper in `cpp/` is header-only.  `make` and
+   `make install` do not build or install it.
+
 Normal install
 --------------
 
