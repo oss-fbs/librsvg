@@ -19,7 +19,8 @@ Ranked from `00-SUMMARY.md`. High first. Noise skipped.
 13. **H2-4** — do not set XML_PARSE_HUGE unless UNLIMITED on libxml2 2.12+
 14. **H2-12** — skip non-finite feDisplacementMap scale before the interpolator cast
 15. **B3-2** — clamp feOffset dx/dy to gint and subtract in gint64
-16. Medium left: B3-3 / E4-4
+16. **B3-3** — skip kernelUnitLength scaling that would overflow the int canvas size
+17. Medium left: E4-4
 
 ## Attempts
 
@@ -143,7 +144,15 @@ Ranked from `00-SUMMARY.md`. High first. Noise skipped.
 - Tests: `make check` 282 PASS including `/api/offset_huge_dx_does_not_abort` (`dx='1e20'` copies nothing) and `/api/offset_unit_dx_still_shifts`. `make check-parity` pass=723 fail=0 skip=27 (filter-offset and filters-offset-01-b still green).
 - Outcome: **fixed**.
 
+### B3-3 — kernelUnitLength ceil overflow (try 1, committed)
+
+- Site: `rsvg-filter.c` `rsvg_filter_primitive_convolve_matrix_render` and `feDiffuseLighting`. `ox`/`oy` below `1e-6` are already bumped to 1. Tiny but still-positive `ox` in `[1e-6, width/INT_MAX)` makes `width/ox` exceed `INT_MAX`, so `(int) ceil` is float-cast UB, and an in-range value can still request a huge `surface_scale_clipped`.
+- Plan: compute the scaled size in double, reject non-finite/non-positive `ox`/`oy`, sizes over `RSVG_MAX_IMAGE_DIMENSION` or the UNLIMITED pixel budget, and bounds that do not fit in `gint`. On reject, keep the unscaled surface (same as a failed scale).
+- Change: `rsvg_kernel_unit_scaled_size` before `surface_scale_clipped`. Both call sites use it. Specular lighting has no third copy.
+- Tests: `make check` 284 PASS including `/api/convolve_tiny_kernel_unit_does_not_abort` (2200×8 identity 3×3, `kernelUnitLength='1e-6'`) and `/api/convolve_unit_kernel_length_still_applies`. `make check-parity` pass=723 fail=0 skip=27.
+- Outcome: **fixed**.
+
 ## Remaining (not this batch)
 
-- Medium: B3-3, E4-4.
+- Medium: E4-4.
 - Low / note: see `00-SUMMARY.md`.

@@ -1302,6 +1302,47 @@ lighting_cif_srgb (RsvgFilterPrimitive *self, RsvgFilterContext *ctx)
     return FALSE;
 }
 
+/* kernelUnitLength scaled size. Tiny ox makes width/ox exceed INT_MAX
+ * (B3-3). Skip scaling so the primitive keeps the unscaled surface. */
+static gboolean
+rsvg_kernel_unit_scaled_size (int width, int height, RsvgIRect bounds,
+                              double ox, double oy,
+                              int *nw, int *nh, RsvgIRect *sb)
+{
+    double nw_d, nh_d, x0, y0, x1, y1;
+
+    if (!isfinite (ox) || !isfinite (oy) || ox <= 0.0 || oy <= 0.0)
+        return FALSE;
+
+    nw_d = ceil ((double) width / ox);
+    nh_d = ceil ((double) height / oy);
+    if (!isfinite (nw_d) || !isfinite (nh_d)
+        || nw_d < 1.0 || nh_d < 1.0
+        || nw_d > (double) RSVG_MAX_IMAGE_DIMENSION
+        || nh_d > (double) RSVG_MAX_IMAGE_DIMENSION)
+        return FALSE;
+    if (!rsvg_pixel_buffer_dims_ok ((gint64) nw_d, (gint64) nh_d,
+                                    RSVG_MAX_IMAGE_PIXEL_BYTES_UNLIMITED))
+        return FALSE;
+
+    x0 = floor ((double) bounds.x0 / ox);
+    y0 = floor ((double) bounds.y0 / oy);
+    x1 = ceil ((double) bounds.x1 / ox);
+    y1 = ceil ((double) bounds.y1 / oy);
+    if (!isfinite (x0) || !isfinite (y0) || !isfinite (x1) || !isfinite (y1)
+        || x0 < (double) G_MININT || y0 < (double) G_MININT
+        || x1 > (double) G_MAXINT || y1 > (double) G_MAXINT)
+        return FALSE;
+
+    *nw = (int) nw_d;
+    *nh = (int) nh_d;
+    sb->x0 = (int) x0;
+    sb->y0 = (int) y0;
+    sb->x1 = (int) x1;
+    sb->y1 = (int) y1;
+    return TRUE;
+}
+
 static cairo_surface_t *
 surface_scale_clipped (cairo_surface_t *src,
                        int new_w, int new_h,
@@ -1454,13 +1495,11 @@ rsvg_filter_primitive_convolve_matrix_render (RsvgFilterPrimitive * self, RsvgFi
             if (oy < 1e-6)
                 oy = 1;
 
-            nw = (int) ceil (width / ox);
-            nh = (int) ceil (height / oy);
-            sb.x0 = (int) floor (boundarys.x0 / ox);
-            sb.y0 = (int) floor (boundarys.y0 / oy);
-            sb.x1 = (int) ceil (boundarys.x1 / ox);
-            sb.y1 = (int) ceil (boundarys.y1 / oy);
-            scaled = surface_scale_clipped (in, nw, nh, sb, 1.0 / ox, 1.0 / oy);
+            if (rsvg_kernel_unit_scaled_size (width, height, boundarys, ox, oy,
+                                              &nw, &nh, &sb))
+                scaled = surface_scale_clipped (in, nw, nh, sb, 1.0 / ox, 1.0 / oy);
+            else
+                scaled = NULL;
             if (scaled) {
                 cairo_surface_destroy (in);
                 in = scaled;
@@ -5044,13 +5083,11 @@ rsvg_filter_primitive_diffuse_lighting_render (RsvgFilterPrimitive * self, RsvgF
             if (oy < 1e-6)
                 oy = 1;
 
-            nw = (int) ceil (width / ox);
-            nh = (int) ceil (height / oy);
-            sb.x0 = (int) floor (boundarys.x0 / ox);
-            sb.y0 = (int) floor (boundarys.y0 / oy);
-            sb.x1 = (int) ceil (boundarys.x1 / ox);
-            sb.y1 = (int) ceil (boundarys.y1 / oy);
-            tmp = surface_scale_clipped (in, nw, nh, sb, 1.0 / ox, 1.0 / oy);
+            if (rsvg_kernel_unit_scaled_size (width, height, boundarys, ox, oy,
+                                              &nw, &nh, &sb))
+                tmp = surface_scale_clipped (in, nw, nh, sb, 1.0 / ox, 1.0 / oy);
+            else
+                tmp = NULL;
             if (tmp) {
                 cairo_surface_destroy (in);
                 in = tmp;
