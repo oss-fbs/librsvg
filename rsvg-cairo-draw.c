@@ -1257,8 +1257,20 @@ rsvg_cairo_push_render_stack (RsvgDrawingCtx * ctx)
                                                 CAIRO_CONTENT_COLOR_ALPHA,
                                                 render->width, render->height);
     } else {
-        surface = cairo_image_surface_create (CAIRO_FORMAT_ARGB32, 
-                                              render->width, render->height);
+        gint iw = 1, ih = 1;
+
+        if (isfinite (render->width) && isfinite (render->height)
+            && render->width >= 1.0 && render->height >= 1.0
+            && render->width <= (double) RSVG_MAX_IMAGE_DIMENSION
+            && render->height <= (double) RSVG_MAX_IMAGE_DIMENSION) {
+            iw = (gint) render->width;
+            ih = (gint) render->height;
+            if (!rsvg_pixel_buffer_dims_ok (iw, ih, ctx->max_image_pixel_bytes)) {
+                iw = 1;
+                ih = 1;
+            }
+        }
+        surface = cairo_image_surface_create (CAIRO_FORMAT_ARGB32, iw, ih);
 
         /* The surface reference is owned by the child_cr created below and put on the cr_stack! */
         render->surfaces_stack = g_list_prepend (render->surfaces_stack, surface);

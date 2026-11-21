@@ -180,6 +180,7 @@ rsvg_cairo_new_drawing_ctx (cairo_t * cr, RsvgHandle * handle)
     draw->num_elements_acquired = 0;
     draw->layer_nesting_depth = 0;
     draw->layer_nesting_exceeded = FALSE;
+    draw->max_image_pixel_bytes = rsvg_handle_max_image_pixel_bytes (handle);
     draw->pango_context = NULL;
     draw->drawsub_stack = NULL;
     draw->acquired_nodes = NULL;

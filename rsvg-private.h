@@ -251,6 +251,8 @@ struct RsvgDrawingCtx {
      * RSVG_MAX_LAYER_NESTING_DEPTH. UNLIMITED does not raise it. */
     guint layer_nesting_depth;
     gboolean layer_nesting_exceeded;
+    /* Copied from the handle. Caps filter/mask image surfaces. */
+    gsize max_image_pixel_bytes;
     PangoContext *pango_context;
     double dpi_x, dpi_y;
     RsvgViewBox vb;
@@ -560,6 +562,25 @@ rsvg_handle_max_image_pixel_bytes (const RsvgHandle *handle)
     if (handle && (handle->priv->flags & RSVG_HANDLE_FLAG_UNLIMITED))
         return RSVG_MAX_IMAGE_PIXEL_BYTES_UNLIMITED;
     return RSVG_MAX_IMAGE_PIXEL_BYTES;
+}
+
+/* Same overflow-safe check as <image> rasters. Used for document
+ * pixbufs and filter/mask image surfaces. */
+static inline gboolean
+rsvg_pixel_buffer_dims_ok (gint64 width, gint64 height, gsize max_pixel_bytes)
+{
+    gsize max_pixels;
+
+    if (width <= 0 || height <= 0)
+        return FALSE;
+    if (width > RSVG_MAX_IMAGE_DIMENSION || height > RSVG_MAX_IMAGE_DIMENSION)
+        return FALSE;
+    if (max_pixel_bytes < 4)
+        return FALSE;
+    max_pixels = max_pixel_bytes / 4;
+    if ((gsize) height > 0 && (gsize) width > max_pixels / (gsize) height)
+        return FALSE;
+    return TRUE;
 }
 
 static inline void

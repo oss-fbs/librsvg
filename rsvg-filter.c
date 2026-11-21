@@ -356,6 +356,11 @@ _rsvg_image_surface_new (int width, int height)
 {
     cairo_surface_t *surface;
 
+    /* Hard ceiling: even UNLIMITED never exceeds this. */
+    if (!rsvg_pixel_buffer_dims_ok (width, height,
+                                    RSVG_MAX_IMAGE_PIXEL_BYTES_UNLIMITED))
+        return NULL;
+
     surface = cairo_image_surface_create (CAIRO_FORMAT_ARGB32, width, height);
     if (cairo_surface_status (surface) != CAIRO_STATUS_SUCCESS) {
       cairo_surface_destroy (surface);

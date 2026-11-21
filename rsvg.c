@@ -81,6 +81,10 @@ rsvg_handle_get_pixbuf_sub (RsvgHandle * handle, const char *id)
     if (!(dimensions.width && dimensions.height))
         return NULL;
 
+    if (!rsvg_pixel_buffer_dims_ok (dimensions.width, dimensions.height,
+                                    rsvg_handle_max_image_pixel_bytes (handle)))
+        return NULL;
+
     surface = cairo_image_surface_create (CAIRO_FORMAT_ARGB32,
                                           dimensions.width, dimensions.height);
     if (cairo_surface_status (surface) != CAIRO_STATUS_SUCCESS) {

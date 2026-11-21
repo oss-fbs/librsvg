@@ -2313,6 +2313,30 @@ color_matrix_20_values_still_applies (void)
 }
 
 static void
+huge_filtered_canvas_does_not_crash (void)
+{
+    const char *svg =
+        "<svg xmlns='http://www.w3.org/2000/svg' width='32000' height='32000'>"
+        "<filter id='f' x='0' y='0' width='1' height='1'>"
+        "<feOffset dx='1' dy='1'/>"
+        "</filter>"
+        "<rect x='10' y='10' width='20' height='20' fill='#ff0000' filter='url(#f)'/>"
+        "</svg>";
+    RsvgHandle *handle = handle_from_svg_string (svg);
+    cairo_surface_t *output;
+    GdkPixbuf *pixbuf;
+
+    output = cairo_image_surface_create (CAIRO_FORMAT_ARGB32, 64, 64);
+    render_to_surface (handle, output);
+    cairo_surface_destroy (output);
+
+    pixbuf = rsvg_handle_get_pixbuf (handle);
+    g_assert_null (pixbuf);
+
+    g_object_unref (handle);
+}
+
+static void
 unlimited_raises_image_and_data_caps (void)
 {
     RsvgHandle *def;
@@ -3391,6 +3415,7 @@ main (int argc, char **argv)
     g_test_add_func ("/api/oversized_number_list_does_not_abort", oversized_number_list_does_not_abort);
     g_test_add_func ("/api/oversized_dasharray_does_not_abort", oversized_dasharray_does_not_abort);
     g_test_add_func ("/api/color_matrix_20_values_still_applies", color_matrix_20_values_still_applies);
+    g_test_add_func ("/api/huge_filtered_canvas_does_not_crash", huge_filtered_canvas_does_not_crash);
     g_test_add_func ("/api/unlimited_raises_image_and_data_caps", unlimited_raises_image_and_data_caps);
     g_test_add_func ("/api/oversized_data_uri_does_not_abort", oversized_data_uri_does_not_abort);
     g_test_add_func ("/api/embedded_svg_image_renders_at_device_resolution",
