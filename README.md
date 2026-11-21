@@ -1,20 +1,13 @@
 librsvg
 =======
 
-librsvg is a C library that renders Scalable Vector Graphics (SVG) to
-Cairo surfaces.  The shared library, headers, and pkg-config module
-are **librsvg-2.0**.  The soname is **librsvg-2.so.2**.
+librsvg is a C library that renders Scalable Vector Graphics (SVG) to Cairo surfaces.  The shared library, headers, and pkg-config module are **librsvg-2.0**.  The soname is **librsvg-2.so.2**. Originally written by Raph Levien.  This is an independent continuation of the C implementation.  It is not part of the GNOME project and is not affiliated with it.
 
-Version **2.63.4**. C library matching GNOME librsvg 2.63.4 for nested
-SVG `<image>` at device resolution, EXIF / `image-orientation`
-(`from-image` | `none`), `--unlimited` (decoded pixels 512 MiB and
-`data:` URIs 256 MiB; other limits stay), and invalid
-`feConvolveMatrix` order as a no-op.
 
-Originally written by Raph Levien.
 
-This tree is an independent continuation of the C implementation.
-It is not an official GNOME release.  Project page:
+Version **2.63.4**. C library with nested SVG `<image>` at device resolution, EXIF / `image-orientation` (`from-image` | `none`), `--unlimited` (decoded pixels 512 MiB and `data:` URIs 256 MiB; other limits stay), and invalid `feConvolveMatrix` order as a no-op.
+
+Project page:
 
     https://familybusinesssoftware.com/oss/librsvg
     
@@ -81,17 +74,21 @@ bit over ±8 million) are skipped.
 
 SVG `<image>` rasters:
 
-| Cap               | Default                 | With `--unlimited`      |
-| ----------------- | ----------------------- | ----------------------- |
-| Side length       | 32767 px                | 32767 px (never raised) |
-| Decoded pixels    | 128 MiB                 | 512 MiB                 |
-| `data:` URI size  | 64 MiB                  | 256 MiB                 |
-| File nesting      | 20                      | 20 (never raised)       |
-| Layer nesting     | 500 (glibc) / 50 (musl) | same                    |
-| Cairo coordinates | ±8,388,608              | same                    |
+| Cap               | Default                 | With `--unlimited` |
+| ----------------- | ----------------------- | ------------------ |
+| Side length       | 32767 px                | same               |
+| Decoded pixels    | 128 MiB                 | 512 MiB            |
+| `data:` URI size  | 64 MiB                  | 256 MiB            |
+| File nesting      | 20                      | same               |
+| Layer nesting     | 500 (glibc) / 50 (musl) | same               |
+| Cairo coordinates | ±8,388,608              | same               |
 
 Dimensions and `data:` size are checked before allocating the decode
 buffer.  Stylesheet buffers may still be rejected.
+
+**Why these limits exist**
+
+Unlimited renderer is dangerous in a multi-user or desktop environment. librsvg is intended for desktop use — icons, theme assets, UI graphics, and similar reasonably sized SVG content — not for arbitrarily large or untrusted graphics. The resource limits exist to protect the system from accidental or malicious SVGs that would otherwise consume unbounded memory or CPU.  
 
 Defaults
 --------
@@ -129,12 +126,9 @@ Release
 
 Download and signature:
 
-    https://familybusinesssoftware.com/oss/librsvg
+    https://familybusinesssoftware.com/oss/librsvg/download
     
     https://github.com/oss-fbs/librsvg
-    
-    make help
-    make pkg
 
 writes `librsvg-c-2.63.4.tar.xz` only under `../pkg/`.
 The tarball is source only (C tree, tests, autotools; `libcroco/`
