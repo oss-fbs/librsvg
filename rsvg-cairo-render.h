@@ -55,6 +55,10 @@ struct _RsvgCairoRender {
     RsvgBbox logical_bbox;
     GList *logical_bb_stack;
     GList *surfaces_stack;
+    /* TRUE if the matching push_render_stack created an offscreen
+     * layer. Pop must not re-derive that from a second clip-path
+     * acquire (E4-9). */
+    GList *offscreen_stack;
 
 #ifdef HAVE_PANGOFT2
     FcConfig *font_config_for_testing;

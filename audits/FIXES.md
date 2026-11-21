@@ -13,7 +13,8 @@ Ranked from `00-SUMMARY.md`. High first. Noise skipped.
 7. **H2-8** — AVIF size limits before decode
 8. **H2-1** — file size cap before full read
 9. **E4-2** — XInclude parse failure uses xi:fallback
-10. Medium left: E4-9 / H2-16 / E4-8, then H2-4 / H2-12 / B3-2 / B3-3 / E4-4
+10. **E4-9** — remember push/pop offscreen layer instead of re-acquiring clip-path
+11. Medium left: H2-16 / E4-8, then H2-4 / H2-12 / B3-2 / B3-3 / E4-4
 
 ## Attempts
 
@@ -89,8 +90,16 @@ Ranked from `00-SUMMARY.md`. High first. Noise skipped.
 - Tests: `make check` 271 PASS including `/api/xinclude_malformed_xml_uses_fallback` (not-xml sibling uses red fallback; well-formed sibling still paints blue and skips fallback). `make check-parity` pass=723 fail=0 skip=27 (include-fallback, include-compressed, include-text still green).
 - Outcome: **fixed**.
 
+### E4-9 — push/pop render stack clip-path layer mismatch (try 1, committed)
+
+- Site: `rsvg-cairo-draw.c` `rsvg_cairo_push_render_stack` / `rsvg_cairo_pop_render_stack`. Push and pop each acquired the clip-path node to decide `lateclip` (objectBoundingBox). Pop's early return skipped unwinding `cr_stack` when the second acquire failed. `rsvg_cairo_render_free` was a TODO and did not drain leftover stacks.
+- Plan: remember whether push created an offscreen layer; pop consults that flag instead of re-deriving skip from a second acquire. Drain leftover stacks in free.
+- Change: `RsvgCairoRender.offscreen_stack` of `gboolean`. `push_render_stack` returns whether a layer was created. `pop_discrete_layer` only calls `pop_render_stack` when that flag is TRUE. `pop_render_stack` always unwinds (empty `cr_stack` returns before the lateclip acquire). `rsvg_cairo_render_free` drains `cr_stack`, bbox stacks, `surfaces_stack`, and `offscreen_stack`.
+- Tests: `make check` 273 PASS including `/api/clip_path_object_bbox_still_clips` and `/api/clip_path_missing_does_not_unbalance_stack`. `make check-parity` pass=723 fail=0 skip=27 (masking-path-04-b still green). First `make check` SIGSEGV on masking-path-04-b was a stale `rsvg-cairo-clip.o` after inserting the struct field; rebuilt that TU, no source change.
+- Outcome: **fixed**. Non-filter `cairo_surface_create_similar` still uses uncapped `render->width/height` (H2-16 remainder).
+
 ## Remaining (not this batch)
 
-- Medium: E4-9 / H2-16 / E4-8 (error-path robustness). H2-16 remainder: non-filter `cairo_surface_create_similar` still uses uncapped `render->width/height`.
+- Medium: H2-16 / E4-8 (error-path robustness). H2-16 remainder: non-filter `cairo_surface_create_similar` still uses uncapped `render->width/height`.
 - Also medium: H2-4, H2-12, B3-2, B3-3, E4-4.
 - Low / note: see `00-SUMMARY.md`.

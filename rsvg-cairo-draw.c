@@ -1212,7 +1212,7 @@ rsvg_cairo_generate_mask (cairo_t * cr, RsvgMask * self, RsvgDrawingCtx * ctx, R
     cairo_surface_destroy (surface);
 }
 
-static void
+static gboolean
 rsvg_cairo_push_render_stack (RsvgDrawingCtx * ctx)
 {
     RsvgCairoRender *render = RSVG_CAIRO_RENDER (ctx->render);
@@ -1250,7 +1250,7 @@ rsvg_cairo_push_render_stack (RsvgDrawingCtx * ctx)
         && !state->filter && !state->mask && !lateclip && (state->comp_op == CAIRO_OPERATOR_OVER)
         && !state->isolation
         && (state->enable_background == RSVG_ENABLE_BACKGROUND_ACCUMULATE))
-        return;
+        return FALSE;
 
     if (!state->filter) {
         surface = cairo_surface_create_similar (cairo_get_target (render->cr),
@@ -1300,15 +1300,20 @@ rsvg_cairo_push_render_stack (RsvgDrawingCtx * ctx)
         render->logical_bb_stack = g_list_prepend (render->logical_bb_stack, logical);
         rsvg_bbox_init (&render->logical_bbox, &state->affine);
     }
+
+    return TRUE;
 }
 
 void
 rsvg_cairo_push_discrete_layer (RsvgDrawingCtx * ctx)
 {
     RsvgCairoRender *render = RSVG_CAIRO_RENDER (ctx->render);
+    gboolean offscreen;
 
     cairo_save (render->cr);
-    rsvg_cairo_push_render_stack (ctx);
+    offscreen = rsvg_cairo_push_render_stack (ctx);
+    render->offscreen_stack = g_list_prepend (render->offscreen_stack,
+                                              GINT_TO_POINTER (offscreen));
 }
 
 static void
@@ -1321,6 +1326,9 @@ rsvg_cairo_pop_render_stack (RsvgDrawingCtx * ctx)
     RsvgState *state = rsvg_current_state (ctx);
     gboolean nest, needs_destroy = FALSE;
 
+    if (!render->cr_stack)
+        return;
+
     if (rsvg_current_state (ctx)->clip_path) {
         RsvgNode *node;
         node = rsvg_acquire_node (ctx, rsvg_current_state (ctx)->clip_path);
@@ -1330,12 +1338,6 @@ rsvg_cairo_pop_render_stack (RsvgDrawingCtx * ctx)
         else
             rsvg_release_node (ctx, node);
     }
-
-    if (state->opacity == 0xFF
-        && !state->filter && !state->mask && !lateclip && (state->comp_op == CAIRO_OPERATOR_OVER)
-        && !state->isolation
-        && (state->enable_background == RSVG_ENABLE_BACKGROUND_ACCUMULATE))
-        return;
 
     surface = cairo_get_target (child_cr);
 
@@ -1408,8 +1410,15 @@ void
 rsvg_cairo_pop_discrete_layer (RsvgDrawingCtx * ctx)
 {
     RsvgCairoRender *render = RSVG_CAIRO_RENDER (ctx->render);
+    gboolean offscreen = FALSE;
 
-    rsvg_cairo_pop_render_stack (ctx);
+    if (render->offscreen_stack) {
+        offscreen = GPOINTER_TO_INT (render->offscreen_stack->data);
+        render->offscreen_stack = g_list_delete_link (render->offscreen_stack,
+                                                      render->offscreen_stack);
+    }
+    if (offscreen)
+        rsvg_cairo_pop_render_stack (ctx);
     cairo_restore (render->cr);
 }
 

@@ -47,7 +47,25 @@ rsvg_cairo_render_free (RsvgRender * self)
 {
     RsvgCairoRender *me = RSVG_CAIRO_RENDER (self);
 
-    /* TODO */
+    while (me->cr_stack) {
+        cairo_destroy (me->cr);
+        me->cr = (cairo_t *) me->cr_stack->data;
+        me->cr_stack = g_list_delete_link (me->cr_stack, me->cr_stack);
+    }
+
+    g_list_free (me->surfaces_stack);
+    me->surfaces_stack = NULL;
+
+    while (me->bb_stack) {
+        g_free (me->bb_stack->data);
+        me->bb_stack = g_list_delete_link (me->bb_stack, me->bb_stack);
+    }
+    while (me->logical_bb_stack) {
+        g_free (me->logical_bb_stack->data);
+        me->logical_bb_stack = g_list_delete_link (me->logical_bb_stack, me->logical_bb_stack);
+    }
+    g_list_free (me->offscreen_stack);
+    me->offscreen_stack = NULL;
 
 #ifdef HAVE_PANGOFT2
     if (me->font_config_for_testing) {
@@ -89,6 +107,7 @@ rsvg_cairo_render_new (cairo_t * cr, double width, double height)
     cairo_render->cr_stack = NULL;
     cairo_render->bb_stack = NULL;
     cairo_render->surfaces_stack = NULL;
+    cairo_render->offscreen_stack = NULL;
 
 #ifdef HAVE_PANGOFT2
     cairo_render->font_config_for_testing = NULL;

@@ -1479,6 +1479,70 @@ layer_nesting_shallow_still_renders (void)
     assert_nested_groups_render (10, RSVG_HANDLE_FLAGS_NONE, TRUE);
 }
 
+/* objectBoundingBox clip-path forces an offscreen layer. Push records
+ * that; pop must unwind even if a second clip acquire would fail (E4-9). */
+static void
+clip_path_object_bbox_still_clips (void)
+{
+    const char *svg =
+        "<svg xmlns='http://www.w3.org/2000/svg' width='8' height='8'>"
+        "<rect width='8' height='8' fill='#00ff00'/>"
+        "<clipPath id='c' clipPathUnits='objectBoundingBox'>"
+        "<rect x='0' y='0' width='0.5' height='1'/>"
+        "</clipPath>"
+        "<g clip-path='url(#c)'>"
+        "<rect width='8' height='8' fill='#ff0000'/>"
+        "</g>"
+        "</svg>";
+    RsvgHandle *handle;
+    GError *error = NULL;
+    cairo_surface_t *output;
+
+    handle = rsvg_handle_new_from_data ((const guint8 *) svg, strlen (svg), &error);
+    g_assert_no_error (error);
+    g_assert_nonnull (handle);
+
+    output = cairo_image_surface_create (CAIRO_FORMAT_ARGB32, 8, 8);
+    render_to_surface (handle, output);
+    g_assert_cmphex (pixel_argb (output, 2, 4), ==, 0xffff0000);
+    g_assert_cmphex (pixel_argb (output, 6, 4), ==, 0xff00ff00);
+
+    cairo_surface_destroy (output);
+    g_object_unref (handle);
+}
+
+static void
+clip_path_missing_does_not_unbalance_stack (void)
+{
+    const char *svg =
+        "<svg xmlns='http://www.w3.org/2000/svg' width='8' height='8'>"
+        "<rect width='8' height='8' fill='#00ff00'/>"
+        "<clipPath id='c' clipPathUnits='objectBoundingBox'>"
+        "<rect x='0' y='0' width='0.5' height='1'/>"
+        "</clipPath>"
+        "<g clip-path='url(#missing)'>"
+        "<g clip-path='url(#c)'>"
+        "<rect width='8' height='8' fill='#ff0000'/>"
+        "</g>"
+        "</g>"
+        "</svg>";
+    RsvgHandle *handle;
+    GError *error = NULL;
+    cairo_surface_t *output;
+
+    handle = rsvg_handle_new_from_data ((const guint8 *) svg, strlen (svg), &error);
+    g_assert_no_error (error);
+    g_assert_nonnull (handle);
+
+    output = cairo_image_surface_create (CAIRO_FORMAT_ARGB32, 8, 8);
+    render_to_surface (handle, output);
+    g_assert_cmphex (pixel_argb (output, 2, 4), ==, 0xffff0000);
+    g_assert_cmphex (pixel_argb (output, 6, 4), ==, 0xff00ff00);
+
+    cairo_surface_destroy (output);
+    g_object_unref (handle);
+}
+
 static void
 cairo_huge_path_coords_are_skipped (void)
 {
@@ -3619,6 +3683,8 @@ main (int argc, char **argv)
     g_test_add_func ("/api/layer_nesting_over_limit_does_not_crash", layer_nesting_over_limit_does_not_crash);
     g_test_add_func ("/api/layer_nesting_unlimited_still_fails", layer_nesting_unlimited_still_fails);
     g_test_add_func ("/api/layer_nesting_shallow_still_renders", layer_nesting_shallow_still_renders);
+    g_test_add_func ("/api/clip_path_object_bbox_still_clips", clip_path_object_bbox_still_clips);
+    g_test_add_func ("/api/clip_path_missing_does_not_unbalance_stack", clip_path_missing_does_not_unbalance_stack);
     g_test_add_func ("/api/cairo_huge_path_coords_are_skipped", cairo_huge_path_coords_are_skipped);
     g_test_add_func ("/api/cairo_huge_text_coords_are_skipped", cairo_huge_text_coords_are_skipped);
     g_test_add_func ("/api/convolve_invalid_order_is_noop", convolve_invalid_order_is_noop);
