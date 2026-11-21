@@ -2,7 +2,7 @@
 
 **librsvg** is a C library that loads SVG and SVGZ and draws it onto
 a Cairo surface.  The shared library, headers, and pkg-config module
-are **librsvg-2.0**.  This is the public C API for librsvg **2.63.4**.
+are **librsvg-2.0**.  This is the public C API for librsvg **2.63.5**.
 
 It handles non-animated SVG, CSS styling, filters, masks, clip paths,
 and SVG `<image>` rasters (PNG, JPEG, GIF, WebP, BMP; optional AVIF).  A
@@ -40,7 +40,7 @@ stylesheet buffers may be rejected.
 - [Deprecated](@ref rsvg_deprecated) — older calls kept for compatibility
 
 The last new public C function is `rsvg_handle_set_cancellable_for_rendering`
-(2.59).  The library version is 2.63.4.
+(2.59).  The library version is 2.63.5.
 
 [Thank you](@ref thanks) — the people who built librsvg.
 

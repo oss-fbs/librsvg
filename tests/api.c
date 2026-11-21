@@ -285,7 +285,7 @@ library_version_defines (void)
                                       LIBRSVG_MINOR_VERSION,
                                       LIBRSVG_MICRO_VERSION);
     g_assert_cmpstr (version, ==, LIBRSVG_VERSION);
-    g_assert_cmpstr (LIBRSVG_VERSION, ==, "2.63.4");
+    g_assert_cmpstr (LIBRSVG_VERSION, ==, "2.63.5");
     g_free (version);
 }
 
@@ -302,7 +302,8 @@ library_version_check (void)
     g_assert_true (LIBRSVG_CHECK_VERSION (2, 62, 6));
     g_assert_true (LIBRSVG_CHECK_VERSION (2, 63, 0));
     g_assert_true (LIBRSVG_CHECK_VERSION (2, 63, 4));
-    g_assert_false (LIBRSVG_CHECK_VERSION (2, 63, 5));
+    g_assert_true (LIBRSVG_CHECK_VERSION (2, 63, 5));
+    g_assert_false (LIBRSVG_CHECK_VERSION (2, 63, 6));
     g_assert_false (LIBRSVG_CHECK_VERSION (2, 64, 0));
     g_assert_false (LIBRSVG_CHECK_VERSION (3, 0, 0));
 }

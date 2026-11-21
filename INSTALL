@@ -7,9 +7,9 @@ unlimited permission to copy, distribute and modify it.
 Project-specific install (this tree)
 ====================================
 
-   This tree is librsvg 2.63.4 (`librsvg-2.0`).  The public name,
+   This tree is librsvg 2.63.5 (`librsvg-2.0`).  The public name,
    soname, and pkg-config module remain librsvg-2.0.  C library
-   matching GNOME librsvg 2.63.4 for nested SVG <image> at device
+   matching GNOME librsvg 2.63.5 for nested SVG <image> at device
    resolution, EXIF / image-orientation, --unlimited (decoded pixels
    512 MiB and data: URIs 256 MiB; other limits stay), and invalid
    feConvolveMatrix order as a no-op.

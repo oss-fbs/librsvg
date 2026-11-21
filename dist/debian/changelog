@@ -1,3 +1,11 @@
+librsvg-c (2.63.5-1) unstable; urgency=medium
+
+  * Version 2.63.5. Unsigned PACK_RGBA and RSVG_ASPECT_RATIO_SLICE
+    shifts. Nested XInclude copies node names so the xml dict cannot
+    UAF. CI runs make check, ASan+UBSan, and a short fuzz smoke.
+
+ -- Randy Butler <oss@familybusinesssoftware.com>  Fri, 20 Nov 2026 22:30:00 -0500
+
 librsvg-c (2.63.4-1) unstable; urgency=medium
 
   * Version 2.63.4. C library matching GNOME librsvg 2.63.4 for nested

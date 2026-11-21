@@ -1,7 +1,7 @@
 SUBDIRS = . gdk-pixbuf-loader tests tools doc build
 
 # Packaging and extra checks. `make` with no goal is still `all`.
-# VERSION is AC_INIT / configure.ac (2.63.4). Source tarball: ../pkg/.
+# VERSION is AC_INIT / configure.ac (2.63.5). Source tarball: ../pkg/.
 # Debian packages: ../debpkg/.
 help:
 	@echo "librsvg-c $(VERSION) targets:"

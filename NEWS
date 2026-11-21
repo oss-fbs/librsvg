@@ -1,3 +1,16 @@
+Version 2.63.5
+
+- PACK_RGBA uses unsigned left shifts, so packing 255 into the high
+  byte is well-defined.
+- RSVG_ASPECT_RATIO_SLICE is 1u << 31.
+- Nested XInclude that hits the file nesting cap no longer reads
+  freed parser memory. Node names are copied so they outlive the
+  inner xml parser. The load still fails with "maximum nesting
+  depth exceeded".
+- GitHub Actions runs make check, ASan+UBSan, and a short fuzz smoke
+  (fuzz-css, fuzz-afl, fuzz-bmp).
+
+
 Version 2.63.4
 
 - Nested SVG documents in <image> are rasterized at the parent
@@ -16,9 +29,6 @@ Version 2.63.4
 - feConvolveMatrix with an invalid kernel size (order zero, negative,
   or larger than 20) is a no-op. The rest of the document still
   renders.
-- Nested XInclude that hits the file nesting cap no longer reads
-  freed parser memory. The load still fails with "maximum nesting
-  depth exceeded".
 
 
 Version 2.62.6

@@ -14,7 +14,7 @@
 	/>
 	<UserMacro
 		Name="RsvgMicroVersion"
-		Value="4"
+		Value="5"
 	/>
 	<UserMacro
 		Name="ApiVersion"

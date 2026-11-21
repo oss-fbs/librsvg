@@ -5,7 +5,7 @@ librsvg is a C library that renders Scalable Vector Graphics (SVG) to Cairo surf
 
 
 
-Version **2.63.4**. C library with nested SVG `<image>` at device resolution, EXIF / `image-orientation` (`from-image` | `none`), `--unlimited` (decoded pixels 512 MiB and `data:` URIs 256 MiB; other limits stay), and invalid `feConvolveMatrix` order as a no-op.
+Version **2.63.5**. C library with nested SVG `<image>` at device resolution, EXIF / `image-orientation` (`from-image` | `none`), `--unlimited` (decoded pixels 512 MiB and `data:` URIs 256 MiB; other limits stay), and invalid `feConvolveMatrix` order as a no-op.
 
 Project page:
 
@@ -130,7 +130,7 @@ Download and signature:
     
     https://github.com/oss-fbs/librsvg
 
-writes `librsvg-c-2.63.4.tar.xz` only under `../pkg/`.
+writes `librsvg-c-2.63.5.tar.xz` only under `../pkg/`.
 The tarball is source only (C tree, tests, autotools; `libcroco/`
 is an unbuilt archive).  Sample packaging lives in git `dist/`,
 not in the public source archive.
@@ -142,8 +142,8 @@ and in the git tree (`oss-familybusinesssoftware.com-pubkey.asc`).
 Neither installs onto a live prefix or runs pkgmk.
 
     cd ../pkg
-    gpg --detach-sign --armor librsvg-c-2.63.4.tar.xz
-    sha256sum librsvg-c-2.63.4.tar.xz > SHA256SUMS
+    gpg --detach-sign --armor librsvg-c-2.63.5.tar.xz
+    sha256sum librsvg-c-2.63.5.tar.xz > SHA256SUMS
     gpg --detach-sign --armor SHA256SUMS
 
 Further reading

@@ -1,8 +1,8 @@
 /**
 @page examples Examples
 
-Curated samples for librsvg **2.63.4**.  Full programs live in
-`examples/` in the source tree and in the `librsvg-c-2.63.4` tarball.
+Curated samples for librsvg **2.63.5**.  Full programs live in
+`examples/` in the source tree and in the `librsvg-c-2.63.5` tarball.
 Build from that directory (needs pkg-config `librsvg-2.0`; Cairo
 samples also need `cairo` / `cairo-png`):
 

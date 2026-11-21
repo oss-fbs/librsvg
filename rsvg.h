@@ -1,7 +1,7 @@
 /* -*- Mode: C; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
 /* vim: set sw=4 sts=4 expandtab: */
 /*
-   rsvg.h: Public C API for librsvg 2.63.4.
+   rsvg.h: Public C API for librsvg 2.63.5.
 
    Copyright (C) 2000 Eazel, Inc.
    Copyright (C) 2026 Randy Butler
