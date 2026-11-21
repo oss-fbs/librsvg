@@ -63,7 +63,6 @@ else
         --exclude '/build-asan/' \
         --exclude '/.git/' \
         --exclude '/stage/' \
-        --exclude '/rust/' \
         --exclude '.libs/' \
         --exclude '.deps/' \
         --exclude '*.o' \

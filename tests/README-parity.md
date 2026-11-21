@@ -1,7 +1,8 @@
 # 2.62.3 parity reftests (P0)
 
-`tests/fixtures/parity/` is a read-only copy of
-`rust/rsvg/tests/fixtures/reftests` from the librsvg **2.62.3** snapshot.
+`tests/fixtures/parity/` is the **2.62.3** PNG reftest corpus (copied
+from GNOME librsvg 2.62.3 during development). That snapshot
+directory has been removed.
 
 The 2.52.0 baseline suite is unchanged: `make check` still runs
 `tests/api.c` and `tests/fixtures/reftests/` only.
@@ -145,7 +146,7 @@ RSVG_PARITY=1 RSVG_PARITY_XFAIL_OUT=/tmp/parity-xfail.txt \
 
 ## Same-renderer local refs (P20)
 
-`make check-parity` always compares against the **rust 2.62.3 oracle**
+`make check-parity` always compares against the **2.62.3 oracle**
 PNGs in `fixtures/parity/*-ref.png`. That is the version-claim corpus.
 Do not replace those files.
 
@@ -167,7 +168,7 @@ text fixtures). They are **not** the 2.62.3 oracle and do not change
 `LIBRSVG_VERSION`.
 
 Do not remove lines from `parity-xfail.txt` because a local ref
-matches. Only rust-oracle `unexpected_pass` may drop an accepted-
+matches. Only oracle `unexpected_pass` may drop an accepted-
 difference line.
 
 ## Rules
@@ -176,9 +177,9 @@ difference line.
 - `LIBRSVG_VERSION` is **2.63.5** (named real-gap empty).
   Do not bump further for TFM / TAA / TCR accepted differences.
 - Do not build or link `libcroco/` (discontinued archive; css/ only).
-- `RSVG_PARITY=1` loads only the rust 2.62.3 TTF list (Roboto / Ahem /
+- `RSVG_PARITY=1` loads only the 2.62.3 TTF list (Roboto / Ahem /
   DejaVu / Noto Hebrew) + `fonts.conf` (P19 / Q1). LiberationSans is
   **not** in that map. `make check` still uses LiberationSans.
 - `RSVG_PARITY=1` fills text as a cairo path in paint-order (Q2,
-  matching rust `drawing_ctx.rs`). `make check` still uses
+  matching 2.62.3 `drawing_ctx.rs`). `make check` still uses
   `show_layout` so the 2.40 baseline PNGs stay green.

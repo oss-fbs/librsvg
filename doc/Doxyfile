@@ -107,8 +107,7 @@ EXCLUDE                = rust \
                          AGENTS.md \
                          AGENTS_history.md
 EXCLUDE_SYMLINKS       = NO
-EXCLUDE_PATTERNS       = */rust/* \
-                         */libcroco/* \
+EXCLUDE_PATTERNS       = */libcroco/* \
                          */tests/* \
                          */AGENTS.md \
                          */AGENTS_history.md

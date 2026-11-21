@@ -641,7 +641,7 @@ parity_write_generated_xfail (void)
 
     fprintf (fp,
              "# Living xfail list: librsvg vs 2.62.3 reftests\n"
-             "# Corpus: tests/fixtures/parity/ (copy of rust/rsvg/tests/fixtures/reftests)\n"
+             "# Corpus: tests/fixtures/parity/ (2.62.3 reftest corpus; snapshot removed)\n"
              "# Do not implement features to shrink this list in the P0 step.\n"
              "# Format: fail<TAB>relative-path<TAB>reason\n"
              "#\n"

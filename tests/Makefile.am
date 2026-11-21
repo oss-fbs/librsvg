@@ -175,7 +175,7 @@ check-parity-croco:
 	@echo "check-parity-croco: libcroco is discontinued; css/ is the only engine" >&2
 	@false
 
-# P20: host-local same-renderer refs. Does not replace rust 2.62.3 PNGs.
+# P20: host-local same-renderer refs. Does not replace 2.62.3 PNGs.
 generate-parity-local: $(top_builddir)/rsvg-convert$(EXEEXT)
 	$(SHELL) $(srcdir)/generate-parity-local.sh \
 		$(top_builddir)/rsvg-convert$(EXEEXT) \
@@ -184,7 +184,7 @@ generate-parity-local: $(top_builddir)/rsvg-convert$(EXEEXT)
 		$(abs_srcdir)/parity-local.txt
 
 # Same-renderer regression on the class A named subset. No tolerance band
-# (strict max_diff ≤ 1). rust check-parity is unchanged.
+# (strict max_diff ≤ 1). check-parity (fixtures/parity/) is unchanged.
 check-parity-local: rsvg-test$(EXEEXT)
 	G_TEST_SRCDIR="$(abs_srcdir)" \
 	G_TEST_BUILDDIR="$(abs_builddir)" \

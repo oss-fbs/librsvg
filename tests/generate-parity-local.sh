@@ -1,6 +1,6 @@
 #!/bin/sh
 # Generate host-local 72 dpi PNGs with this tree's rsvg-convert and the
-# P19 RSVG_PARITY font map. Does not touch rust 2.62.3 oracle PNGs.
+# P19 RSVG_PARITY font map. Does not touch 2.62.3 oracle PNGs.
 set -eu
 
 if [ "$#" -lt 4 ]; then

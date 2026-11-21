@@ -54,7 +54,7 @@ Pixel noise dropped; **no line flipped**. Class A stays **180**.
 **Q1:** isolated rust TTF list + `FcConfigSetCurrent`.
 
 **Q2:** `RSVG_PARITY=1` fills text as a cairo path in paint-order
-(`rust/rsvg/src/drawing_ctx.rs`). That flipped 105 xfails (including
+(2.62.3 `drawing_ctx.rs`). That flipped 105 xfails (including
 the named set below). Leftover class A is Pango-vs-rust metrics /
 missing face, not another algorithm. Do **not** guess outlines.
 
@@ -73,7 +73,7 @@ without rust’s text/AA stack:
 every span’s pango ink box and uses that for objectBoundingBox
 paint. C now does the same two-pass.
 
-**T5 flipped:** `bugs/bug108-font-size-relative.svg` — `font-size: smaller`/`larger` now resolve to parent/1.2 and parent×1.2 (`rust/rsvg/src/font_props.rs`). The render path used to treat stored length 0 as “skip”.
+**T5 flipped:** `bugs/bug108-font-size-relative.svg` — `font-size: smaller`/`larger` now resolve to parent/1.2 and parent×1.2 (2.62.3 `font_props.rs`). The render path used to treat stored length 0 as “skip”.
 
 **Q2 flipped (removed from xfail):** `a-pseudo-class.svg`,
 `font-shorthand.svg`, `include-text.svg`, `include-fallback.svg`,

@@ -2,8 +2,8 @@ gdk-pixbuf SVG loader audit vs GNOME librsvg 2.62.3
 ====================================================
 
 Scope: `gdk-pixbuf-loader/io-svg.c`, `librsvg.thumbnailer.in`,
-`librsvg-c-common` install/postinst/postrm. Oracle: `rust/gdk-pixbuf-loader/`
-(`src/lib.rs` is the 2.62.3 meson loader; `io-svg.c` there is a C twin).
+`librsvg-c-common` install/postinst/postrm. Compared during development
+to GNOME librsvg 2.62.3 (`gdk-pixbuf-loader/`; snapshot removed).
 No host install. LIBRSVG_VERSION unchanged.
 
 Sources

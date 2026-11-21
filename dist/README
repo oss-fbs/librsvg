@@ -8,7 +8,7 @@ From the project root (`make help` lists targets):
 writes **only** `librsvg-c-2.63.5.tar.xz` under `../pkg/`.
 The tarball is source only;
 packaging lives in git `dist/`, not in the public archive.
-`rust/` is not included. `debug/` and test logs (`tests/*.log`,
+`debug/` and test logs (`tests/*.log`,
 `tests/*.trs`) are not part of the release tarball.
 `make dist-release` is an alias of `pkg`.
 

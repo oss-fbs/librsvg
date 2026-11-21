@@ -273,7 +273,7 @@ struct RsvgDrawingCtx {
      * rect/circle/ellipse (rust shapes.rs Markers::No). */
     gboolean suppress_markers;
 
-    /* rust/rsvg/src/text.rs: objectBoundingBox fill/stroke uses the
+    /* 2.62.3 text.rs: objectBoundingBox fill/stroke uses the
      * union of all text-span ink boxes, not each chunk. */
     cairo_rectangle_t text_obb;
     gboolean text_obb_valid;

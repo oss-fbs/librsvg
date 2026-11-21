@@ -10,7 +10,7 @@ help:
 	@echo "  all           library + tools  (default \`make\`)"
 	@echo "  check         test suite"
 	@echo "  check-asan    ASan+UBSan out-of-tree make check (not the default build)"
-	@echo "  check-parity  rust-oracle reftests"
+	@echo "  check-parity  2.62.3 PNG reftests (tests/fixtures/parity/)"
 	@echo "  fuzz-css      optional CSS/SVG harness (not make check)"
 	@echo "  fuzz-afl      optional AFL++ binary (skips if AFL++ missing)"
 	@echo "  html          API HTML (Doxygen)"

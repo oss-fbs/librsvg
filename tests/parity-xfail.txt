@@ -4,7 +4,7 @@
 # Per-fixture class + frozen T-norm: tests/parity-t-numbers.md
 # Policy: tests/README-parity.md
 #
-# Corpus: tests/fixtures/parity/  (copy of rust/rsvg/tests/fixtures/reftests)
+# Corpus: tests/fixtures/parity/  (2.62.3 reftest corpus; snapshot removed)
 # Harness: tests/rsvg-test.c with RSVG_PARITY=1
 # Default matcher is css/. libcroco comparison: RSVG_CSS_ENGINE=croco
 # and tests/parity-xfail-croco.txt.

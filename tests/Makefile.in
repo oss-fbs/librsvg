@@ -1689,7 +1689,7 @@ fuzz-afl: $(top_builddir)/librsvg-@RSVG_API_MAJOR_VERSION@.la
 clean-local:
 	-rm -f fuzz-bmp$(EXEEXT) fuzz/rsvg-fuzz-css$(EXEEXT) fuzz/rsvg-fuzz-css-afl$(EXEEXT)
 
-# P20: host-local same-renderer refs. Does not replace rust 2.62.3 PNGs.
+# P20: host-local same-renderer refs. Does not replace 2.62.3 PNGs.
 generate-parity-local: $(top_builddir)/rsvg-convert$(EXEEXT)
 	$(SHELL) $(srcdir)/generate-parity-local.sh \
 		$(top_builddir)/rsvg-convert$(EXEEXT) \

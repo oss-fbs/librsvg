@@ -2,7 +2,7 @@ css/ engine (default)
 =====================
 
 C cascade + selector matcher aligned with librsvg 2.62.3
-`rust/rsvg/src/css.rs`.
+`css.rs` (development oracle snapshot removed).
 
 - This directory is the **only** matching path.
 - `RSVG_CSS_ENGINE=croco` (or `old` / `libcroco` / `0` / `off`) is

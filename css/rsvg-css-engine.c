@@ -31,7 +31,7 @@
 #include "rsvg-css.h"
 #include "css/rsvg-css-engine.h"
 
-/* See rust/rsvg/src/ua.css — only the rules this engine can parse. */
+/* 2.62.3 ua.css — only the rules this engine can parse. */
 static const char rsvg_ua_css[] =
     "svg:not(:root), image, marker, pattern, symbol { overflow: hidden; }\n"
     "defs, clipPath, mask, marker, desc, title, metadata,\n"

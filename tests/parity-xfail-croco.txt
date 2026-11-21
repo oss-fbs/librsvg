@@ -1,7 +1,7 @@
 # Living xfail list: libcroco fallback (RSVG_CSS_ENGINE=croco) vs 2.62.3
 # Default matcher is css/; this file is only for make check-parity-croco.
 #
-# Corpus: tests/fixtures/parity/  (copy of rust/rsvg/tests/fixtures/reftests)
+# Corpus: tests/fixtures/parity/  (2.62.3 reftest corpus; snapshot removed)
 # Harness: tests/rsvg-test.c with RSVG_PARITY=1
 # Generated from one full run of the PNG reftest subset. Do not implement
 # features just to shrink this list in the P0 step. Do not bump

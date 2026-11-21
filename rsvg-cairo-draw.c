@@ -677,7 +677,7 @@ rsvg_cairo_render_pango_layout (RsvgDrawingCtx * ctx, PangoLayout * layout, doub
         bbox.virgin = 0;
     }
 
-    /* rust/rsvg/src/drawing_ctx.rs: PNG/image text is a cairo path
+    /* 2.62.3 drawing_ctx.rs: PNG/image text is a cairo path
      * painted in paint-order (fill/stroke). PDF fill still uses
      * show_layout so the text stays selectable. */
     {
@@ -781,7 +781,7 @@ rsvg_cairo_render_pango_layout (RsvgDrawingCtx * ctx, PangoLayout * layout, doub
 
 /* Cairo does not draw a square cap on a zero-length subpath (bug165).
  * Expand those subpaths to a short segment so the square cap appears,
- * matching rust/rsvg/src/cairo_path.rs. Round caps already work. */
+ * matching 2.62.3 cairo_path.rs. Round caps already work. */
 static void
 rsvg_cairo_append_path (cairo_t *cr, const cairo_path_t *path, cairo_line_cap_t cap)
 {

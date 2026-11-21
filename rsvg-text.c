@@ -118,7 +118,7 @@ _rsvg_node_has_next_sibling (RsvgNode *node)
     return FALSE;
 }
 
-/* SVG1.1 xml:space, matching rust/rsvg/src/space.rs (2.62.3).
+/* SVG1.1 xml:space, matching 2.62.3 space.rs.
  * CSS white-space is parsed but not applied on <text>, same as 2.62. */
 static GString *
 _rsvg_text_chomp (RsvgState *state, RsvgNode *chars_node, gboolean * lastwasspace)
@@ -392,7 +392,7 @@ _rsvg_node_text_draw (RsvgNode * self, RsvgDrawingCtx * ctx, int dominate)
     x += dx;
     y += dy;
 
-    /* rust/rsvg/src/text.rs unions every span’s ink box, then
+    /* 2.62.3 text.rs unions every span’s ink box, then
      * to_user_space() uses that for objectBoundingBox paint. */
     ctx->text_obb_valid = FALSE;
     ctx->text_measure_only = TRUE;
@@ -703,7 +703,7 @@ rsvg_text_layout_new (RsvgDrawingCtx * ctx, RsvgState * state, const char *text)
     return layout;
 }
 
-/* rust/rsvg/src/text.rs compute_text_box: pango ink in user space. */
+/* 2.62.3 text.rs compute_text_box: pango ink in user space. */
 static gboolean
 rsvg_text_layout_ink_rect (PangoLayout *layout, double x, double y,
                            cairo_rectangle_t *rect)

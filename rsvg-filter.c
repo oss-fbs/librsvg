@@ -5498,7 +5498,7 @@ rsvg_filter_primitive_drop_shadow_render (RsvgFilterPrimitive * self, RsvgFilter
     RsvgFilterPrimitiveDropShadow *ds = (RsvgFilterPrimitiveDropShadow *) self;
     RsvgNode *blur, *offset, *flood, *comp, *merge, *mn1, *mn2;
 
-    /* Equivalent chain from rust/rsvg/src/filter_func.rs drop_shadow_primitives():
+    /* Equivalent chain from 2.62.3 filter_func.rs drop_shadow_primitives():
      *   feGaussianBlur in=SourceAlpha
      *   feOffset result=offsetblur
      *   feFlood (flood-color / flood-opacity from this node)

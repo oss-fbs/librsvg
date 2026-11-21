@@ -1,6 +1,7 @@
 #!/bin/bash
 # Build librsvg-c-VERSION.tar.xz under ../pkg/ (parent of this tree).
-# Never install onto the live host. No rust/ in the archive.
+# Never install onto the live host. The former 2.62.3 snapshot must
+# not appear in the archive.
 set -euo pipefail
 
 here=$(cd "$(dirname "$0")" && pwd)
