@@ -2313,6 +2313,47 @@ color_matrix_20_values_still_applies (void)
 }
 
 static void
+morphology_huge_radius_does_not_hang (void)
+{
+    const char *svg =
+        "<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32'>"
+        "<filter id='f' x='0' y='0' width='1' height='1'>"
+        "<feMorphology operator='dilate' radius='20000'/>"
+        "</filter>"
+        "<rect width='32' height='32' fill='#00ff00' filter='url(#f)'/>"
+        "</svg>";
+    RsvgHandle *handle = handle_from_svg_string (svg);
+    cairo_surface_t *output = cairo_image_surface_create (CAIRO_FORMAT_ARGB32, 32, 32);
+
+    render_to_surface (handle, output);
+    g_assert_cmphex (pixel_argb (output, 16, 16) >> 24, ==, 0xff);
+
+    cairo_surface_destroy (output);
+    g_object_unref (handle);
+}
+
+static void
+morphology_unit_radius_still_dilates (void)
+{
+    const char *svg =
+        "<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32'>"
+        "<filter id='f' filterUnits='userSpaceOnUse' x='0' y='0' width='32' height='32'>"
+        "<feMorphology operator='dilate' radius='1'/>"
+        "</filter>"
+        "<rect x='15' y='15' width='2' height='2' fill='#ff0000' filter='url(#f)'/>"
+        "</svg>";
+    RsvgHandle *handle = handle_from_svg_string (svg);
+    cairo_surface_t *output = cairo_image_surface_create (CAIRO_FORMAT_ARGB32, 32, 32);
+
+    render_to_surface (handle, output);
+    g_assert_cmphex (pixel_argb (output, 15, 15), ==, 0xffff0000);
+    g_assert_cmphex (pixel_argb (output, 14, 15), ==, 0xffff0000);
+
+    cairo_surface_destroy (output);
+    g_object_unref (handle);
+}
+
+static void
 filter_pixel_offset_uses_gsize (void)
 {
     /* 30000 * 128000 overflows a 32-bit int (B3-1 feOffset case). */
@@ -3425,6 +3466,8 @@ main (int argc, char **argv)
     g_test_add_func ("/api/oversized_number_list_does_not_abort", oversized_number_list_does_not_abort);
     g_test_add_func ("/api/oversized_dasharray_does_not_abort", oversized_dasharray_does_not_abort);
     g_test_add_func ("/api/color_matrix_20_values_still_applies", color_matrix_20_values_still_applies);
+    g_test_add_func ("/api/morphology_huge_radius_does_not_hang", morphology_huge_radius_does_not_hang);
+    g_test_add_func ("/api/morphology_unit_radius_still_dilates", morphology_unit_radius_still_dilates);
     g_test_add_func ("/api/filter_pixel_offset_uses_gsize", filter_pixel_offset_uses_gsize);
     g_test_add_func ("/api/huge_filtered_canvas_does_not_crash", huge_filtered_canvas_does_not_crash);
     g_test_add_func ("/api/unlimited_raises_image_and_data_caps", unlimited_raises_image_and_data_caps);

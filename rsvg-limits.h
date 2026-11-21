@@ -31,6 +31,7 @@
  *   File nesting        20          never raised
  *   Layer nesting       500 / 50    never raised
  *   Cairo coordinates   ±8,388,608  never raised
+ *   Morphology radius   500 px      never raised
  */
 
 #define RSVG_MAX_IMAGE_DIMENSION             32767
@@ -50,6 +51,8 @@
  * Do not pass coordinates outside this to Cairo. Never raised. */
 #define RSVG_CAIRO_COORD_MAX ((double) 2147483647 / 256.0)
 #define RSVG_CAIRO_COORD_MIN ((double) (-2147483647 - 1) / 256.0)
+/* feMorphology neighborhood in device pixels after the primitive affine. */
+#define RSVG_MAX_MORPHOLOGY_RADIUS 500
 
 G_STATIC_ASSERT (RSVG_MAX_IMAGE_PIXEL_BYTES_UNLIMITED > RSVG_MAX_IMAGE_PIXEL_BYTES);
 G_STATIC_ASSERT (RSVG_MAX_DATA_URI_BYTES_UNLIMITED > RSVG_MAX_DATA_URI_BYTES);

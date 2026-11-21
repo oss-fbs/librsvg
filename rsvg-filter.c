@@ -3272,6 +3272,21 @@ struct _RsvgFilterPrimitiveErode {
     int mode;
 };
 
+static gint
+rsvg_morphology_kernel_radius (double r, double scale)
+{
+    double k;
+
+    if (!isfinite (r) || !isfinite (scale) || r <= 0.0)
+        return 0;
+    k = r * scale;
+    if (!isfinite (k) || k <= 0.0)
+        return 0;
+    if (k > (double) RSVG_MAX_MORPHOLOGY_RADIUS)
+        return RSVG_MAX_MORPHOLOGY_RADIUS;
+    return (gint) k;
+}
+
 static void
 rsvg_filter_primitive_erode_render (RsvgFilterPrimitive * self, RsvgFilterContext * ctx)
 {
@@ -3307,9 +3322,9 @@ rsvg_filter_primitive_erode_render (RsvgFilterPrimitive * self, RsvgFilterContex
 
     rowstride = cairo_image_surface_get_stride (in);
 
-    /* scale the radius values */
-    kx = upself->rx * ctx->paffine.xx;
-    ky = upself->ry * ctx->paffine.yy;
+    /* scale the radius values; cap so a huge radius cannot DoS */
+    kx = rsvg_morphology_kernel_radius (upself->rx, ctx->paffine.xx);
+    ky = rsvg_morphology_kernel_radius (upself->ry, ctx->paffine.yy);
 
     output = _rsvg_image_surface_new (width, height);
     if (output == NULL) {
