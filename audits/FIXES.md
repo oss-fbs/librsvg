@@ -21,6 +21,7 @@ Ranked from `00-SUMMARY.md`. High first. Noise skipped.
 15. **B3-2** — clamp feOffset dx/dy to gint and subtract in gint64
 16. **B3-3** — skip kernelUnitLength scaling that would overflow the int canvas size
 17. **E4-4** — failed write closes the loader so close cannot set CLOSED_OK
+18. **SA-2** — do not allocate a filter result store when result= is empty
 
 ## Attempts
 
@@ -160,7 +161,15 @@ Ranked from `00-SUMMARY.md`. High first. Noise skipped.
 - Tests: `make check` 286 PASS including `/api/failed_write_then_close_does_not_succeed` (self xi:include via write, close, get_pixbuf NULL) and `/api/write_then_close_still_renders`. `make check-parity` pass=723 fail=0 skip=27.
 - Outcome: **fixed**.
 
+### SA-2 — unnamed filter result store leak (try 1, committed)
+
+- Site: `rsvg-filter.c` `rsvg_filter_store_output`. `store` was always `g_new`'d, but only inserted in the hash when `result=` was non-empty. Each unnamed primitive leaked one `RsvgFilterPrimitiveOutput` per render.
+- Plan: allocate and insert only when the name is non-empty; lastresult still takes a surface reference.
+- Change: moved `g_new` / hash insert inside `if (name->str[0] != '\0')`.
+- Tests: `make check` 287 PASS including `/api/offset_unit_dx_still_shifts` (unnamed) and `/api/filter_named_result_still_applies` (`result='o'` then feMerge). `make check-parity` pass=723 fail=0 skip=27.
+- Outcome: **fixed**.
+
 ## Remaining (not this batch)
 
 - Medium: none.
-- Low / note: see `00-SUMMARY.md`.
+- Low / note: see `00-SUMMARY.md`. This batch: SA-3, SA-4, E4-5, E4-7 next.
