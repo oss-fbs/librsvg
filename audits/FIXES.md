@@ -34,6 +34,7 @@ Ranked from `00-SUMMARY.md`. High first. Noise skipped.
 28. **E4-6** — check cairo_matrix_invert on gradients and feImage
 29. **E4-10** — return FALSE from measure/render_cairo when cairo_status fails
 30. **E4-11** — free Qual name/value when an attribute selector fails to parse
+31. **E4-12** — do not commit a malformed path number; stop that command
 
 ## Attempts
 
@@ -277,7 +278,15 @@ Ranked from `00-SUMMARY.md`. High first. Noise skipped.
 - Tests: `make check` 307 PASS including `/api/css_malformed_attr_selector_does_not_abort` (`rect[foo!]`, `rect[foo=`, `rect[foo=bar` without `]`) and `/api/css_attr_selector_still_applies` (`rect[id='r']` paints red). `make check-parity` pass=723 fail=0 skip=27 (styling-css-* still green).
 - Outcome: **fixed**.
 
+### E4-12 — malformed path numbers are still committed (try 1, committed)
+
+- Site: `rsvg-path.c` `rsvg_parse_number`. Two signs or a broken exponent set `error` then still called `rsvg_path_end_of_number`, and parsing continued. SVG 1.1 stops at the command that contains the first error.
+- Plan: do not commit a malformed number. Drop the incomplete command and stop remaining path data. Treat an unexpected char (or EOF) in PREINTEGER/PREEXPONENT as the same error so `1e` does not swallow the rest of the string.
+- Change: `ctx->error` on the parser. Fail paths skip `rsvg_path_end_of_number`, zero `param`, and skip the final `do_cmd`.
+- Tests: `make check` 309 PASS including `/api/path_malformed_number_stops_path` (`L --8` and `L 1e++8`, later segments do not paint over green) and `/api/path_scientific_number_still_applies` (`H 8e0 V 8.0e0` still red). `make check-parity` pass=723 fail=0 skip=27 (paths-data-* still green).
+- Outcome: **fixed**.
+
 ## Remaining (not this batch)
 
 - Medium: none.
-- Low / note: see `00-SUMMARY.md`. Next: E4-12, E4-13, E4-14.
+- Low / note: see `00-SUMMARY.md`. Working E4-12, E4-13, E4-14. Next after this batch: none of the clearer low/note list.

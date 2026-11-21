@@ -1945,6 +1945,65 @@ path_leading_numbers_do_not_abort (void)
     g_object_unref (handle);
 }
 
+/* E4-12: a malformed number used to be committed and the rest of the
+ * path kept parsing. Stop at that command so later segments do not paint. */
+static void
+path_malformed_number_stops_path (void)
+{
+    static const char *const svgs[] = {
+        "<svg xmlns='http://www.w3.org/2000/svg' width='8' height='8'>"
+        "<rect width='8' height='8' fill='#00ff00'/>"
+        "<path d='M 0 0 L --8 8 L 8 8 L 8 0 Z' fill='#ff0000'/>"
+        "</svg>",
+        "<svg xmlns='http://www.w3.org/2000/svg' width='8' height='8'>"
+        "<rect width='8' height='8' fill='#00ff00'/>"
+        "<path d='M 0 0 L 1e++8 8 L 8 8 L 8 0 Z' fill='#ff0000'/>"
+        "</svg>",
+    };
+    gsize i;
+
+    for (i = 0; i < G_N_ELEMENTS (svgs); i++) {
+        GError *error = NULL;
+        RsvgHandle *handle;
+        cairo_surface_t *output;
+
+        handle = rsvg_handle_new_from_data ((const guint8 *) svgs[i], strlen (svgs[i]), &error);
+        g_assert_no_error (error);
+        g_assert_nonnull (handle);
+
+        output = cairo_image_surface_create (CAIRO_FORMAT_ARGB32, 8, 8);
+        render_to_surface (handle, output);
+        g_assert_cmphex (pixel_argb (output, 4, 4), ==, 0xff00ff00);
+
+        cairo_surface_destroy (output);
+        g_object_unref (handle);
+    }
+}
+
+static void
+path_scientific_number_still_applies (void)
+{
+    const char *svg =
+        "<svg xmlns='http://www.w3.org/2000/svg' width='8' height='8'>"
+        "<rect width='8' height='8' fill='#00ff00'/>"
+        "<path d='M 0 0 H 8e0 V 8.0e0 H 0 Z' fill='#ff0000'/>"
+        "</svg>";
+    GError *error = NULL;
+    RsvgHandle *handle;
+    cairo_surface_t *output;
+
+    handle = rsvg_handle_new_from_data ((const guint8 *) svg, strlen (svg), &error);
+    g_assert_no_error (error);
+    g_assert_nonnull (handle);
+
+    output = cairo_image_surface_create (CAIRO_FORMAT_ARGB32, 8, 8);
+    render_to_surface (handle, output);
+    g_assert_cmphex (pixel_argb (output, 4, 4), ==, 0xffff0000);
+
+    cairo_surface_destroy (output);
+    g_object_unref (handle);
+}
+
 static void
 path_unit_fill_still_applies (void)
 {
@@ -4576,6 +4635,8 @@ main (int argc, char **argv)
     g_test_add_func ("/api/clip_path_missing_does_not_unbalance_stack", clip_path_missing_does_not_unbalance_stack);
     g_test_add_func ("/api/cairo_huge_path_coords_are_skipped", cairo_huge_path_coords_are_skipped);
     g_test_add_func ("/api/path_leading_numbers_do_not_abort", path_leading_numbers_do_not_abort);
+    g_test_add_func ("/api/path_malformed_number_stops_path", path_malformed_number_stops_path);
+    g_test_add_func ("/api/path_scientific_number_still_applies", path_scientific_number_still_applies);
     g_test_add_func ("/api/path_unit_fill_still_applies", path_unit_fill_still_applies);
     g_test_add_func ("/api/cairo_huge_text_coords_are_skipped", cairo_huge_text_coords_are_skipped);
     g_test_add_func ("/api/convolve_invalid_order_is_noop", convolve_invalid_order_is_noop);

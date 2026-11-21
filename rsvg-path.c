@@ -58,6 +58,7 @@ struct _RSVGParsePathCtx {
     char cmd;                   /* current command (lowercase) */
     int param;                  /* parameter number */
     gboolean rel;               /* true if relative coords */
+    gboolean error;             /* malformed number; stop remaining commands */
     double params[7];           /* parameters that have been parsed */
 };
 
@@ -649,6 +650,8 @@ rsvg_parse_number (RSVGParsePathCtx * ctx, const char *data)
                 } else if (c >= '0' && c <= '9') {
                     value = c - '0';
                     in = RSVGN_IN_INTEGER;
+                } else {
+                    error = TRUE; /* sign not followed by a digit or '.' */
                 }
                 break;
             case RSVGN_IN_INTEGER: /* Previous character(s) was/were digit(s) */
@@ -691,6 +694,8 @@ rsvg_parse_number (RSVGParsePathCtx * ctx, const char *data)
                 } else if (c >= '0' && c <= '9') {
                     exponent = c - '0';
                     in = RSVGN_IN_EXPONENT;
+                } else {
+                    error = TRUE; /* exponent without a digit */
                 }
                 break;
             case RSVGN_IN_EXPONENT: /* After E and the sign, if applicable */
@@ -705,9 +710,17 @@ rsvg_parse_number (RSVGParsePathCtx * ctx, const char *data)
         length++;
     }
 
-    /* TODO? if (error) report_the_error_somehow(); */
+    if (in == RSVGN_IN_PREINTEGER || in == RSVGN_IN_PREEXPONENT)
+        error = TRUE;
+
+    if (error) {
+        /* SVG 1.1: stop at the command that contains the first error. */
+        ctx->error = TRUE;
+        return end ? length - 1 : length;
+    }
+
     rsvg_path_end_of_number(ctx, value, sign, exponent_sign, exponent);
-    return end /* && !error */ ? length - 1 : length;
+    return end ? length - 1 : length;
 }
 
 static void
@@ -721,6 +734,10 @@ rsvg_parse_path_data (RSVGParsePathCtx * ctx, const char *data)
         if ((c >= '0' && c <= '9') || c == '+' || c == '-' || c == '.') {
             /* digit */
             i += rsvg_parse_number(ctx, data + i) - 1;
+            if (ctx->error) {
+                ctx->param = 0;
+                break;
+            }
         } else if (c == 'z' || c == 'Z') {
             if (ctx->param)
                 rsvg_parse_path_do_cmd (ctx, TRUE);
@@ -759,10 +776,11 @@ rsvg_parse_path (const char *path_str)
     ctx.cmd = 0;
     ctx.param = 0;
     ctx.rel = FALSE;
+    ctx.error = FALSE;
 
     rsvg_parse_path_data (&ctx, path_str);
 
-    if (ctx.param)
+    if (ctx.param && !ctx.error)
         rsvg_parse_path_do_cmd (&ctx, TRUE);
 
     return rsvg_path_builder_finish (&ctx.builder);
