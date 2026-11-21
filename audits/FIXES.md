@@ -36,6 +36,7 @@ Ranked from `00-SUMMARY.md`. High first. Noise skipped.
 30. **E4-11** — free Qual name/value when an attribute selector fails to parse
 31. **E4-12** — do not commit a malformed path number; stop that command
 32. **E4-13** — report file-nesting errors from external SVG references
+33. **E4-14** — check xmlCreatePushParserCtxt NULL before using the parser
 
 ## Attempts
 
@@ -295,7 +296,15 @@ Ranked from `00-SUMMARY.md`. High first. Noise skipped.
 - Tests: `make check` 311 PASS including `/api/extern_svg_nesting_error_fails_render` (`<use href='child.svg#r'/>` whose child self-xincludes) and `/api/extern_svg_use_still_applies`. `make check-parity` pass=723 fail=0 skip=27 (include-compressed still green).
 - Outcome: **fixed**.
 
+### E4-14 — xmlCreatePushParserCtxt NULL not checked (try 1, committed)
+
+- Site: `rsvg-base.c` `create_xml_push_parser` and `rsvg_handle_write_impl`. `xmlCreatePushParserCtxt` can return NULL (OOM). The stream parser already checked; the push parser did not, so `rsvg_set_xml_parse_options` would write `replaceEntities` on NULL and `write_impl` would `xmlParseChunk (NULL)`.
+- Plan: skip option setup when the ctxt is NULL. Fail `write_impl` with a GError and CLOSED_ERROR instead of parsing a NULL ctxt. Match the existing stream-parser message.
+- Change: NULL guard in `rsvg_set_xml_parse_options`. `create_xml_push_parser` only sets options when the ctxt exists. `write_impl` returns FALSE with `"Error creating XML parser"` when create fails.
+- Tests: `make check` 311 PASS including existing `/api/write_then_close_still_renders`. `make check-parity` pass=723 fail=0 skip=27. The OOM NULL path is not unit-testable without mocking libxml2.
+- Outcome: **fixed**.
+
 ## Remaining (not this batch)
 
 - Medium: none.
-- Low / note: see `00-SUMMARY.md`. Working E4-12, E4-13, E4-14. Next after this batch: none of the clearer low/note list.
+- Low / note: see `00-SUMMARY.md`. Clearer low/note list finished (through E4-14). Skip still: SA-7, SA-8, H2-3, H2-5, H2-6, H2-14, H2-Pango, B3-4, E4-15, E4-16.

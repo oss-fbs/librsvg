@@ -580,6 +580,9 @@ rsvg_set_xml_parse_options(xmlParserCtxtPtr xml_parser,
 {
     int options;
 
+    if (xml_parser == NULL)
+        return;
+
     options = (XML_PARSE_NONET |
                XML_PARSE_BIG_LINES);
 
@@ -626,7 +629,8 @@ create_xml_push_parser (RsvgHandle *handle,
     xmlParserCtxtPtr parser;
 
     parser = xmlCreatePushParserCtxt (&rsvgSAXHandlerStruct, handle, NULL, 0, base_uri);
-    rsvg_set_xml_parse_options (parser, handle);
+    if (parser)
+        rsvg_set_xml_parse_options (parser, handle);
 
     return parser;
 }
@@ -1295,6 +1299,13 @@ rsvg_handle_write_impl (RsvgHandle * handle, const guchar * buf, gsize count, GE
 
     if (handle->priv->ctxt == NULL) {
         handle->priv->ctxt = create_xml_push_parser (handle, rsvg_handle_get_base_uri (handle));
+        if (handle->priv->ctxt == NULL) {
+            handle->priv->error = NULL;
+            g_set_error (error, rsvg_error_quark (), RSVG_ERROR_FAILED,
+                         _("Error creating XML parser"));
+            handle->priv->state = RSVG_HANDLE_STATE_CLOSED_ERROR;
+            return FALSE;
+        }
     }
 
     result = xmlParseChunk (handle->priv->ctxt, (char *) buf, count, 0);
