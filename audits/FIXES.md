@@ -29,6 +29,7 @@ Ranked from `00-SUMMARY.md`. High first. Noise skipped.
 23. **SA-5 / H2-15** — honor len in rsvg_make_valid_utf8 (g_strndup / g_string_append_len)
 24. **SA-6** — clear priv->error on close_impl xmlParseChunk failure
 25. **H2-2** — cap @import stylesheet bodies at RSVG_MAX_STYLESHEET_BYTES
+26. **H2-13** — range-check feConvolveMatrix targetX/targetY
 
 ## Attempts
 
@@ -232,7 +233,15 @@ Ranked from `00-SUMMARY.md`. High first. Noise skipped.
 - Tests: `make check` 298 PASS including `/api/css_import_oversized_does_not_abort` (sibling-file CSS > 1 MiB with `rect { fill: #ff0000 }`, presentation-attribute green remains) and `/api/css_import_unit_still_applies` (`data:text/css` import paints red). `make check-parity` pass=723 fail=0 skip=27 (css-import.svg still green).
 - Outcome: **fixed**.
 
+### H2-13 — feConvolveMatrix targetX/targetY range (try 1, committed)
+
+- Site: `rsvg-filter.c` `rsvg_filter_primitive_convolve_matrix_set_atts`. `atoi` stored any int, including `INT_MIN`. Render does `sx = x - targetx + j * dx`, which is signed-overflow UB. Edge modes clamp before indexing, so no OOB.
+- Plan: parse with `g_ascii_strtoll` and keep only `0..G_MAXINT`. After order is known, if the value is outside `[0, order)`, use `order/2` (same default as an omitted target).
+- Change: `convolve_target_component_is_valid` plus the post-order range reset. Integer `orderx / 2` matches the old `floor` for the non-negative order.
+- Tests: `make check` 300 PASS including `/api/convolve_huge_target_does_not_abort` (`targetX='-2147483648'`, identity 3×3 still red) and `/api/convolve_unit_target_still_applies`. `make check-parity` pass=723 fail=0 skip=27.
+- Outcome: **fixed**.
+
 ## Remaining (not this batch)
 
 - Medium: none.
-- Low / note: see `00-SUMMARY.md`. This batch: H2-13, E4-3 next.
+- Low / note: see `00-SUMMARY.md`. This batch (SA-5/H2-15, SA-6, H2-2, H2-13) is done. Next: E4-3, E4-6, E4-10, E4-11, E4-12, E4-13, E4-14.

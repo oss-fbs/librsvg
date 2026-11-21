@@ -1405,6 +1405,21 @@ convolve_order_component_is_valid (double n, gint *out)
     return TRUE;
 }
 
+static gboolean
+convolve_target_component_is_valid (const char *value, gint *out)
+{
+    gint64 v;
+    char *end = NULL;
+
+    if (!value || !value[0])
+        return FALSE;
+    v = g_ascii_strtoll (value, &end, 10);
+    if (end == value || v < 0 || v > G_MAXINT)
+        return FALSE;
+    *out = (gint) v;
+    return TRUE;
+}
+
 static void
 rsvg_filter_primitive_convolve_matrix_render (RsvgFilterPrimitive * self, RsvgFilterContext * ctx)
 {
@@ -1742,12 +1757,12 @@ rsvg_filter_primitive_convolve_matrix_set_atts (RsvgNode * self,
         if ((value = rsvg_property_bag_lookup (atts, "height")))
             filter->super.height = _rsvg_css_parse_length (value);
         if ((value = rsvg_property_bag_lookup (atts, "targetX"))) {
-            has_target_x = 1;
-            filter->targetx = atoi (value);
+            if (convolve_target_component_is_valid (value, &filter->targetx))
+                has_target_x = 1;
         }
         if ((value = rsvg_property_bag_lookup (atts, "targetY"))) {
-            has_target_y = 1;
-            filter->targety = atoi (value);
+            if (convolve_target_component_is_valid (value, &filter->targety))
+                has_target_y = 1;
         }
         if ((value = rsvg_property_bag_lookup (atts, "bias")))
             filter->bias = atof (value);
@@ -1808,12 +1823,10 @@ rsvg_filter_primitive_convolve_matrix_set_atts (RsvgNode * self,
     if (filter->divisor == 0)
         filter->divisor = 1;
 
-    if (!has_target_x) {
-        filter->targetx = floor (filter->orderx / 2);
-    }
-    if (!has_target_y) {
-        filter->targety = floor (filter->ordery / 2);
-    }
+    if (!has_target_x || filter->targetx < 0 || filter->targetx >= filter->orderx)
+        filter->targetx = filter->orderx / 2;
+    if (!has_target_y || filter->targety < 0 || filter->targety >= filter->ordery)
+        filter->targety = filter->ordery / 2;
 }
 
 RsvgNode *
