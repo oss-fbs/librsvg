@@ -735,6 +735,77 @@ set_stylesheet_ignores_file_import (void)
 }
 
 static void
+css_import_oversized_does_not_abort (void)
+{
+    /* @import used to parse bodies over RSVG_MAX_STYLESHEET_BYTES (H2-2). */
+    GError *error = NULL;
+    char *dir, *css_path, *svg_path;
+    GString *css;
+    RsvgHandle *handle;
+    cairo_surface_t *output;
+
+    dir = g_dir_make_tmp ("librsvg-css-import-XXXXXX", &error);
+    g_assert_no_error (error);
+    g_assert_nonnull (dir);
+
+    css_path = g_build_filename (dir, "huge.css", NULL);
+    css = g_string_new ("rect { fill: #ff0000; }");
+    while (css->len <= RSVG_MAX_STYLESHEET_BYTES)
+        g_string_append_c (css, ' ');
+    g_assert_true (g_file_set_contents (css_path, css->str, (gssize) css->len, &error));
+    g_assert_no_error (error);
+    g_string_free (css, TRUE);
+
+    svg_path = g_build_filename (dir, "doc.svg", NULL);
+    g_assert_true (g_file_set_contents (svg_path,
+                                        "<svg xmlns='http://www.w3.org/2000/svg' width='8' height='8'>"
+                                        "<style>@import url('huge.css');</style>"
+                                        "<rect width='8' height='8' fill='#00ff00'/>"
+                                        "</svg>",
+                                        -1, &error));
+    g_assert_no_error (error);
+
+    handle = rsvg_handle_new_from_file (svg_path, &error);
+    g_assert_no_error (error);
+    g_assert_nonnull (handle);
+
+    output = cairo_image_surface_create (CAIRO_FORMAT_ARGB32, 8, 8);
+    render_to_surface (handle, output);
+    g_assert_cmphex (pixel_argb (output, 4, 4), ==, 0xff00ff00);
+
+    cairo_surface_destroy (output);
+    g_object_unref (handle);
+    g_remove (css_path);
+    g_remove (svg_path);
+    g_rmdir (dir);
+    g_free (css_path);
+    g_free (svg_path);
+    g_free (dir);
+}
+
+static void
+css_import_unit_still_applies (void)
+{
+    const char *svg =
+        "<svg xmlns='http://www.w3.org/2000/svg' width='8' height='8'>"
+        "<style>@import url('data:text/css,rect{fill:%23ff0000}');</style>"
+        "<rect width='8' height='8' fill='#00ff00'/>"
+        "</svg>";
+    GError *error = NULL;
+    RsvgHandle *handle = rsvg_handle_new_from_data ((const guint8 *) svg, strlen (svg), &error);
+    cairo_surface_t *output;
+
+    g_assert_no_error (error);
+    g_assert_nonnull (handle);
+    output = cairo_image_surface_create (CAIRO_FORMAT_ARGB32, 8, 8);
+    render_to_surface (handle, output);
+    g_assert_cmphex (pixel_argb (output, 4, 4), ==, 0xffff0000);
+
+    cairo_surface_destroy (output);
+    g_object_unref (handle);
+}
+
+static void
 css_engine_load_style_survives (const char *css)
 {
     GString *svg;
@@ -4249,6 +4320,8 @@ main (int argc, char **argv)
     g_test_add_func ("/api/context_fill_from_use", context_fill_from_use);
     g_test_add_func ("/api/set_stylesheet_invalid_utf8", set_stylesheet_invalid_utf8);
     g_test_add_func ("/api/set_stylesheet_ignores_file_import", set_stylesheet_ignores_file_import);
+    g_test_add_func ("/api/css_import_oversized_does_not_abort", css_import_oversized_does_not_abort);
+    g_test_add_func ("/api/css_import_unit_still_applies", css_import_unit_still_applies);
     g_test_add_func ("/api/css_deep_not_does_not_abort", css_deep_not_does_not_abort);
     g_test_add_func ("/api/css_long_combinator_does_not_abort", css_long_combinator_does_not_abort);
     g_test_add_func ("/api/css_huge_nth_does_not_abort", css_huge_nth_does_not_abort);

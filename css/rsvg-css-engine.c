@@ -1361,6 +1361,11 @@ handle_import (RsvgCssEngine *eng, Sheet *sheet, const char *uri,
         g_free (mime);
         return;
     }
+    if (data_len > RSVG_MAX_STYLESHEET_BYTES) {
+        g_free (data);
+        g_free (mime);
+        return;
+    }
     parse_stylesheet (eng, sheet, data, data_len, ctx, allow_import, import_depth + 1);
     g_free (data);
     g_free (mime);

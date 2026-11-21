@@ -28,6 +28,7 @@ Ranked from `00-SUMMARY.md`. High first. Noise skipped.
 22. **E4-7** — destroy the filter-input surface when cairo reports an error status
 23. **SA-5 / H2-15** — honor len in rsvg_make_valid_utf8 (g_strndup / g_string_append_len)
 24. **SA-6** — clear priv->error on close_impl xmlParseChunk failure
+25. **H2-2** — cap @import stylesheet bodies at RSVG_MAX_STYLESHEET_BYTES
 
 ## Attempts
 
@@ -223,7 +224,15 @@ Ranked from `00-SUMMARY.md`. High first. Noise skipped.
 - Tests: `make check` 296 PASS including `/api/truncated_write_then_close_does_not_succeed` (unclosed `<svg>`, close FALSE, get_pixbuf NULL, second close idempotent) and `/api/write_then_close_still_renders`. `make check-parity` pass=723 fail=0 skip=27.
 - Outcome: **fixed**.
 
+### H2-2 — @import bodies bypass stylesheet byte cap (try 1, committed)
+
+- Site: `css/rsvg-css-engine.c` `handle_import`. Top-level `rsvg_css_engine_add_sheet` and `rsvg_parse_cssbuffer_with_flags` reject `len > RSVG_MAX_STYLESHEET_BYTES` (1 MiB). Imported bodies from `_rsvg_handle_acquire_data` (up to 64 MiB) were parsed with no extra check.
+- Plan: drop the import when `data_len` is over the same 1 MiB cap. UNLIMITED does not raise this cap at the other entry points.
+- Change: that size check after the mime test, then free data/mime.
+- Tests: `make check` 298 PASS including `/api/css_import_oversized_does_not_abort` (sibling-file CSS > 1 MiB with `rect { fill: #ff0000 }`, presentation-attribute green remains) and `/api/css_import_unit_still_applies` (`data:text/css` import paints red). `make check-parity` pass=723 fail=0 skip=27 (css-import.svg still green).
+- Outcome: **fixed**.
+
 ## Remaining (not this batch)
 
 - Medium: none.
-- Low / note: see `00-SUMMARY.md`. This batch: H2-2, H2-13, E4-3 next.
+- Low / note: see `00-SUMMARY.md`. This batch: H2-13, E4-3 next.
