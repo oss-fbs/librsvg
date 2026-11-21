@@ -1339,6 +1339,73 @@ xinclude_self_include_unlimited_still_fails (void)
     assert_xinclude_self_fails (RSVG_HANDLE_FLAG_UNLIMITED);
 }
 
+/* Malformed parse="xml" must not count as a successful include (E4-2),
+ * so xi:fallback is used. A well-formed sibling still wins over fallback. */
+static void
+xinclude_malformed_xml_uses_fallback (void)
+{
+    GError *error = NULL;
+    char *dir, *bad_xml, *good_xml, *svg_bad, *svg_good;
+    RsvgHandle *handle;
+
+    dir = g_dir_make_tmp ("librsvg-xinclude-malformed-XXXXXX", &error);
+    g_assert_no_error (error);
+    g_assert_nonnull (dir);
+
+    bad_xml = g_build_filename (dir, "bad.xml", NULL);
+    good_xml = g_build_filename (dir, "good.xml", NULL);
+    svg_bad = g_build_filename (dir, "bad.svg", NULL);
+    svg_good = g_build_filename (dir, "good.svg", NULL);
+
+    write_text_file (bad_xml, "this is not xml");
+    write_text_file (good_xml,
+                     "<rect id='from-include' width='8' height='8' fill='#0000ff'/>");
+    write_text_file (svg_bad,
+                     "<svg xmlns='http://www.w3.org/2000/svg'"
+                     " xmlns:xi='http://www.w3.org/2001/XInclude'"
+                     " width='8' height='8'>"
+                     "<rect width='8' height='8' fill='#00ff00'/>"
+                     "<xi:include href='bad.xml' parse='xml'>"
+                     "<xi:fallback>"
+                     "<rect id='from-fallback' width='8' height='8' fill='#ff0000'/>"
+                     "</xi:fallback>"
+                     "</xi:include>"
+                     "</svg>");
+    write_text_file (svg_good,
+                     "<svg xmlns='http://www.w3.org/2000/svg'"
+                     " xmlns:xi='http://www.w3.org/2001/XInclude'"
+                     " width='8' height='8'>"
+                     "<rect width='8' height='8' fill='#00ff00'/>"
+                     "<xi:include href='good.xml' parse='xml'>"
+                     "<xi:fallback>"
+                     "<rect id='from-fallback' width='8' height='8' fill='#ff0000'/>"
+                     "</xi:fallback>"
+                     "</xi:include>"
+                     "</svg>");
+
+    handle = handle_from_path (svg_bad);
+    g_assert_true (rsvg_handle_has_sub (handle, "#from-fallback"));
+    g_assert_cmphex (center_pixel_of_handle (handle), ==, 0xffff0000);
+    g_object_unref (handle);
+
+    handle = handle_from_path (svg_good);
+    g_assert_true (rsvg_handle_has_sub (handle, "#from-include"));
+    g_assert_false (rsvg_handle_has_sub (handle, "#from-fallback"));
+    g_assert_cmphex (center_pixel_of_handle (handle), ==, 0xff0000ff);
+    g_object_unref (handle);
+
+    g_remove (svg_bad);
+    g_remove (svg_good);
+    g_remove (bad_xml);
+    g_remove (good_xml);
+    g_rmdir (dir);
+    g_free (svg_bad);
+    g_free (svg_good);
+    g_free (bad_xml);
+    g_free (good_xml);
+    g_free (dir);
+}
+
 static char *
 make_nested_groups_svg (int ngroups)
 {
@@ -3548,6 +3615,7 @@ main (int argc, char **argv)
     g_test_add_func ("/api/duplicate_entity_xinclude_keeps_first", duplicate_entity_xinclude_keeps_first);
     g_test_add_func ("/api/xinclude_self_include_fails_with_nesting_error", xinclude_self_include_fails_with_nesting_error);
     g_test_add_func ("/api/xinclude_self_include_unlimited_still_fails", xinclude_self_include_unlimited_still_fails);
+    g_test_add_func ("/api/xinclude_malformed_xml_uses_fallback", xinclude_malformed_xml_uses_fallback);
     g_test_add_func ("/api/layer_nesting_over_limit_does_not_crash", layer_nesting_over_limit_does_not_crash);
     g_test_add_func ("/api/layer_nesting_unlimited_still_fails", layer_nesting_unlimited_still_fails);
     g_test_add_func ("/api/layer_nesting_shallow_still_renders", layer_nesting_shallow_still_renders);

@@ -12,7 +12,8 @@ Ranked from `00-SUMMARY.md`. High first. Noise skipped.
 6. **H2-7** — GIF first-frame size check before RasterBits
 7. **H2-8** — AVIF size limits before decode
 8. **H2-1** — file size cap before full read
-9. Medium left: E4-2 / E4-9 / H2-16 / E4-8, then H2-4 / H2-12 / B3-2 / B3-3 / E4-4
+9. **E4-2** — XInclude parse failure uses xi:fallback
+10. Medium left: E4-9 / H2-16 / E4-8, then H2-4 / H2-12 / B3-2 / B3-3 / E4-4
 
 ## Attempts
 
@@ -80,8 +81,16 @@ Ranked from `00-SUMMARY.md`. High first. Noise skipped.
 - Tests: `make check` 270 PASS including `/api/oversized_file_href_does_not_abort` (red PNG `ftruncate`d past the cap stays omitted; sibling under the cap still paints). `make check-parity` pass=723 fail=0 skip=27.
 - Outcome: **fixed**. FIFOs still report size 0 so they are not rejected before the read.
 
+### E4-2 — XInclude parse failure uses fallback (try 1, committed)
+
+- Site: `rsvg-base.c` `rsvg_start_xinclude`. `(void) xmlParseDocument` discarded the nested parse status; a failed `create_xml_stream_parser` cleared `err` and still set `success = TRUE`, so `xi:fallback` was skipped.
+- Plan: treat parser-create failure, `xmlParseDocument != 0`, and stream `err` as include failure so fallback runs. Match the main-document path in `rsvg_handle_read_stream_sync`.
+- Change: NULL parser → fallback. Nested parse result and `err` checked before `success = TRUE`. `ctx->priv->error` still forces fallback. Partial nodes from a half-parsed include can remain in the tree (no rollback).
+- Tests: `make check` 271 PASS including `/api/xinclude_malformed_xml_uses_fallback` (not-xml sibling uses red fallback; well-formed sibling still paints blue and skips fallback). `make check-parity` pass=723 fail=0 skip=27 (include-fallback, include-compressed, include-text still green).
+- Outcome: **fixed**.
+
 ## Remaining (not this batch)
 
-- Medium: E4-2 / E4-9 / H2-16 / E4-8 (error-path robustness). H2-16 remainder: non-filter `cairo_surface_create_similar` still uses uncapped `render->width/height`.
+- Medium: E4-9 / H2-16 / E4-8 (error-path robustness). H2-16 remainder: non-filter `cairo_surface_create_similar` still uses uncapped `render->width/height`.
 - Also medium: H2-4, H2-12, B3-2, B3-3, E4-4.
 - Low / note: see `00-SUMMARY.md`.

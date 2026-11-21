@@ -717,18 +717,28 @@ rsvg_start_xinclude (RsvgHandle * ctx, RsvgPropertyBag * atts)
 
         g_object_unref (stream);
 
+        if (xml_parser == NULL) {
+            g_clear_error (&err);
+            goto fallback;
+        }
+
         ctx->priv->file_nesting_depth++;
-        if (xml_parser) {
+        {
             xmlParserCtxtPtr saved_ctxt = ctx->priv->ctxt;
+            int parse_result;
 
             ctx->priv->ctxt = xml_parser;
-            (void) xmlParseDocument (xml_parser);
+            parse_result = xmlParseDocument (xml_parser);
             ctx->priv->ctxt = saved_ctxt;
 
             xml_parser = rsvg_free_xml_parser_and_doc (xml_parser);
-        }
-        ctx->priv->file_nesting_depth--;
+            ctx->priv->file_nesting_depth--;
 
+            if (parse_result != 0 || err != NULL) {
+                g_clear_error (&err);
+                goto fallback;
+            }
+        }
         g_clear_error (&err);
 
         if (ctx->priv->error && *ctx->priv->error)
