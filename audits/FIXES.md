@@ -10,7 +10,8 @@ Ranked from `00-SUMMARY.md`. High first. Noise skipped.
 4. **H2-11** — cap feTurbulence `numOctaves`
 5. **E4-1 / SA-1 / H2-9** — volatile locals in PNG/JPEG `setjmp`
 6. **H2-7** — GIF first-frame size check before RasterBits
-7. Medium left: H2-8 / H2-1, then E4-2 / E4-9 / H2-16 / E4-8, then H2-4 / H2-12 / B3-2 / B3-3 / E4-4
+7. **H2-8** — AVIF size limits before decode
+8. Medium left: H2-1, then E4-2 / E4-9 / H2-16 / E4-8, then H2-4 / H2-12 / B3-2 / B3-3 / E4-4
 
 ## Attempts
 
@@ -62,8 +63,16 @@ Ranked from `00-SUMMARY.md`. High first. Noise skipped.
 - Tests: `make check` 268 PASS including `/api/gif_huge_frame_does_not_abort` (8×8 screen, 40000×8 frame) and the existing red GIF tests. `make check-parity` pass=723 fail=0 skip=27.
 - Outcome: **fixed**.
 
+### H2-8 — AVIF size limits before decode (try 1, committed)
+
+- Site: `rsvg-image.c` `rsvg_cairo_surface_from_avif` ran `avifDecoderNextImage` before `rsvg_image_dims_ok`, and never set libavif’s `imageSizeLimit` / `imageDimensionLimit`.
+- Plan: set those limits to rsvg’s caps, then check container size after `avifDecoderParse` before the AV1 decode.
+- Change: `imageDimensionLimit = RSVG_MAX_IMAGE_DIMENSION`; `imageSizeLimit = max_pixel_bytes / 4`. `rsvg_image_dims_ok` after parse and again after `NextImage`.
+- Tests: `make check` 269 PASS including `/api/avif_oversized_dimensions_does_not_abort` (ispe 40000×10) and the existing 10×10 AVIF tests. `make check-parity` pass=723 fail=0 skip=27.
+- Outcome: **fixed**.
+
 ## Remaining (not this batch)
 
-- Medium: H2-8 / H2-1 (AVIF decode and file size before decode), E4-2 / E4-9 / H2-16 / E4-8 (error-path robustness). H2-16 remainder: non-filter `cairo_surface_create_similar` still uses uncapped `render->width/height`.
+- Medium: H2-1 (file size before decode), E4-2 / E4-9 / H2-16 / E4-8 (error-path robustness). H2-16 remainder: non-filter `cairo_surface_create_similar` still uses uncapped `render->width/height`.
 - Also medium: H2-4, H2-12, B3-2, B3-3, E4-4.
 - Low / note: see `00-SUMMARY.md`.

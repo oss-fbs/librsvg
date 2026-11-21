@@ -1614,12 +1614,31 @@ rsvg_cairo_surface_from_avif (const guint8 *data,
     if (decoder == NULL)
         goto fail;
 
+    /* libavif defaults are 32768 / 16384², larger than rsvg’s caps.
+     * Set them before parse so a huge ispe does not decode (H2-8). */
+    if (max_pixel_bytes < 4)
+        goto fail;
+    decoder->imageDimensionLimit = (uint32_t) RSVG_MAX_IMAGE_DIMENSION;
+    {
+        gsize max_pixels = max_pixel_bytes / 4;
+
+        if (max_pixels > (gsize) G_MAXUINT32)
+            max_pixels = (gsize) G_MAXUINT32;
+        decoder->imageSizeLimit = (uint32_t) max_pixels;
+    }
+
     r = avifDecoderSetIOMemory (decoder, data, (size_t) data_len);
     if (r != AVIF_RESULT_OK)
         goto fail;
     r = avifDecoderParse (decoder);
-    if (r != AVIF_RESULT_OK)
+    if (r != AVIF_RESULT_OK || decoder->image == NULL)
         goto fail;
+    /* Container size is known after parse; skip the AV1 decode. */
+    if (!rsvg_image_dims_ok ((gint64) decoder->image->width,
+                             (gint64) decoder->image->height,
+                             max_pixel_bytes))
+        goto fail;
+
     r = avifDecoderNextImage (decoder);
     if (r != AVIF_RESULT_OK || decoder->image == NULL)
         goto fail;

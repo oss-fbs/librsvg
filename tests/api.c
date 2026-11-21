@@ -1548,6 +1548,10 @@ convolve_invalid_order_is_noop (void)
     "data:application/octet-stream;base64,AAAAHGZ0eXBhdmlmAAAAAGF2aWZtaWYxbWlhZgAAAOptZXRhAAAAAAAAACFoZGxyAAAAAAAAAABwaWN0AAAAAAAAAAAAAAAAAAAAAA5waXRtAAAAAAABAAAAImlsb2MAAAAAREAAAQABAAAAAAEOAAEAAAAAAAAAIQAAACNpaW5mAAAAAAABAAAAFWluZmUCAAAAAAEAAGF2MDEAAAAAamlwcnAAAABLaXBjbwAAABNjb2xybmNseAABAA0ABoAAAAAMYXYxQ4EADAAAAAAUaXNwZQAAAAAAAAAKAAAACgAAABBwaXhpAAAAAAMICAgAAAAXaXBtYQAAAAAAAAABAAEEAYIDBAAAACltZGF0EgAKCRgM5lggIaDQgDISGAAKKKKEAACpjMK7oRKCHmG8"
 #define AVIF_BAD_DATA_URI \
     "data:image/avif;base64,AAAAHGZ0eXBhdmlm"
+/* rectangle.avif with ispe patched to 40000×10: parse/limit must
+ * reject before avifDecoderNextImage (H2-8). */
+#define AVIF_OVERSIZE_DIM_URI \
+    "data:image/avif;base64,AAAAHGZ0eXBhdmlmAAAAAGF2aWZtaWYxbWlhZgAAAOptZXRhAAAAAAAAACFoZGxyAAAAAAAAAABwaWN0AAAAAAAAAAAAAAAAAAAAAA5waXRtAAAAAAABAAAAImlsb2MAAAAAREAAAQABAAAAAAEOAAEAAAAAAAAAIQAAACNpaW5mAAAAAAABAAAAFWluZmUCAAAAAAEAAGF2MDEAAAAAamlwcnAAAABLaXBjbwAAABNjb2xybmNseAABAA0ABoAAAAAMYXYxQ4EADAAAAAAUaXNwZQAAAAAAAJxAAAAACgAAABBwaXhpAAAAAAMICAgAAAAXaXBtYQAAAAAAAAABAAEEAYIDBAAAACltZGF0EgAKCRgM5lggIaDQgDISGAAKKKKEAACpjMK7oRKCHmG8"
 
 static RsvgHandle *
 handle_from_svg_string (const char *svg)
@@ -2190,6 +2194,12 @@ static void
 avif_decode_failure_does_not_abort (void)
 {
     assert_href_paints_center (AVIF_BAD_DATA_URI, 0xff00ff00);
+}
+
+static void
+avif_oversized_dimensions_does_not_abort (void)
+{
+    assert_href_paints_center (AVIF_OVERSIZE_DIM_URI, 0xff00ff00);
 }
 #else
 static void
@@ -3519,6 +3529,7 @@ main (int argc, char **argv)
     g_test_add_func ("/api/avif_image_sniff_without_mime_renders", avif_image_sniff_without_mime_renders);
     g_test_add_func ("/api/avif_image_file_href_renders", avif_image_file_href_renders);
     g_test_add_func ("/api/avif_decode_failure_does_not_abort", avif_decode_failure_does_not_abort);
+    g_test_add_func ("/api/avif_oversized_dimensions_does_not_abort", avif_oversized_dimensions_does_not_abort);
 #else
     g_test_add_func ("/api/avif_disabled_without_libavif", avif_disabled_without_libavif);
 #endif
