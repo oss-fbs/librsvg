@@ -2590,6 +2590,71 @@ huge_filtered_canvas_does_not_crash (void)
 }
 
 static void
+huge_opacity_canvas_does_not_crash (void)
+{
+    /* Non-filter offscreen (opacity) used to call create_similar with
+     * uncapped render->width/height. Viewport matches the document so
+     * the cairo scale is 1 and the canvas is 32000² (H2-16). */
+    const char *svg =
+        "<svg xmlns='http://www.w3.org/2000/svg' width='32000' height='32000'>"
+        "<rect width='32000' height='32000' fill='#00ff00'/>"
+        "<g opacity='0.5'>"
+        "<rect x='10' y='10' width='20' height='20' fill='#ff0000'/>"
+        "</g>"
+        "</svg>";
+    RsvgHandle *handle = handle_from_svg_string (svg);
+    cairo_surface_t *output;
+    cairo_t *cr;
+    RsvgRectangle viewport;
+    GError *error = NULL;
+
+    output = cairo_image_surface_create (CAIRO_FORMAT_ARGB32, 64, 64);
+    cr = cairo_create (output);
+    viewport.x = 0;
+    viewport.y = 0;
+    viewport.width = 32000;
+    viewport.height = 32000;
+    g_assert_true (rsvg_handle_render_document (handle, cr, &viewport, &error));
+    g_assert_no_error (error);
+    cairo_destroy (cr);
+    cairo_surface_destroy (output);
+    g_object_unref (handle);
+}
+
+static void
+opacity_group_still_blends (void)
+{
+    const char *svg =
+        "<svg xmlns='http://www.w3.org/2000/svg' width='8' height='8'>"
+        "<rect width='8' height='8' fill='#00ff00'/>"
+        "<g opacity='0.5'>"
+        "<rect width='8' height='8' fill='#ff0000'/>"
+        "</g>"
+        "</svg>";
+    RsvgHandle *handle = handle_from_svg_string (svg);
+    cairo_surface_t *output;
+    guint32 p;
+    guint8 a, r, g, b;
+
+    output = cairo_image_surface_create (CAIRO_FORMAT_ARGB32, 8, 8);
+    render_to_surface (handle, output);
+    p = pixel_argb (output, 4, 4);
+    a = (guint8) (p >> 24);
+    r = (guint8) (p >> 16);
+    g = (guint8) (p >> 8);
+    b = (guint8) p;
+    g_assert_cmpint (a, ==, 0xff);
+    g_assert_cmpint (r, >=, 0x70);
+    g_assert_cmpint (r, <=, 0x90);
+    g_assert_cmpint (g, >=, 0x70);
+    g_assert_cmpint (g, <=, 0x90);
+    g_assert_cmpint (b, <=, 0x10);
+
+    cairo_surface_destroy (output);
+    g_object_unref (handle);
+}
+
+static void
 unlimited_raises_image_and_data_caps (void)
 {
     RsvgHandle *def;
@@ -3758,6 +3823,8 @@ main (int argc, char **argv)
     g_test_add_func ("/api/turbulence_one_octave_still_applies", turbulence_one_octave_still_applies);
     g_test_add_func ("/api/filter_pixel_offset_uses_gsize", filter_pixel_offset_uses_gsize);
     g_test_add_func ("/api/huge_filtered_canvas_does_not_crash", huge_filtered_canvas_does_not_crash);
+    g_test_add_func ("/api/huge_opacity_canvas_does_not_crash", huge_opacity_canvas_does_not_crash);
+    g_test_add_func ("/api/opacity_group_still_blends", opacity_group_still_blends);
     g_test_add_func ("/api/unlimited_raises_image_and_data_caps", unlimited_raises_image_and_data_caps);
     g_test_add_func ("/api/oversized_data_uri_does_not_abort", oversized_data_uri_does_not_abort);
     g_test_add_func ("/api/oversized_file_href_does_not_abort", oversized_file_href_does_not_abort);

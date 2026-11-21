@@ -14,7 +14,8 @@ Ranked from `00-SUMMARY.md`. High first. Noise skipped.
 8. **H2-1** — file size cap before full read
 9. **E4-2** — XInclude parse failure uses xi:fallback
 10. **E4-9** — remember push/pop offscreen layer instead of re-acquiring clip-path
-11. Medium left: H2-16 / E4-8, then H2-4 / H2-12 / B3-2 / B3-3 / E4-4
+11. **H2-16 leftover** — cap non-filter offscreen `create_similar`
+12. Medium left: E4-8, then H2-4 / H2-12 / B3-2 / B3-3 / E4-4
 
 ## Attempts
 
@@ -98,8 +99,15 @@ Ranked from `00-SUMMARY.md`. High first. Noise skipped.
 - Tests: `make check` 273 PASS including `/api/clip_path_object_bbox_still_clips` and `/api/clip_path_missing_does_not_unbalance_stack`. `make check-parity` pass=723 fail=0 skip=27 (masking-path-04-b still green). First `make check` SIGSEGV on masking-path-04-b was a stale `rsvg-cairo-clip.o` after inserting the struct field; rebuilt that TU, no source change.
 - Outcome: **fixed**. Non-filter `cairo_surface_create_similar` still uses uncapped `render->width/height` (H2-16 remainder).
 
+### H2-16 leftover — cap non-filter offscreen create_similar (try 1, committed)
+
+- Site: `rsvg-cairo-draw.c` `rsvg_cairo_push_render_stack`. Filter surfaces were already dummy 1×1 when over the pixel budget (B3-5). Non-filter `cairo_surface_create_similar` still passed uncapped `render->width/height`. The `#if 0` status check would have returned early and unbalanced push/pop.
+- Plan: share the dimension cap for both paths; on a failed cairo surface, replace with a 1×1 dummy instead of returning.
+- Change: `rsvg_cairo_offscreen_size` clamps to 1×1 when non-finite, sub-pixel, over `RSVG_MAX_IMAGE_DIMENSION`, or over `max_image_pixel_bytes`. Both similar and image surfaces use it. A failed `cairo_surface_status` becomes a 1×1 image surface so the layer is still pushed.
+- Tests: `make check` 275 PASS including `/api/huge_opacity_canvas_does_not_crash` (32000² identity-scale opacity group) and `/api/opacity_group_still_blends`. `make check-parity` pass=723 fail=0 skip=27.
+- Outcome: **fixed**. Pattern-tile `create_similar` at rsvg-cairo-draw.c:292 is a different allocation and was left alone.
+
 ## Remaining (not this batch)
 
-- Medium: H2-16 / E4-8 (error-path robustness). H2-16 remainder: non-filter `cairo_surface_create_similar` still uses uncapped `render->width/height`.
-- Also medium: H2-4, H2-12, B3-2, B3-3, E4-4.
+- Medium: E4-8 (gdk_pixbuf_new NULL). Then H2-4, H2-12, B3-2, B3-3, E4-4.
 - Low / note: see `00-SUMMARY.md`.
