@@ -21,7 +21,7 @@
  *     $(pkg-config --cflags --libs librsvg-2.0 cairo cairo-png)
  */
 
-#include "rsvg.hpp"
+#include "librsvg.hpp"
 
 #include <cairo.h>
 #include <iostream>

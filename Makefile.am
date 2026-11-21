@@ -243,7 +243,7 @@ EXTRA_DIST =				\
 	examples/06-pixbuf.c		\
 	examples/deprecated/render-cairo.c \
 	cpp/README \
-	cpp/rsvg.hpp \
+	cpp/librsvg.hpp \
 	cpp/example.cpp \
 	dist/debian/rsvg-convert.bash-completion
 

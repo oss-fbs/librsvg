@@ -1,6 +1,6 @@
 /* -*- Mode: C++; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
 /*
-   rsvg.hpp: Optional C++ wrapper around the librsvg-2.0 C API.
+   librsvg.hpp: Optional C++ wrapper around the librsvg-2.0 C API.
 
    Header-only. Not built or installed by make / make install.
    Does not change the C library, ABI, or soname.
@@ -21,8 +21,8 @@
    License along with this program; if not, see LICENCE-LIB.
 */
 
-#ifndef RSVG_CXX_RSVG_HPP
-#define RSVG_CXX_RSVG_HPP
+#ifndef RSVG_CXX_LIBRSVG_HPP
+#define RSVG_CXX_LIBRSVG_HPP
 
 #include <librsvg/rsvg.h>
 
@@ -357,4 +357,4 @@ private:
 
 } /* namespace rsvg */
 
-#endif /* RSVG_CXX_RSVG_HPP */
+#endif /* RSVG_CXX_LIBRSVG_HPP */
