@@ -583,6 +583,19 @@ rsvg_pixel_buffer_dims_ok (gint64 width, gint64 height, gsize max_pixel_bytes)
     return TRUE;
 }
 
+/* Byte offset of pixel (x, y). gsize so y * stride cannot overflow int. */
+static inline gsize
+rsvg_row_offset (gint y, gsize stride)
+{
+    return (gsize) y * stride;
+}
+
+static inline gsize
+rsvg_pixel_offset (gint y, gsize stride, gint x)
+{
+    return rsvg_row_offset (y, stride) + (gsize) x * 4;
+}
+
 static inline void
 rsvg_set_nesting_error (GError **error)
 {

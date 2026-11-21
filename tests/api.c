@@ -2313,6 +2313,16 @@ color_matrix_20_values_still_applies (void)
 }
 
 static void
+filter_pixel_offset_uses_gsize (void)
+{
+    /* 30000 * 128000 overflows a 32-bit int (B3-1 feOffset case). */
+    gsize off = rsvg_pixel_offset (30000, 128000, 10);
+
+    g_assert_cmpuint (off, ==, (gsize) 30000 * (gsize) 128000 + 40);
+    g_assert_cmpuint (off, >, (gsize) G_MAXINT);
+}
+
+static void
 huge_filtered_canvas_does_not_crash (void)
 {
     const char *svg =
@@ -3415,6 +3425,7 @@ main (int argc, char **argv)
     g_test_add_func ("/api/oversized_number_list_does_not_abort", oversized_number_list_does_not_abort);
     g_test_add_func ("/api/oversized_dasharray_does_not_abort", oversized_dasharray_does_not_abort);
     g_test_add_func ("/api/color_matrix_20_values_still_applies", color_matrix_20_values_still_applies);
+    g_test_add_func ("/api/filter_pixel_offset_uses_gsize", filter_pixel_offset_uses_gsize);
     g_test_add_func ("/api/huge_filtered_canvas_does_not_crash", huge_filtered_canvas_does_not_crash);
     g_test_add_func ("/api/unlimited_raises_image_and_data_caps", unlimited_raises_image_and_data_caps);
     g_test_add_func ("/api/oversized_data_uri_does_not_abort", oversized_data_uri_does_not_abort);

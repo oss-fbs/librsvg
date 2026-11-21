@@ -396,25 +396,25 @@ get_interp_pixel (guchar * src, gdouble ox, gdouble oy, guchar ch, RsvgIRect bou
         foy <= boundarys.y0 || foy >= boundarys.y1)
         c1 = 0;
     else
-        c1 = src[(guint) foy * rowstride + (guint) fox * 4 + ch];
+        c1 = src[rsvg_pixel_offset ((gint) foy, rowstride, (gint) fox) + ch];
 
     if (cox <= boundarys.x0 || cox >= boundarys.x1 ||
         foy <= boundarys.y0 || foy >= boundarys.y1)
         c2 = 0;
     else
-        c2 = src[(guint) foy * rowstride + (guint) cox * 4 + ch];
+        c2 = src[rsvg_pixel_offset ((gint) foy, rowstride, (gint) cox) + ch];
 
     if (cox <= boundarys.x0 || cox >= boundarys.x1 ||
         coy <= boundarys.y0 || coy >= boundarys.y1)
         c3 = 0;
     else
-        c3 = src[(guint) coy * rowstride + (guint) cox * 4 + ch];
+        c3 = src[rsvg_pixel_offset ((gint) coy, rowstride, (gint) cox) + ch];
 
     if (fox <= boundarys.x0 || fox >= boundarys.x1 ||
         coy <= boundarys.y0 || coy >= boundarys.y1)
         c4 = 0;
     else
-        c4 = src[(guint) coy * rowstride + (guint) fox * 4 + ch];
+        c4 = src[rsvg_pixel_offset ((gint) coy, rowstride, (gint) fox) + ch];
 
     c = (c1 * dist1 + c2 * dist2 + c3 * dist3 + c4 * dist4) / (dist1 + dist2 + dist3 + dist4);
 
@@ -528,17 +528,17 @@ rsvg_alpha_blt (cairo_surface_t *src,
             sy = y + src_clipped_y;
             dx = x + dst_clipped_x;
             dy = y + dst_clipped_y;
-            a = src_pixels[4 * sx + sy * srcrowstride + 3];
+            a = src_pixels[rsvg_pixel_offset (sy, srcrowstride, sx) + 3];
 
             if (a) {
-                ad = dst_pixels[4 * dx + dy * dstrowstride + 3];
+                ad = dst_pixels[rsvg_pixel_offset (dy, dstrowstride, dx) + 3];
                 ar = a + ad * (255 - a) / 255;
-                dst_pixels[4 * dx + dy * dstrowstride + 3] = ar;
+                dst_pixels[rsvg_pixel_offset (dy, dstrowstride, dx) + 3] = ar;
                 for (i = 0; i < 3; i++) {
-                    c = src_pixels[4 * sx + sy * srcrowstride + i];
-                    cd = dst_pixels[4 * dx + dy * dstrowstride + i];
+                    c = src_pixels[rsvg_pixel_offset (sy, srcrowstride, sx) + i];
+                    cd = dst_pixels[rsvg_pixel_offset (dy, dstrowstride, dx) + i];
                     cr = c + cd * (255 - a) / 255;
-                    dst_pixels[4 * dx + dy * dstrowstride + i] = cr;
+                    dst_pixels[rsvg_pixel_offset (dy, dstrowstride, dx) + i] = cr;
                 }
             }
         }
@@ -608,7 +608,7 @@ rsvg_art_affine_image (cairo_surface_t *img,
             if (rawx < 0 || rawy < 0 || rawx >= w ||
                 rawy >= h || basex < 0 || basey < 0 || basex >= width || basey >= height) {
                 for (k = 0; k < 4; k++)
-                    intpix[i * 4 + j * intstride + k] = 0;
+                    intpix[rsvg_pixel_offset (j, intstride, i) + k] = 0;
             } else {
                 if (basex < 0 || basex + 1 >= width)
                     xrunnoff = TRUE;
@@ -627,17 +627,17 @@ rsvg_art_affine_image (cairo_surface_t *img,
                         else {
                             for (k = 0; k < basebpp; k++) {
                                 pixsum[k] +=
-                                    (double) basepix[basebpp * (basex + ii) +
-                                                     (basey + jj) * basestride + k]
+                                    (double) basepix[rsvg_row_offset (basey + jj, basestride) +
+                                                     (gsize) (basex + ii) * (gsize) basebpp + k]
                                     * (xrunnoff ? 1 : fabs (fbasex - (double) (basex + (1 - ii))))
                                     * (yrunnoff ? 1 : fabs (fbasey - (double) (basey + (1 - jj))));
                             }
                         }
                     }
                 for (k = 0; k < basebpp; k++)
-                    intpix[i * 4 + j * intstride + k] = pixsum[k];
+                    intpix[rsvg_pixel_offset (j, intstride, i) + k] = pixsum[k];
                 if (!has_alpha)
-                    intpix[i * 4 + j * intstride + 3] = 255;
+                    intpix[rsvg_pixel_offset (j, intstride, i) + 3] = 255;
             }
 
         }
@@ -1028,14 +1028,14 @@ rsvg_filter_blend (RsvgFilterPrimitiveBlendMode mode,
             double qr, cr, qa, qb, ca, cb, bca, bcb;
             int ch;
 
-            qa = (double) in_pixels[4 * x + y * rowstride + channelmap[3]] / 255.0;
-            qb = (double) in2_pixels[4 * x + y * rowstride2 + channelmap[3]] / 255.0;
+            qa = (double) in_pixels[rsvg_pixel_offset (y, rowstride, x) + channelmap[3]] / 255.0;
+            qb = (double) in2_pixels[rsvg_pixel_offset (y, rowstride2, x) + channelmap[3]] / 255.0;
             qr = 1 - (1 - qa) * (1 - qb);
             cr = 0;
             for (ch = 0; ch < 3; ch++) {
                 i = channelmap[ch];
-                ca = (double) in_pixels[4 * x + y * rowstride + i] / 255.0;
-                cb = (double) in2_pixels[4 * x + y * rowstride2 + i] / 255.0;
+                ca = (double) in_pixels[rsvg_pixel_offset (y, rowstride, x) + i] / 255.0;
+                cb = (double) in2_pixels[rsvg_pixel_offset (y, rowstride2, x) + i] / 255.0;
                 /*these are the ca and cb that are used in the non-standard blend functions */
                 bcb = (1 - qa) * cb + ca;
                 bca = (1 - qb) * ca + cb;
@@ -1097,10 +1097,10 @@ rsvg_filter_blend (RsvgFilterPrimitiveBlendMode mode,
                     cr = 255;
                 if (cr < 0)
                     cr = 0;
-                output_pixels[4 * x + y * rowstrideo + i] = (guchar) cr;
+                output_pixels[rsvg_pixel_offset (y, rowstrideo, x) + i] = (guchar) cr;
 
             }
-            output_pixels[4 * x + y * rowstrideo + channelmap[3]] = qr * 255.0;
+            output_pixels[rsvg_pixel_offset (y, rowstrideo, x) + channelmap[3]] = qr * 255.0;
         }
 
     cairo_surface_mark_dirty (output);
@@ -1256,7 +1256,7 @@ surface_convert_cif (cairo_surface_t *surf, RsvgIRect bounds, gboolean to_linear
 
     for (y = bounds.y0; y < bounds.y1; y++) {
         for (x = bounds.x0; x < bounds.x1; x++) {
-            guchar *p = pixels + y * rowstride + x * 4;
+            guchar *p = pixels + rsvg_pixel_offset (y, rowstride, x);
             guchar a = p[ca];
             if (a == 0)
                 continue;
@@ -1498,7 +1498,7 @@ rsvg_filter_primitive_convolve_matrix_render (RsvgFilterPrimitive * self, RsvgFi
                 int cb = ctx->channelmap[2];
                 int ca = ctx->channelmap[3];
                 double out_a, out_r, out_g, out_b;
-                int p;
+                gsize p;
 
                 for (i = 0; i < upself->ordery; i++)
                     for (j = 0; j < upself->orderx; j++) {
@@ -1535,7 +1535,7 @@ rsvg_filter_primitive_convolve_matrix_render (RsvgFilterPrimitive * self, RsvgFi
                         kx = upself->orderx - j - 1;
                         ky = upself->ordery - i - 1;
                         kval = upself->KernelMatrix[kx + ky * upself->orderx];
-                        p = 4 * sx + sy * rowstride;
+                        p = rsvg_pixel_offset (sy, rowstride, sx);
                         sum_r += in_pixels[p + cr] * kval;
                         sum_g += in_pixels[p + cg] * kval;
                         sum_b += in_pixels[p + cb] * kval;
@@ -1563,7 +1563,7 @@ rsvg_filter_primitive_convolve_matrix_render (RsvgFilterPrimitive * self, RsvgFi
                 if (out_b > out_a)
                     out_b = out_a;
 
-                p = 4 * x + y * rowstride;
+                p = rsvg_pixel_offset (y, rowstride, x);
                 output_pixels[p + cr] = (guchar) (out_r + 0.5);
                 output_pixels[p + cg] = (guchar) (out_g + 0.5);
                 output_pixels[p + cb] = (guchar) (out_b + 0.5);
@@ -1607,9 +1607,9 @@ rsvg_filter_primitive_convolve_matrix_render (RsvgFilterPrimitive * self, RsvgFi
 
                             kx = upself->orderx - j - 1;
                             ky = upself->ordery - i - 1;
-                            alpha = in_pixels[4 * sx + sy * rowstride + 3];
+                            alpha = in_pixels[rsvg_pixel_offset (sy, rowstride, sx) + 3];
                             if (alpha)
-                                sval = in_pixels[4 * sx + sy * rowstride + ch] * 255 / alpha;
+                                sval = in_pixels[rsvg_pixel_offset (sy, rowstride, sx) + ch] * 255 / alpha;
                             else
                                 sval = 0;
                             kval = upself->KernelMatrix[kx + ky * upself->orderx];
@@ -1620,15 +1620,15 @@ rsvg_filter_primitive_convolve_matrix_render (RsvgFilterPrimitive * self, RsvgFi
                         tempresult = 255;
                     if (tempresult < 0)
                         tempresult = 0;
-                    output_pixels[4 * x + y * rowstride + ch] = tempresult;
+                    output_pixels[rsvg_pixel_offset (y, rowstride, x) + ch] = tempresult;
                 }
-                output_pixels[4 * x + y * rowstride + ctx->channelmap[3]] =
-                    in_pixels[4 * x + y * rowstride + ctx->channelmap[3]];
+                output_pixels[rsvg_pixel_offset (y, rowstride, x) + ctx->channelmap[3]] =
+                    in_pixels[rsvg_pixel_offset (y, rowstride, x) + ctx->channelmap[3]];
                 for (umch = 0; umch < 3; umch++) {
                     ch = ctx->channelmap[umch];
-                    output_pixels[4 * x + y * rowstride + ch] =
-                        output_pixels[4 * x + y * rowstride + ch] *
-                        output_pixels[4 * x + y * rowstride + ctx->channelmap[3]] / 255;
+                    output_pixels[rsvg_pixel_offset (y, rowstride, x) + ch] =
+                        output_pixels[rsvg_pixel_offset (y, rowstride, x) + ch] *
+                        output_pixels[rsvg_pixel_offset (y, rowstride, x) + ctx->channelmap[3]] / 255;
                 }
             }
         }
@@ -2087,7 +2087,7 @@ get_column (guchar *column_data,
     gint c;
 
     for (y = 0; y < height; y++) {
-        guchar *src = src_data + y * src_stride + x * bpp;
+        guchar *src = src_data + rsvg_row_offset (y, src_stride) + (gsize) x * (gsize) bpp;
 
         for (c = 0; c < bpp; c++)
             column_data[c] = src[c];
@@ -2103,7 +2103,7 @@ put_column (guchar *column_data, guchar *dest_data, gint dest_stride, gint bpp, 
     gint c;
 
     for (y = 0; y < height; y++) {
-        guchar *dst = dest_data + y * dest_stride + x * bpp;
+        guchar *dst = dest_data + rsvg_row_offset (y, dest_stride) + (gsize) x * (gsize) bpp;
 
         for (c = 0; c < bpp; c++)
             dst[c] = column_data[c];
@@ -2201,8 +2201,8 @@ gaussian_blur_surface (cairo_surface_t *in,
         for (y = 0; y < height; y++) {
             guchar *in_row, *out_row;
 
-            in_row = in_data + in_stride * y;
-            out_row = out_data + out_stride * y;
+            in_row = in_data + rsvg_row_offset (y, in_stride);
+            out_row = out_data + rsvg_row_offset (y, out_stride);
 
             if (use_box_blur) {
                 if (box_width % 2 != 0) {
@@ -2458,8 +2458,8 @@ rsvg_filter_primitive_offset_render (RsvgFilterPrimitive * self, RsvgFilterConte
                 continue;
 
             for (ch = 0; ch < 4; ch++) {
-                output_pixels[y * rowstride + x * 4 + ch] =
-                    in_pixels[(y - oy) * rowstride + (x - ox) * 4 + ch];
+                output_pixels[rsvg_pixel_offset (y, rowstride, x) + ch] =
+                    in_pixels[rsvg_pixel_offset (y - oy, rowstride, x - ox) + ch];
             }
         }
 
@@ -2739,7 +2739,7 @@ rsvg_filter_primitive_color_matrix_render (RsvgFilterPrimitive * self, RsvgFilte
 
     for (y = boundarys.y0; y < boundarys.y1; y++) {
         for (x = boundarys.x0; x < boundarys.x1; x++) {
-            int p = 4 * x + y * rowstride;
+            gsize p = rsvg_pixel_offset (y, rowstride, x);
             guchar ia = in_pixels[p + ca];
             gdouble r, g, b, a, nr, ng, nb, na;
 
@@ -3106,7 +3106,7 @@ rsvg_filter_primitive_component_transfer_render (RsvgFilterPrimitive *
     for (y = boundarys.y0; y < boundarys.y1; y++)
         for (x = boundarys.x0; x < boundarys.x1; x++) {
             gdouble alpha, new_a, v, nv;
-            inpix = in_pixels + (y * rowstride + x * 4);
+            inpix = in_pixels + rsvg_pixel_offset (y, rowstride, x);
             alpha = inpix[achan] / 255.0;
             new_a = functions[achan] (alpha, channels[achan]);
             if (new_a < 0)
@@ -3130,7 +3130,7 @@ rsvg_filter_primitive_component_transfer_render (RsvgFilterPrimitive *
                 outpix[c] = (guchar) (nv * new_a * 255.0 + 0.5);
             }
             for (c = 0; c < 4; c++)
-                output_pixels[y * rowstride + x * 4 + c] = outpix[c];
+                output_pixels[rsvg_pixel_offset (y, rowstride, x) + c] = outpix[c];
         }
 
     cairo_surface_mark_dirty (output);
@@ -3331,7 +3331,7 @@ rsvg_filter_primitive_erode_render (RsvgFilterPrimitive * self, RsvgFilterContex
                         if (y + i >= height || y + i < 0 || x + j >= width || x + j < 0)
                             continue;
 
-                        val = in_pixels[(y + i) * rowstride + (x + j) * 4 + ch];
+                        val = in_pixels[rsvg_pixel_offset (y + i, rowstride, x + j) + ch];
 
 
                         if (upself->mode == 0) {
@@ -3343,7 +3343,7 @@ rsvg_filter_primitive_erode_render (RsvgFilterPrimitive * self, RsvgFilterContex
                         }
 
                     }
-                output_pixels[y * rowstride + x * 4 + ch] = extreme;
+                output_pixels[rsvg_pixel_offset (y, rowstride, x) + ch] = extreme;
             }
 
     cairo_surface_mark_dirty (output);
@@ -3480,20 +3480,20 @@ rsvg_filter_primitive_composite_render (RsvgFilterPrimitive * self, RsvgFilterCo
             for (x = boundarys.x0; x < boundarys.x1; x++) {
                 int qr, qa, qb;
 
-                qa = in_pixels[4 * x + y * rowstride + 3];
-                qb = in2_pixels[4 * x + y * rowstride + 3];
+                qa = in_pixels[rsvg_pixel_offset (y, rowstride, x) + 3];
+                qb = in2_pixels[rsvg_pixel_offset (y, rowstride, x) + 3];
                 qr = (upself->k1 * qa * qb / 255 + upself->k2 * qa + upself->k3 * qb) / 255;
 
                 if (qr > 255)
                     qr = 255;
                 if (qr < 0)
                     qr = 0;
-                output_pixels[4 * x + y * rowstride + 3] = qr;
+                output_pixels[rsvg_pixel_offset (y, rowstride, x) + 3] = qr;
                 if (qr)
                     for (i = 0; i < 3; i++) {
                         int ca, cb, cr;
-                        ca = in_pixels[4 * x + y * rowstride + i];
-                        cb = in2_pixels[4 * x + y * rowstride + i];
+                        ca = in_pixels[rsvg_pixel_offset (y, rowstride, x) + i];
+                        cb = in2_pixels[rsvg_pixel_offset (y, rowstride, x) + i];
 
                         cr = (ca * cb * upself->k1 / 255 + ca * upself->k2 +
                               cb * upself->k3 + upself->k4 * qr) / 255;
@@ -3501,7 +3501,7 @@ rsvg_filter_primitive_composite_render (RsvgFilterPrimitive * self, RsvgFilterCo
                             cr = qr;
                         if (cr < 0)
                             cr = 0;
-                        output_pixels[4 * x + y * rowstride + i] = cr;
+                        output_pixels[rsvg_pixel_offset (y, rowstride, x) + i] = cr;
 
                     }
             }
@@ -3511,8 +3511,8 @@ rsvg_filter_primitive_composite_render (RsvgFilterPrimitive * self, RsvgFilterCo
             for (x = boundarys.x0; x < boundarys.x1; x++) {
                 int qr, cr, qa, qb, ca, cb, Fa, Fb, Fab, Fo;
 
-                qa = in_pixels[4 * x + y * rowstride + 3];
-                qb = in2_pixels[4 * x + y * rowstride + 3];
+                qa = in_pixels[rsvg_pixel_offset (y, rowstride, x) + 3];
+                qb = in2_pixels[rsvg_pixel_offset (y, rowstride, x) + 3];
                 cr = 0;
                 Fa = Fb = Fab = Fo = 0;
                 switch (upself->mode) {
@@ -3547,18 +3547,18 @@ rsvg_filter_primitive_composite_render (RsvgFilterPrimitive * self, RsvgFilterCo
                     qr = 0;
 
                 for (i = 0; i < 3; i++) {
-                    ca = in_pixels[4 * x + y * rowstride + i];
-                    cb = in2_pixels[4 * x + y * rowstride + i];
+                    ca = in_pixels[rsvg_pixel_offset (y, rowstride, x) + i];
+                    cb = in2_pixels[rsvg_pixel_offset (y, rowstride, x) + i];
 
                     cr = (ca * Fa + cb * Fb + ca * cb * Fab + Fo) / 255;
                     if (cr > qr)
                         cr = qr;
                     if (cr < 0)
                         cr = 0;
-                    output_pixels[4 * x + y * rowstride + i] = cr;
+                    output_pixels[rsvg_pixel_offset (y, rowstride, x) + i] = cr;
 
                 }
-                output_pixels[4 * x + y * rowstride + 3] = qr;
+                output_pixels[rsvg_pixel_offset (y, rowstride, x) + 3] = qr;
             }
 
     cairo_surface_mark_dirty (output);
@@ -3691,7 +3691,7 @@ rsvg_filter_primitive_flood_render (RsvgFilterPrimitive * self, RsvgFilterContex
     for (y = boundarys.y0; y < boundarys.y1; y++)
         for (x = boundarys.x0; x < boundarys.x1; x++)
             for (i = 0; i < 4; i++)
-                output_pixels[4 * x + y * rowstride + ctx->channelmap[i]] = pixcolor[i];
+                output_pixels[rsvg_pixel_offset (y, rowstride, x) + ctx->channelmap[i]] = pixcolor[i];
 
     cairo_surface_mark_dirty (output);
 
@@ -3848,18 +3848,18 @@ rsvg_filter_primitive_displacement_map_render (RsvgFilterPrimitive * self, RsvgF
         for (x = boundarys.x0; x < boundarys.x1; x++) {
             if (xch != 4)
                 ox = x + upself->scale * ctx->paffine.xx *
-                    ((double) in2_pixels[y * rowstride + x * 4 + xch] / 255.0 - 0.5);
+                    ((double) in2_pixels[rsvg_pixel_offset (y, rowstride, x) + xch] / 255.0 - 0.5);
             else
                 ox = x;
 
             if (ych != 4)
                 oy = y + upself->scale * ctx->paffine.yy *
-                    ((double) in2_pixels[y * rowstride + x * 4 + ych] / 255.0 - 0.5);
+                    ((double) in2_pixels[rsvg_pixel_offset (y, rowstride, x) + ych] / 255.0 - 0.5);
             else
                 oy = y;
 
             for (ch = 0; ch < 4; ch++) {
-                output_pixels[y * rowstride + x * 4 + ch] =
+                output_pixels[rsvg_pixel_offset (y, rowstride, x) + ch] =
                     get_interp_pixel (in_pixels, ox, oy, ch, boundarys, rowstride);
             }
         }
@@ -4223,7 +4223,7 @@ rsvg_filter_primitive_turbulence_render (RsvgFilterPrimitive * self, RsvgFilterC
             point[0] = affine.xx * (x + boundarys.x0) + affine.xy * (y + boundarys.y0) + affine.x0;
             point[1] = affine.yx * (x + boundarys.x0) + affine.yy * (y + boundarys.y0) + affine.y0;
 
-            pixel = output_pixels + 4 * (x + boundarys.x0) + (y + boundarys.y0) * rowstride;
+            pixel = output_pixels + rsvg_pixel_offset (y + boundarys.y0, rowstride, x + boundarys.x0);
 
             for (i = 0; i < 4; i++) {
                 double cr;
@@ -5042,7 +5042,7 @@ rsvg_filter_primitive_diffuse_lighting_render (RsvgFilterPrimitive * self, RsvgF
                 double lx = scaled ? x * ox : x;
                 double ly = scaled ? y * oy : y;
 
-                z = surfaceScale * (double) in_pixels[y * rowstride + x * 4 + ctx->channelmap[3]];
+                z = surfaceScale * (double) in_pixels[rsvg_pixel_offset (y, rowstride, x) + ctx->channelmap[3]];
                 L = get_light_direction (source, lx, ly, z, &iaffine, ctx->ctx);
                 N = get_surface_normal (in_pixels, boundarys, x, y,
                                         dx, dy, rawdx, rawdy, upself->surfaceScale,
@@ -5050,13 +5050,13 @@ rsvg_filter_primitive_diffuse_lighting_render (RsvgFilterPrimitive * self, RsvgF
                 lightcolor = get_light_color (source, color, lx, ly, z, &iaffine, ctx->ctx);
                 factor = dotproduct (N, L);
 
-                output_pixels[y * rowstride + x * 4 + ctx->channelmap[0]] =
+                output_pixels[rsvg_pixel_offset (y, rowstride, x) + ctx->channelmap[0]] =
                     MAX (0, MIN (255, upself->diffuseConstant * factor * lightcolor.x * 255.0));
-                output_pixels[y * rowstride + x * 4 + ctx->channelmap[1]] =
+                output_pixels[rsvg_pixel_offset (y, rowstride, x) + ctx->channelmap[1]] =
                     MAX (0, MIN (255, upself->diffuseConstant * factor * lightcolor.y * 255.0));
-                output_pixels[y * rowstride + x * 4 + ctx->channelmap[2]] =
+                output_pixels[rsvg_pixel_offset (y, rowstride, x) + ctx->channelmap[2]] =
                     MAX (0, MIN (255, upself->diffuseConstant * factor * lightcolor.z * 255.0));
-                output_pixels[y * rowstride + x * 4 + ctx->channelmap[3]] = 255;
+                output_pixels[rsvg_pixel_offset (y, rowstride, x) + ctx->channelmap[3]] = 255;
             }
 
         cairo_surface_mark_dirty (output);
@@ -5234,7 +5234,7 @@ rsvg_filter_primitive_specular_lighting_render (RsvgFilterPrimitive * self, Rsvg
 
     for (y = boundarys.y0; y < boundarys.y1; y++)
         for (x = boundarys.x0; x < boundarys.x1; x++) {
-            z = in_pixels[y * rowstride + x * 4 + 3] * surfaceScale;
+            z = in_pixels[rsvg_pixel_offset (y, rowstride, x) + 3] * surfaceScale;
             L = get_light_direction (source, x, y, z, &iaffine, ctx->ctx);
             L.z += 1;
             L = normalise (L);
@@ -5261,10 +5261,10 @@ rsvg_filter_primitive_specular_lighting_render (RsvgFilterPrimitive * self, Rsvg
             if (max < 0)
                 max = 0;
 
-            output_pixels[y * rowstride + x * 4 + ctx->channelmap[0]] = lightcolor.x * max;
-            output_pixels[y * rowstride + x * 4 + ctx->channelmap[1]] = lightcolor.y * max;
-            output_pixels[y * rowstride + x * 4 + ctx->channelmap[2]] = lightcolor.z * max;
-            output_pixels[y * rowstride + x * 4 + ctx->channelmap[3]] = max;
+            output_pixels[rsvg_pixel_offset (y, rowstride, x) + ctx->channelmap[0]] = lightcolor.x * max;
+            output_pixels[rsvg_pixel_offset (y, rowstride, x) + ctx->channelmap[1]] = lightcolor.y * max;
+            output_pixels[rsvg_pixel_offset (y, rowstride, x) + ctx->channelmap[2]] = lightcolor.z * max;
+            output_pixels[rsvg_pixel_offset (y, rowstride, x) + ctx->channelmap[3]] = max;
 
         }
 
@@ -5406,11 +5406,13 @@ rsvg_filter_primitive_tile_render (RsvgFilterPrimitive * self, RsvgFilterContext
     for (y = oboundarys.y0; y < oboundarys.y1; y++)
         for (x = oboundarys.x0; x < oboundarys.x1; x++)
             for (i = 0; i < 4; i++) {
-                output_pixels[4 * x + y * rowstride + i] =
-                    in_pixels[(mod ((x - boundarys.x0), (boundarys.x1 - boundarys.x0)) +
-                               boundarys.x0) * 4 +
-                              (mod ((y - boundarys.y0), (boundarys.y1 - boundarys.y0)) +
-                               boundarys.y0) * rowstride + i];
+                output_pixels[rsvg_pixel_offset (y, rowstride, x) + i] =
+                    in_pixels[rsvg_pixel_offset (
+                                  mod ((y - boundarys.y0), (boundarys.y1 - boundarys.y0)) +
+                                  boundarys.y0,
+                                  rowstride,
+                                  mod ((x - boundarys.x0), (boundarys.x1 - boundarys.x0)) +
+                                  boundarys.x0) + i];
             }
 
     cairo_surface_mark_dirty (output);
