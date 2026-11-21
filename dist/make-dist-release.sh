@@ -1,7 +1,7 @@
 #!/bin/bash
 # Build librsvg-c-VERSION.tar.xz under ../pkg/ (parent of this tree).
-# Never install onto the live host. The former 2.62.3 snapshot must
-# not appear in the archive.
+# Never install onto the live host. The former 2.62.3 snapshot and
+# the discontinued libcroco archive must not appear in the archive.
 set -euo pipefail
 
 here=$(cd "$(dirname "$0")" && pwd)
@@ -51,7 +51,7 @@ rm -f "$pack_ignore"
 
 # Belt-and-suspenders: drop maintainer-only leftovers rsync might keep.
 rm -rf "$stage/$name/debug" "$stage/$name/dist" "$stage/$name/.git" \
-	"$stage/$name/rust" "$stage/$name/debian" "$stage/$name/stage" \
+	"$stage/$name/rust" "$stage/$name/libcroco" "$stage/$name/debian" "$stage/$name/stage" \
 	"$stage/$name/pkg" "$stage/$name/debpkg" "$stage/$name/tmp" \
 	"$stage/$name/.downloads"
 find "$stage/$name" -type d -name autom4te.cache -prune -exec rm -rf {} +
@@ -63,6 +63,7 @@ rm -f "$stage/$name/AGENTS.md" "$stage/$name/AGENTS_history.md" \
 	"$stage/$name/AGENTS_deprecated-abi.md" "$stage/$name/PLAN.md"
 
 if [ -e "$stage/$name/debug" ] || [ -e "$stage/$name/rust" ] \
+	|| [ -e "$stage/$name/libcroco" ] \
 	|| [ -e "$stage/$name/.git" ] || [ -e "$stage/$name/dist" ] \
 	|| [ -e "$stage/$name/.gitignore" ] \
 	|| [ -e "$stage/$name/AGENTS.md" ] \
@@ -83,8 +84,8 @@ fi
 
 tar -C "$stage" -cJf "$out" "$name"
 
-if tar tJf "$out" | grep -E '(^|/)debug(/|$)|(^|/)tests/[^/]*\.(log|trs)$|(^|/)\.git(/|$)|(^|/)rust(/|$)|(^|/)dist(/|$)|(^|/)pkg(/|$)|autom4te\.cache|(^|/)\.gitignore$|\.asc$|\.libs/|\.o$|(^|/)AGENTS(_history|_deprecated-abi)?\.md$' >/dev/null; then
-	echo "$0: archive contains debug/, test logs, dist/, pkg/, rust/, .git, autom4te.cache, .libs, objects, or AGENTS maintainer files" >&2
+if tar tJf "$out" | grep -E '(^|/)debug(/|$)|(^|/)tests/[^/]*\.(log|trs)$|(^|/)\.git(/|$)|(^|/)rust(/|$)|(^|/)libcroco(/|$)|(^|/)dist(/|$)|(^|/)pkg(/|$)|autom4te\.cache|(^|/)\.gitignore$|\.asc$|\.libs/|\.o$|(^|/)AGENTS(_history|_deprecated-abi)?\.md$' >/dev/null; then
+	echo "$0: archive contains debug/, test logs, dist/, pkg/, rust/, libcroco/, .git, autom4te.cache, .libs, objects, or AGENTS maintainer files" >&2
 	rm -f "$out"
 	exit 1
 fi

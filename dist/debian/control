@@ -29,7 +29,7 @@ Description: SVG rendering library (shared library)
  C library that renders SVG to Cairo (librsvg-2.0 API, SONAME
  librsvg-2.so.2). Replaces Debian/Devuan librsvg2-2 (GNOME/Rust).
  .
- CSS uses the in-tree css/ engine. libcroco is not built or packaged.
+ CSS uses the in-tree css/ engine.
 
 Package: librsvg-c-common
 Architecture: any

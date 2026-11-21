@@ -6,8 +6,7 @@
 #
 # Corpus: tests/fixtures/parity/  (2.62.3 reftest corpus; snapshot removed)
 # Harness: tests/rsvg-test.c with RSVG_PARITY=1
-# Default matcher is css/. libcroco comparison: RSVG_CSS_ENGINE=croco
-# and tests/parity-xfail-croco.txt.
+# Default matcher is css/.
 #
 # Format:
 #   fail<TAB>path-relative-to-fixtures/parity/<TAB>reason
@@ -69,7 +68,7 @@
 #   bugs/bug548-data-url-without-mimetype.svg
 #   bugs/bug718-rect-negative-rx-ry.svg
 #
-# CSS matcher flips vs libcroco (removed from this list):
+# CSS matcher flips vs the former croco engine (removed from this list):
 #   bug483-attribute-selectors.svg
 #   bugs/bug112-svg-delayed-attributes.svg
 #   specificity.svg

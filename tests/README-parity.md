@@ -23,7 +23,7 @@ The default matcher is the `css/` engine. `make check-parity` and
 `make check-parity-engine` load `tests/parity-t-numbers.txt` and
 apply the tolerance band. They do **not** TAP-skip the 115 residuals.
 
-`make check-parity-croco` errors: libcroco is discontinued.
+`make check-parity-croco` errors: the former libcroco fallback is gone.
 
 Or, with the same environment `make check` uses:
 
@@ -176,7 +176,7 @@ difference line.
 - Do not implement features just to shrink this list in the P0 step.
 - `LIBRSVG_VERSION` is **2.63.5** (named real-gap empty).
   Do not bump further for TFM / TAA / TCR accepted differences.
-- Do not build or link `libcroco/` (discontinued archive; css/ only).
+- css/ is the only engine. Do not link a system CSS library.
 - `RSVG_PARITY=1` loads only the 2.62.3 TTF list (Roboto / Ahem /
   DejaVu / Noto Hebrew) + `fonts.conf` (P19 / Q1). LiberationSans is
   **not** in that map. `make check` still uses LiberationSans.

@@ -24,7 +24,7 @@ librsvg-2.0.pc
 librsvg-2.0-uninstalled.pc
 /autom4te.cache/
 autom4te.cache/
-libcroco/autom4te.cache/
+/libcroco/
 *.la
 *.lo
 .libs/

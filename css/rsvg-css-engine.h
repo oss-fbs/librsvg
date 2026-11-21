@@ -37,8 +37,7 @@ typedef enum {
     RSVG_CSS_ORIGIN_AUTHOR = 2
 } RsvgCssOrigin;
 
-/* Always TRUE. RSVG_CSS_ENGINE=croco|old|libcroco|0|off is ignored
- * (libcroco is discontinued; one g_warning). */
+/* Always TRUE. css/ is the only engine. */
 gboolean         rsvg_css_engine_enabled (void);
 
 RsvgCssEngine   *rsvg_css_engine_new (void);

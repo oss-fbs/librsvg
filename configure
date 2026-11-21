@@ -3556,8 +3556,6 @@ CAIRO_REQUIRED=1.2.0
 PANGO_REQUIRED=1.38.0
 GDK_PIXBUF_REQUIRED=2.20
 GTK3_REQUIRED=3.10.0
-CROCO_REQUIRED=0.6.1
-
 # ===========================================================================
 
 RSVG_LT_VERSION_INFO=65:5:63
@@ -15171,13 +15169,9 @@ fi
 
 case " $ac_configure_args " in
   *enable-croco*|*disable-croco*)
-    as_fn_error $? "libcroco is discontinued; css/ is the only CSS engine" "$LINENO" 5
+    as_fn_error $? "libcroco is gone; css/ is the only CSS engine" "$LINENO" 5
     ;;
 esac
-if test -n "$PKG_CONFIG" && "$PKG_CONFIG" --exists libcroco-0.6 2>/dev/null; then
-  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: ignoring host libcroco-0.6 from pkg-config; css/ is the only engine" >&5
-printf "%s\n" "$as_me: ignoring host libcroco-0.6 from pkg-config; css/ is the only engine" >&6;}
-fi
 case " $ac_configure_args " in
   *" --enable-maintainer-mode "*) ;;
   *) ac_configure_args="$ac_configure_args --disable-maintainer-mode" ;;
@@ -19117,7 +19111,7 @@ librsvg-$VERSION
 	GIF in SVG <image> (giflib):    ${have_libgif}
 	AVIF in SVG <image> (libavif):  ${have_libavif}
 	BMP in SVG <image> (in-tree):   ${have_bmp}
-	libcroco:                       discontinued (unbuilt archive in libcroco/; css/ only)
+	CSS engine:                     in-tree css/
 	Build miscellaneous tools:      ${build_misc_tools}
 "
 

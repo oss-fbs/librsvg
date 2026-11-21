@@ -1644,7 +1644,7 @@ check-parity: rsvg-test$(EXEEXT)
 check-parity-engine: check-parity
 
 check-parity-croco:
-	@echo "check-parity-croco: libcroco is discontinued; css/ is the only engine" >&2
+	@echo "check-parity-croco: libcroco is gone; css/ is the only engine" >&2
 	@false
 
 .PHONY: check-parity check-parity-engine check-parity-croco generate-parity-local check-parity-local \

@@ -21,7 +21,7 @@
 	/>
 	<UserMacro
 		Name="LibRsvgIncPath"
-		Value="$(GlibEtcInstallRoot)\include\pango-1.0;$(GlibEtcInstallRoot)\include\libcroco-0.6;$(GlibEtcInstallRoot)\include\libxml2;.\"
+		Value="$(GlibEtcInstallRoot)\include\pango-1.0;$(GlibEtcInstallRoot)\include\libxml2;.\"
 	/>
 	<UserMacro
 		Name="Gtk3IncPath"
@@ -33,7 +33,7 @@
 	/>
 	<UserMacro
 		Name="LibRsvgLibs"
-		Value="pangocairo-1.0.lib pango-1.0.lib croco-0.6.lib libxml2.lib "
+		Value="pangocairo-1.0.lib pango-1.0.lib libxml2.lib "
 	/>
 	<UserMacro
 		Name="IntlLib"

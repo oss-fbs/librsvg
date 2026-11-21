@@ -14,7 +14,7 @@ They keep the same C API and SONAME **librsvg-2.so.2**:
 
 gir1.2-rsvg-2.0 is not shipped (introspection is disabled).
 
-css/ is the only CSS engine. libcroco is not built or packaged.
+css/ is the only CSS engine.
 
 `librsvg-c2` Depends on **libgif7** (GIF in SVG `<image>`).
 

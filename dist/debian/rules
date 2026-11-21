@@ -1,7 +1,7 @@
 #!/usr/bin/make -f
 
 # Debian packaging only. Do not install onto the live host from debian/rules.
-# libcroco is discontinued; css/ is the only engine.
+# css/ is the only CSS engine.
 
 include /usr/share/dpkg/default.mk
 
@@ -47,7 +47,7 @@ override_dh_auto_install:
 	      $(CURDIR)/debian/tmp/usr/lib/$(DEB_HOST_MULTIARCH)/gdk-pixbuf-2.0/*/loaders/*.a \
 	      $(CURDIR)/debian/tmp/usr/lib/$(DEB_HOST_MULTIARCH)/gdk-pixbuf-2.0/*/loaders/*.la
 	rm -rf $(CURDIR)/debian/tmp/usr/share/gtk-doc
-	# libcroco is not packaged (css/ only). Strip leftover install paths.
+	# css/ only. Strip leftover install paths that must not ship.
 	rm -rf $(CURDIR)/debian/tmp/usr/lib/$(DEB_HOST_MULTIARCH)/librsvg-c
 	rm -rf $(CURDIR)/debian/tmp/usr/include/libcroco-0.6
 	rm -f $(CURDIR)/debian/tmp/usr/lib/$(DEB_HOST_MULTIARCH)/libcroco-0.6.so* \

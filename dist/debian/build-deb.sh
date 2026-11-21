@@ -63,7 +63,7 @@ if [ -t 1 ] && [ -z "${GPG_TTY:-}" ]; then
   export GPG_TTY
 fi
 
-# Do not pass -tc (clean after): that can distclean shipped croco headers.
+# Do not pass -tc (clean after): that can distclean shipped headers.
 # debian/rules already uses DESTDIR only; this script never dpkg -i.
 set +e
 dpkg-buildpackage -b -k"$KEY"

@@ -17,6 +17,7 @@
 /.downloads/
 /stage/
 /rust/
+/libcroco/
 /debug/
 /build-*/
 /tests/fuzz/out/

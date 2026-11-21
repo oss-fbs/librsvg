@@ -102,13 +102,11 @@ FILE_PATTERNS          = *.h \
                          *.dox
 RECURSIVE              = NO
 EXCLUDE                = rust \
-                         libcroco \
                          tests \
                          AGENTS.md \
                          AGENTS_history.md
 EXCLUDE_SYMLINKS       = NO
-EXCLUDE_PATTERNS       = */libcroco/* \
-                         */tests/* \
+EXCLUDE_PATTERNS       = */tests/* \
                          */AGENTS.md \
                          */AGENTS_history.md
 EXCLUDE_SYMBOLS        = rsvg_handle_internal_set_testing \

@@ -100,8 +100,8 @@ typedef struct _RsvgNodeChars RsvgNodeChars;
 #define RSVG_MAX_CSS_ATTR_VALUE_BYTES 4096
 /* cascade_walk C recursion over the SVG node tree. Overflow styles the
  * current node then stops that branch (no abort, no g_critical, no GError:
- * cascade is not a public stylesheet-failure API). Same spirit as croco
- * RECURSIVE_CALLERS_LIMIT 100; 256 is above real icon/theme grouping. */
+ * cascade is not a public stylesheet-failure API). 256 is above real
+ * icon/theme grouping. */
 #define RSVG_MAX_CSS_TREE_DEPTH     256
 
 /* RSVG_ONE_MINUS_EPSILON:
@@ -191,7 +191,7 @@ struct RsvgHandlePrivate {
 
     GHashTable *css_props;
 
-    /* CSS engine (css/ only; libcroco is discontinued). */
+    /* CSS engine (css/ only). */
     struct _RsvgCssEngine *css_engine;
 
     /* User-origin stylesheet from rsvg_handle_set_stylesheet(). */

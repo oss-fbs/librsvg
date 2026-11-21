@@ -1126,9 +1126,9 @@ main (int argc, char **argv)
         }
     }
 
-    /* g_test_init makes g_warning fatal. 2.62 fixtures exercise CSS that
-     * libcroco rejects with "CSS parsing error"; those must be recorded as
-     * xfails, not abort the suite. Baseline make check is unchanged.
+    /* g_test_init makes g_warning fatal. Parity fixtures may emit CSS
+     * warnings; those must not abort the suite. Baseline make check is
+     * unchanged.
      */
     if (parity_enabled)
         g_log_set_always_fatal (G_LOG_FATAL_MASK);

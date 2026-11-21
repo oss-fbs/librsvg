@@ -441,8 +441,7 @@ hex_digit (char c)
     return -1;
 }
 
-/* CSS2/SVG named colors (same set as the archived libcroco 0.6.15
- * table, minus transparent which is handled above). Sorted for bsearch. */
+/* CSS2/SVG named colors (transparent is handled above). Sorted for bsearch. */
 typedef struct {
     const char *name;
     guint8 r, g, b;

@@ -47,7 +47,7 @@ Linking (pass)
 `librsvg-c-common` `.so` (dpkg-deb extract, `readelf`/`nm -D`):
 
 - NEEDED: `librsvg-2.so.2`, `libgdk_pixbuf-2.0.so.0`, `libgobject-2.0.so.0`, `libglib-2.0.so.0`
-- No `libcroco` NEEDED (libcroco is discontinued; css/ only)
+- No extra CSS-library NEEDED (css/ only)
 - No Rust/C++ mangled symbols (`_ZN`, `rustc`, cargo)
 
 Debian package (pass)
@@ -99,6 +99,6 @@ Verdict
 -------
 
 **Pass** for MIME, signatures, vtable, thumbnailer, linking (librsvg-2,
-css/ only, no libcroco, no Rust), and Debian `librsvg-c-common` contents.
+css/ only, no Rust), and Debian `librsvg-c-common` contents.
 **No crash/abort/wrong-MIME must-fix.** Remaining items are error
 fidelity and small leaks in `io-svg.c`. Default handle DPI is 96.

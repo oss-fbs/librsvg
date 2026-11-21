@@ -41,21 +41,7 @@ static const char rsvg_ua_css[] =
 gboolean
 rsvg_css_engine_enabled (void)
 {
-    static gsize warned = 0;
-    const char *e = g_getenv ("RSVG_CSS_ENGINE");
-
-    /* css/ is the only engine. libcroco is discontinued. */
-    if (e != NULL && *e != '\0' &&
-        (g_ascii_strcasecmp (e, "croco") == 0 ||
-         g_ascii_strcasecmp (e, "old") == 0 ||
-         g_ascii_strcasecmp (e, "libcroco") == 0 ||
-         strcmp (e, "0") == 0 ||
-         g_ascii_strcasecmp (e, "off") == 0)) {
-        if (g_once_init_enter (&warned)) {
-            g_warning ("RSVG_CSS_ENGINE=%s ignored: libcroco is discontinued; using css/", e);
-            g_once_init_leave (&warned, 1);
-        }
-    }
+    /* css/ is the only engine. */
     return TRUE;
 }
 

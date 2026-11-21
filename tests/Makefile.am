@@ -136,7 +136,6 @@ dist_installed_test_data =						\
 	make-check-t-numbers.txt	\
 	parity-xfail.txt		\
 	parity-xfail-engine.txt		\
-	parity-xfail-croco.txt		\
 	fixtures/parity/README		\
 	$(wildcard $(srcdir)/fixtures/parity/*.svg)			\
 	$(wildcard $(srcdir)/fixtures/parity/*.png)			\
@@ -172,7 +171,7 @@ check-parity: rsvg-test$(EXEEXT)
 check-parity-engine: check-parity
 
 check-parity-croco:
-	@echo "check-parity-croco: libcroco is discontinued; css/ is the only engine" >&2
+	@echo "check-parity-croco: libcroco is gone; css/ is the only engine" >&2
 	@false
 
 # P20: host-local same-renderer refs. Does not replace 2.62.3 PNGs.

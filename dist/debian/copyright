@@ -11,11 +11,6 @@ Copyright: 2000 Eazel, Inc.
            2026 Randy Butler
 License: LGPL-2+
 
-Files: libcroco/*
-Copyright: 2002-2003 Dodji Seketeli <dodji@seketeli.org>
-           2026 Randy Butler
-License: LGPL-2.1
-
 Files: debian/*
 Copyright: 2026 Randy Butler
 License: LGPL-2+
@@ -34,12 +29,3 @@ License: LGPL-2+
  On Debian systems, the complete text of the GNU Library General
  Public License version 2 can be found in
  /usr/share/common-licenses/LGPL-2.
-
-License: LGPL-2.1
- This library is free software; you can redistribute it and/or
- modify it under the terms of version 2.1 of the GNU Lesser General
- Public License as published by the Free Software Foundation.
- .
- On Debian systems, the complete text of the GNU Lesser General
- Public License version 2.1 can be found in
- /usr/share/common-licenses/LGPL-2.1.

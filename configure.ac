@@ -41,8 +41,6 @@ CAIRO_REQUIRED=1.2.0
 PANGO_REQUIRED=1.38.0
 GDK_PIXBUF_REQUIRED=2.20
 GTK3_REQUIRED=3.10.0
-CROCO_REQUIRED=0.6.1
-
 # ===========================================================================
 
 AC_SUBST([RSVG_LT_VERSION_INFO],[rsvg_lt_version_info])
@@ -262,17 +260,14 @@ fi
 AC_SUBST([RSVG_PC_REQUIRES_PRIVATE])
 AC_SUBST([RSVG_PC_LIBS_PRIVATE])
 
-dnl libcroco is discontinued. css/ is the only engine. libcroco/ stays
-dnl in the tree as an unbuilt archive. Never PKG_CHECK_MODULES for
-dnl libcroco-0.6. Never AC_CONFIG_SUBDIRS([libcroco]).
+dnl css/ is the only engine. Never PKG_CHECK_MODULES for libcroco-0.6.
+dnl Never AC_CONFIG_SUBDIRS([libcroco]). --enable-croco is an error so
+dnl old scripts fail clearly.
 case " $ac_configure_args " in
   *enable-croco*|*disable-croco*)
-    AC_MSG_ERROR([libcroco is discontinued; css/ is the only CSS engine])
+    AC_MSG_ERROR([libcroco is gone; css/ is the only CSS engine])
     ;;
 esac
-if test -n "$PKG_CONFIG" && "$PKG_CONFIG" --exists libcroco-0.6 2>/dev/null; then
-  AC_MSG_NOTICE([ignoring host libcroco-0.6 from pkg-config; css/ is the only engine])
-fi
 dnl automake 1.16 is required only for maintainer-mode rebuilds of
 dnl the shipped Makefile.in files.
 case " $ac_configure_args " in
@@ -525,6 +520,6 @@ librsvg-$VERSION
 	GIF in SVG <image> (giflib):    ${have_libgif}
 	AVIF in SVG <image> (libavif):  ${have_libavif}
 	BMP in SVG <image> (in-tree):   ${have_bmp}
-	libcroco:                       discontinued (unbuilt archive in libcroco/; css/ only)
+	CSS engine:                     in-tree css/
 	Build miscellaneous tools:      ${build_misc_tools}
 "

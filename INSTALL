@@ -83,11 +83,9 @@ Rebuild
 CSS engine
 ----------
 
-   Stylesheets use in-tree **css/** only.  `libcroco/` is an unbuilt
-   archive (not compiled, not linked, not packaged).
-   `--enable-croco` / `--disable-croco` error: libcroco is
-   discontinued.  A system libcroco is not used.  `RSVG_CSS_ENGINE`
-   is ignored.
+   Stylesheets use in-tree **css/** only.  `--enable-croco` /
+   `--disable-croco` error.  A system CSS library is not used.
+   `RSVG_CSS_ENGINE` is ignored.
 
 Default DPI
 -----------

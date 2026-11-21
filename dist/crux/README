@@ -2,8 +2,7 @@ CRUX port for this librsvg tree
 ===============================
 
 One package (`librsvg/Pkgfile`) builds **librsvg** 2.63.5
-(`librsvg-2.so.2`). css/ is the only CSS engine. `libcroco/` is an
-unbuilt archive and is not packaged.
+(`librsvg-2.so.2`). css/ is the only CSS engine.
 Source code home URL: https://familybusinesssoftware.com/oss/librsvg
 
 How to build with pkgmk
@@ -40,7 +39,7 @@ PNG, JPEG, GIF, WebP, and AVIF in SVG `<image>` stay **auto**
 
 The compile step is `make all` because a bare `make` in this tree
 can run `dist-hook` instead of building. Install is
-`make DESTDIR=$PKG install`. libcroco is not built or installed.
+`make DESTDIR=$PKG install`.
 
 The gdk-pixbuf SVG loader is installed under
 `$PKG.../gdk-pixbuf-2.0/.../loaders/`. The package does **not**
@@ -58,8 +57,6 @@ Dependencies
 Required: cairo, gdk-pixbuf, glib, libxml2, pango.
 
 Optional (configure auto): libpng, libjpeg, giflib, libwebp, libavif.
-
-libcroco is not a package dependency.
 
 libxml2 2.15 (CRUX) needs no Pkgfile patch: parser.h,
 xmlParserMaxDepth (#ifndef raise vs #else XML_PARSE_HUGE), and

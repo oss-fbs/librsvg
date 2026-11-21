@@ -11,6 +11,8 @@ Version 2.63.5
   (fuzz-css, fuzz-afl, fuzz-bmp).
 - Optional C++ wrapper in cpp/ (header-only; not built or installed
   by default).
+- The discontinued libcroco archive has been removed. css/ is the
+  only stylesheet engine.
 
 
 Version 2.63.4

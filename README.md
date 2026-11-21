@@ -38,9 +38,8 @@ Dependencies
 ------------
 
 Required: GLib, GIO, libxml2, cairo, pango (pangocairo / pangoft2),
-gdk-pixbuf.  Stylesheets use the in-tree **css/** engine.  `libcroco/`
-is an unbuilt archive (not compiled, not linked, not packaged).
-A system libcroco is not used.
+gdk-pixbuf.  Stylesheets use the in-tree **css/** engine.  A system
+CSS library is not used.
 
 Raster decoders (each **auto** at configure time):
 
@@ -134,8 +133,8 @@ Download and signature:
     https://github.com/oss-fbs/librsvg
 
 writes `librsvg-c-2.63.5.tar.xz` only under `../pkg/`.
-The tarball is source only (C tree, tests, autotools; `libcroco/`
-is an unbuilt archive).  Sample packaging lives in git `dist/`,
+The tarball is source only (C tree, tests, autotools).  Sample
+packaging lives in git `dist/`,
 not in the public source archive.
 `.git/`, `.gitignore`, and maintainer key files are omitted from
 the tarball.  The public key for signatures is on the project page

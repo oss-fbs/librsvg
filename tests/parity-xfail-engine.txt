@@ -1,8 +1,6 @@
 # Same list as tests/parity-xfail.txt.
-# The css/ engine is now the default matcher. This file is kept so
+# The css/ engine is the default matcher. This file is kept so
 # older `make check-parity-engine` scripts still find it.
-#
-# Fallback comparison: RSVG_CSS_ENGINE=croco + parity-xfail-croco.txt.
 #
 
 fail	a-pseudo-class.svg	pixels=1349 max_diff=255

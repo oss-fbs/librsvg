@@ -15,10 +15,10 @@ first need to use some Unix-like environment or manual work to expand
 files as needed, for instance the .vcprojin files here into .vcproj
 files.
 
-It is recommended that GLib, libxml2, libcroco, Cairo, Pango is compiled
+It is recommended that GLib, libxml2, Cairo, Pango is compiled
 with VS9 to compile librsvg.
 
-External dependencies are at least Cairo, GLib, libxml2, libcroco, GDK-Pixbuf
+External dependencies are at least Cairo, GLib, libxml2, GDK-Pixbuf
 Please see the build\win32\vs9\README.txt file in glib for details where to
 unpack them.
 
@@ -29,7 +29,7 @@ CRTs can be kept at a minimum.
 
 libxml2 and Cairo do contain support for compiling under VS9
 using VS project files and/or makefiles at this time of writing.
-For GDK-Pixbuf, Pango, libcroco and GLib, VS9 project files are
+For GDK-Pixbuf, Pango and GLib, VS9 project files are
 available under $(srcroot)\build\vs9.
 
 Set up the source tree as follows under some arbitrary top folder
@@ -49,7 +49,6 @@ The recommended build order for these dependencies:
   build PCRE is recommended-see build\win32\vs9\README.txt of GLib)
 -GLib (put the sources in <root>\<GLib-Source-Tree>, and build it from
        there with VS9)
--libcroco
 -Cairo
 -Pango
 -Gdk-Pixbuf

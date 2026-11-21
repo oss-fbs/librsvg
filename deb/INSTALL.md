@@ -1,8 +1,8 @@
 # Installing C Library librsvg `(Debian / Devuan)`
 
 These packages **replace** GNOME/Rust `librsvg2-*`. They keep the C API
-and SONAME `librsvg-2.so.2`. CSS is the in-tree `css/` engine. libcroco
-and GObject introspection (`gir1.2-rsvg-2.0`) are not shipped.
+and SONAME `librsvg-2.so.2`. CSS is the in-tree `css/` engine.
+GObject introspection (`gir1.2-rsvg-2.0`) is not shipped.
 
 | File                           | C Package          | Replaces Rust     |
 | ------------------------------ | ------------------ | ----------------- |

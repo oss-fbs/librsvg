@@ -25,7 +25,7 @@ check-parity:
 check-parity-engine:
 	$(MAKE) -C tests check-parity-engine
 check-parity-croco:
-	@echo "check-parity-croco: libcroco is discontinued; css/ is the only engine" >&2
+	@echo "check-parity-croco: libcroco is gone; css/ is the only engine" >&2
 	@false
 
 check-asan:

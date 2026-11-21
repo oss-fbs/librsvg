@@ -5,8 +5,7 @@ Source package: **librsvg-c** (does not collide with GNOME/Rust librsvg2).
 Binaries replace librsvg2-2, librsvg2-common, librsvg2-dev, and
 librsvg2-bin. SONAME stays **librsvg-2.so.2**.
 
-css/ is the only CSS engine. `libcroco/` is an unbuilt archive and is
-not packaged.
+css/ is the only CSS engine.
 
 Layout
 ------
@@ -47,7 +46,7 @@ debian/rules uses `make clean`.
 Packages
 --------
 
-  librsvg-c2        shared library (css/ engine; no libcroco)
+  librsvg-c2        shared library (css/ engine)
   librsvg-c-common  gdk-pixbuf SVG loader; postinst/postrm for
                     loaders.cache
   librsvg-c-dev     headers and librsvg-2.0.pc
