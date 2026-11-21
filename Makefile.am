@@ -256,11 +256,13 @@ install-data-local:
 uninstall-local:
 	rm -f "$(DESTDIR)$(datadir)/bash-completion/completions/rsvg-convert"
 
-# AGENTS.md, AGENTS_history.md, and AGENTS_deprecated-abi.md are
-# developer-only. Do not add them to EXTRA_DIST or pkg/ tarballs.
+# AGENTS.md, AGENTS_history.md, AGENTS_HISTORY.md, and
+# AGENTS_deprecated-abi.md are developer-only. Do not add them to
+# EXTRA_DIST or pkg/ tarballs.
 # debug/ and make-check logs are never part of a release tarball.
 dist-hook:
 	rm -f $(distdir)/AGENTS.md $(distdir)/AGENTS_history.md \
+	      $(distdir)/AGENTS_HISTORY.md \
 	      $(distdir)/AGENTS_deprecated-abi.md $(distdir)/PLAN.md
 	rm -rf $(distdir)/debug
 	-find $(distdir) \( -name '*.log' -o -name '*.trs' \) -delete

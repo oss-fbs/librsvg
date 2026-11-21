@@ -1,46 +1,77 @@
-# Audit fixes (librsvg 2.63.5)
+# Audit history (librsvg 2.63.5)
 
-Ranked from `00-SUMMARY.md`. High first. Noise skipped.
+Developer-only. Not in NEWS, README, make dist, or packages.
+User-visible notes for these fixes are in NEWS under 2.63.5
+(Resource limits and robustness). Compacted engineering history
+is in `AGENTS_history.md`.
+
+## Overnight audit
+
+2026-11-20/21 ET on librsvg 2.63.5 (C library). Reports were
+`audits/00-SUMMARY.md` plus 01–04; those working notes are not
+kept. Counts from the summary: **high 4 · medium 14 · low 17 ·
+note 9** (false positives rejected in the original reports).
+
+- High: all four fixed (canvas pixel cap, `gsize` filter indexes,
+  morphology radius, turbulence octaves).
+- Medium: all fourteen fixed (setjmp volatiles, decoder size
+  checks, file-size cap, XInclude fallback, render-stack
+  balance, offscreen cap, pixbuf NULL, XML_PARSE_HUGE,
+  displacement NaN, feOffset clamp, kernelUnitLength overflow,
+  failed-write close).
+- Clearer low/note: all items worth doing were fixed (37
+  commits, including SA-8, H2-6, H2-Pango, SA-7).
+- Left alone: H2-3, H2-5, H2-14, B3-4, E4-15, E4-16. Those are
+  not reproducible on this host, theoretical, style-only with no
+  live defect, or locked by the documented API. See the skipped
+  sections below.
+
+Each successful fix ran `make check` and `make check-parity`
+(315 PASS / pass=723 fail=0 skip=27 at the end). Version stays
+2.63.5. Renderer behavior for valid documents is unchanged
+(parity stayed green).
 
 ## Order
 
-1. **B3-5** — cap document / filter image surfaces (`RSVG_MAX_IMAGE_PIXEL_BYTES`)
-2. **B3-1** — `gsize` pixel index math in filter walks
-3. **H2-10** — cap feMorphology radius
-4. **H2-11** — cap feTurbulence `numOctaves`
-5. **E4-1 / SA-1 / H2-9** — volatile locals in PNG/JPEG `setjmp`
-6. **H2-7** — GIF first-frame size check before RasterBits
-7. **H2-8** — AVIF size limits before decode
-8. **H2-1** — file size cap before full read
-9. **E4-2** — XInclude parse failure uses xi:fallback
-10. **E4-9** — remember push/pop offscreen layer instead of re-acquiring clip-path
-11. **H2-16 leftover** — cap non-filter offscreen `create_similar`
-12. **E4-8** — check gdk_pixbuf_new NULL in surface_to_pixbuf
-13. **H2-4** — do not set XML_PARSE_HUGE unless UNLIMITED on libxml2 2.12+
-14. **H2-12** — skip non-finite feDisplacementMap scale before the interpolator cast
-15. **B3-2** — clamp feOffset dx/dy to gint and subtract in gint64
-16. **B3-3** — skip kernelUnitLength scaling that would overflow the int canvas size
-17. **E4-4** — failed write closes the loader so close cannot set CLOSED_OK
-18. **SA-2** — do not allocate a filter result store when result= is empty
-19. **SA-3** — free the drawing ctx if rsvg_cairo_render_new fails
-20. **SA-4** — initialize path-parser ctx.rel before reading it
-21. **E4-5** — destroy pattern tile objects even when patternTransform is singular
-22. **E4-7** — destroy the filter-input surface when cairo reports an error status
-23. **SA-5 / H2-15** — honor len in rsvg_make_valid_utf8 (g_strndup / g_string_append_len)
-24. **SA-6** — clear priv->error on close_impl xmlParseChunk failure
-25. **H2-2** — cap @import stylesheet bodies at RSVG_MAX_STYLESHEET_BYTES
-26. **H2-13** — range-check feConvolveMatrix targetX/targetY
-27. **E4-3** — honor g_convert failure on xi:include parse="text"
-28. **E4-6** — check cairo_matrix_invert on gradients and feImage
-29. **E4-10** — return FALSE from measure/render_cairo when cairo_status fails
-30. **E4-11** — free Qual name/value when an attribute selector fails to parse
-31. **E4-12** — do not commit a malformed path number; stop that command
-32. **E4-13** — report file-nesting errors from external SVG references
-33. **E4-14** — check xmlCreatePushParserCtxt NULL before using the parser
-34. **SA-8** — do not read a CLOSE_PATH header as the current point
-35. **H2-6** — keep decoded data: length so %00 does not truncate
-36. **H2-Pango** — clamp font-size and letter-spacing before × PANGO_SCALE
-37. **SA-7** — remove the dead second display branch
+1. **B3-5** (`4cdd9ea`) — cap document / filter image surfaces (`RSVG_MAX_IMAGE_PIXEL_BYTES`)
+2. **B3-1** (`e649099`) — `gsize` pixel index math in filter walks
+3. **H2-10** (`8810c40`) — cap feMorphology radius
+4. **H2-11** (`a317119`) — cap feTurbulence `numOctaves`
+5. **E4-1 / SA-1 / H2-9** (`0afdfe2`) — volatile locals in PNG/JPEG `setjmp`
+6. **H2-7** (`7a5f84d`) — GIF first-frame size check before RasterBits
+7. **H2-8** (`0bbf622`) — AVIF size limits before decode
+8. **H2-1** (`37f10da`) — file size cap before full read
+9. **E4-2** (`8b9b7c7`) — XInclude parse failure uses xi:fallback
+10. **E4-9** (`e5333fe`) — remember push/pop offscreen layer instead of re-acquiring clip-path
+11. **H2-16 leftover** (`54d6c89`) — cap non-filter offscreen `create_similar`
+12. **E4-8** (`93acd28`) — check gdk_pixbuf_new NULL in surface_to_pixbuf
+13. **H2-4** (`8aaa4a6`) — do not set XML_PARSE_HUGE unless UNLIMITED on libxml2 2.12+
+14. **H2-12** (`d9b3932`) — skip non-finite feDisplacementMap scale before the interpolator cast
+15. **B3-2** (`886a4e6`) — clamp feOffset dx/dy to gint and subtract in gint64
+16. **B3-3** (`50b5f08`) — skip kernelUnitLength scaling that would overflow the int canvas size
+17. **E4-4** (`4ffcfd6`) — failed write closes the loader so close cannot set CLOSED_OK
+18. **SA-2** (`0f71467`) — do not allocate a filter result store when result= is empty
+19. **SA-3** (`d23ec91`) — free the drawing ctx if rsvg_cairo_render_new fails
+20. **SA-4** (`c708dff`) — initialize path-parser ctx.rel before reading it
+21. **E4-5** (`3b84bee`) — destroy pattern tile objects even when patternTransform is singular
+22. **E4-7** (`88f0747`) — destroy the filter-input surface when cairo reports an error status
+23. **SA-5 / H2-15** (`45e471f`) — honor len in rsvg_make_valid_utf8 (g_strndup / g_string_append_len)
+24. **SA-6** (`9b3921b`) — clear priv->error on close_impl xmlParseChunk failure
+25. **H2-2** (`a4b2ae3`) — cap @import stylesheet bodies at RSVG_MAX_STYLESHEET_BYTES
+26. **H2-13** (`c6ccf18`) — range-check feConvolveMatrix targetX/targetY
+27. **E4-3** (`988506d`) — honor g_convert failure on xi:include parse="text"
+28. **E4-6** (`002c8f8`) — check cairo_matrix_invert on gradients and feImage
+29. **E4-10** (`576db91`) — return FALSE from measure/render_cairo when cairo_status fails
+30. **E4-11** (`119c93b`) — free Qual name/value when an attribute selector fails to parse
+31. **E4-12** (`7a8b8f3`) — do not commit a malformed path number; stop that command
+32. **E4-13** (`1a460d0`) — report file-nesting errors from external SVG references
+33. **E4-14** (`96b8093`) — check xmlCreatePushParserCtxt NULL before using the parser
+34. **SA-8** (`8d66878`) — do not read a CLOSE_PATH header as the current point
+35. **H2-6** (`1b02841`) — keep decoded data: length so %00 does not truncate
+36. **H2-Pango** (`8983778`) — clamp font-size and letter-spacing before × PANGO_SCALE
+37. **SA-7** (`a1862ff`) — remove the dead second display branch
+
+Skipped-note log: `cedc245` (later H2-Pango and SA-7 were reopened and fixed).
 
 ## Attempts
 
@@ -379,7 +410,15 @@ Ranked from `00-SUMMARY.md`. High first. Noise skipped.
 - `rsvg_bbox_insert` / `rsvg_bbox_clip` return if `cairo_matrix_invert` fails, leaving the box unclipped. The FIXME has no specified correct result (empty vs unchanged). Changing it would risk geometry tests.
 - Outcome: **skipped**. Correctness-only with no clear right answer.
 
-## Remaining (not this batch)
+## Remaining (left alone)
 
-- Medium: none.
-- Low / note: audit remediation of the items worth doing is complete. Skipped as not reproducible / theoretical / API-locked: H2-3, H2-5, H2-14, B3-4, E4-15, E4-16.
+Audit remediation of the items worth doing is complete. These six
+were left unchanged. They are style, not reproducible on this host,
+theoretical, or locked by the documented API:
+
+- **H2-14** — even blur-kernel length at the unused 500 clamp. Not a live defect.
+- **H2-3** — external general entities vs `rsvg_allow_load`. XXE not reproducible on libxml2 2.9.14.
+- **H2-5** — TOCTOU between `realpath` and load. Theoretical race; a correct fix would load via the resolved path.
+- **B3-4** — Cairo zero-fills new ARGB32 surfaces (checked on 1.18.4). Not a live leak of heap contents here.
+- **E4-15** — second close after a failed close returns TRUE. Documented idempotent close; existing API test asserts TRUE.
+- **E4-16** — bbox clip/insert return early on a singular matrix. No specified correct result; changing it would risk geometry tests.

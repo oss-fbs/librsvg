@@ -14,6 +14,45 @@ Version 2.63.5
 - The discontinued libcroco archive has been removed. css/ is the
   only stylesheet engine.
 
+Resource limits and robustness
+
+- rsvg.c, rsvg-cairo-draw.c, rsvg-filter.c: Cap document, filter, and
+  offscreen canvases at the image pixel budget. Oversize filter and
+  opacity layers use a 1×1 dummy so push/pop stay balanced.
+- rsvg-filter.c: Cap morphology radius and turbulence octaves; use
+  gsize for pixel indexes. Skip non-finite feDisplacementMap scale;
+  clamp feOffset dx/dy; skip kernelUnitLength scaling that would
+  overflow; range-check feConvolveMatrix targetX/targetY. Do not
+  allocate a result store when result is empty; destroy filter inputs
+  when cairo reports an error; skip singular feImage matrices.
+- rsvg-cairo-draw.c: Remember offscreen layers so push and pop stay
+  balanced. Return NULL when gdk_pixbuf_new fails. Destroy pattern
+  tiles when patternTransform is singular; skip singular gradient
+  matrices.
+- rsvg-image.c: Mark PNG/JPEG setjmp locals volatile. Check GIF
+  first-frame size before allocating RasterBits. Cap AVIF decode at
+  the image size limits.
+- rsvg-io.c: Cap file and GVFS reads before the full slurp. Keep the
+  decoded data: length so a NUL does not truncate a binary payload.
+- rsvg-base.c: Honor XInclude parse and g_convert failure so
+  xi:fallback is used. Gate XML_PARSE_HUGE on UNLIMITED for libxml2
+  2.12+. Close the loader when write fails; clear the stack error
+  pointer when close's parse fails. Check xmlCreatePushParserCtxt
+  for NULL.
+- rsvg-cairo-render.c: Free the drawing context if cairo render
+  setup fails. Fail render and measure when cairo is in error.
+- rsvg-path.c: Stop committing malformed path numbers; initialize
+  the relative-coords flag; do not read a CLOSE_PATH header as the
+  current point.
+- rsvg-text.c: Honor length in rsvg_make_valid_utf8. Clamp font-size
+  and letter-spacing before converting to Pango units.
+- css/rsvg-css-engine.c: Cap @import stylesheet bodies at one
+  mebibyte. Free Qual strings when attribute selectors fail to parse.
+- rsvg-defs.c: Fail render when an external SVG hits the file-nesting
+  cap.
+- rsvg-styles.c: Remove an unreachable second display branch. The
+  live path already honors display:none.
+
 
 Version 2.63.4
 
