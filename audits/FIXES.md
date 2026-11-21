@@ -23,6 +23,7 @@ Ranked from `00-SUMMARY.md`. High first. Noise skipped.
 17. **E4-4** — failed write closes the loader so close cannot set CLOSED_OK
 18. **SA-2** — do not allocate a filter result store when result= is empty
 19. **SA-3** — free the drawing ctx if rsvg_cairo_render_new fails
+20. **SA-4** — initialize path-parser ctx.rel before reading it
 
 ## Attempts
 
@@ -178,7 +179,15 @@ Ranked from `00-SUMMARY.md`. High first. Noise skipped.
 - Tests: `make check` 287 PASS including `/api/render_cairo_sub`. `make check-parity` pass=723 fail=0 skip=27. The NULL `render` path is not unit-tested.
 - Outcome: **fixed**.
 
+### SA-4 — uninitialized ctx.rel in path parser (try 1, committed)
+
+- Site: `rsvg-path.c` `rsvg_parse_path`. `ctx.rel` was never set. Path data that starts with a number (`d="10 20 …"`) reads it in `rsvg_path_end_of_number`.
+- Plan: initialize `ctx.rel = FALSE` with the other fields.
+- Change: that assignment only.
+- Tests: `make check` 289 PASS including `/api/path_leading_numbers_do_not_abort` and `/api/path_unit_fill_still_applies`. `make check-parity` pass=723 fail=0 skip=27 (paths-data-* still green).
+- Outcome: **fixed**.
+
 ## Remaining (not this batch)
 
 - Medium: none.
-- Low / note: see `00-SUMMARY.md`. This batch: SA-4, E4-5, E4-7 next.
+- Low / note: see `00-SUMMARY.md`. This batch: E4-5, E4-7 next.

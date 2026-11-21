@@ -1709,6 +1709,53 @@ cairo_huge_path_coords_are_skipped (void)
 }
 
 static void
+path_leading_numbers_do_not_abort (void)
+{
+    /* d starting with a number used to read uninitialized ctx.rel (SA-4). */
+    const char *svg =
+        "<svg xmlns='http://www.w3.org/2000/svg' width='8' height='8'>"
+        "<path d='10 20 M 0 0 H 8 V 8 H 0 Z' fill='#ff0000'/>"
+        "</svg>";
+    GError *error = NULL;
+    RsvgHandle *handle;
+    cairo_surface_t *output;
+
+    handle = rsvg_handle_new_from_data ((const guint8 *) svg, strlen (svg), &error);
+    g_assert_no_error (error);
+    g_assert_nonnull (handle);
+
+    output = cairo_image_surface_create (CAIRO_FORMAT_ARGB32, 8, 8);
+    render_to_surface (handle, output);
+    g_assert_cmphex (pixel_argb (output, 4, 4), ==, 0xffff0000);
+
+    cairo_surface_destroy (output);
+    g_object_unref (handle);
+}
+
+static void
+path_unit_fill_still_applies (void)
+{
+    const char *svg =
+        "<svg xmlns='http://www.w3.org/2000/svg' width='8' height='8'>"
+        "<path d='M 0 0 H 8 V 8 H 0 Z' fill='#ff0000'/>"
+        "</svg>";
+    GError *error = NULL;
+    RsvgHandle *handle;
+    cairo_surface_t *output;
+
+    handle = rsvg_handle_new_from_data ((const guint8 *) svg, strlen (svg), &error);
+    g_assert_no_error (error);
+    g_assert_nonnull (handle);
+
+    output = cairo_image_surface_create (CAIRO_FORMAT_ARGB32, 8, 8);
+    render_to_surface (handle, output);
+    g_assert_cmphex (pixel_argb (output, 4, 4), ==, 0xffff0000);
+
+    cairo_surface_destroy (output);
+    g_object_unref (handle);
+}
+
+static void
 cairo_huge_text_coords_are_skipped (void)
 {
     const char *svg =
@@ -4077,6 +4124,8 @@ main (int argc, char **argv)
     g_test_add_func ("/api/clip_path_object_bbox_still_clips", clip_path_object_bbox_still_clips);
     g_test_add_func ("/api/clip_path_missing_does_not_unbalance_stack", clip_path_missing_does_not_unbalance_stack);
     g_test_add_func ("/api/cairo_huge_path_coords_are_skipped", cairo_huge_path_coords_are_skipped);
+    g_test_add_func ("/api/path_leading_numbers_do_not_abort", path_leading_numbers_do_not_abort);
+    g_test_add_func ("/api/path_unit_fill_still_applies", path_unit_fill_still_applies);
     g_test_add_func ("/api/cairo_huge_text_coords_are_skipped", cairo_huge_text_coords_are_skipped);
     g_test_add_func ("/api/convolve_invalid_order_is_noop", convolve_invalid_order_is_noop);
 #ifdef HAVE_LIBWEBP

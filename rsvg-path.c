@@ -758,6 +758,7 @@ rsvg_parse_path (const char *path_str)
     ctx.quad_rp.point.x = ctx.quad_rp.point.y = 0.0;
     ctx.cmd = 0;
     ctx.param = 0;
+    ctx.rel = FALSE;
 
     rsvg_parse_path_data (&ctx, path_str);
 
