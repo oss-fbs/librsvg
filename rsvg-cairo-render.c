@@ -182,8 +182,10 @@ rsvg_cairo_new_drawing_ctx (cairo_t * cr, RsvgHandle * handle)
 
     render = rsvg_cairo_render_new (cr, bbx1 - bbx0, bby1 - bby0);
 
-    if (!render)
+    if (!render) {
+        g_free (draw);
         return NULL;
+    }
 
     draw->render = (RsvgRender *) render;
     render->offset_x = bbx0;

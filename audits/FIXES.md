@@ -22,6 +22,7 @@ Ranked from `00-SUMMARY.md`. High first. Noise skipped.
 16. **B3-3** — skip kernelUnitLength scaling that would overflow the int canvas size
 17. **E4-4** — failed write closes the loader so close cannot set CLOSED_OK
 18. **SA-2** — do not allocate a filter result store when result= is empty
+19. **SA-3** — free the drawing ctx if rsvg_cairo_render_new fails
 
 ## Attempts
 
@@ -169,7 +170,15 @@ Ranked from `00-SUMMARY.md`. High first. Noise skipped.
 - Tests: `make check` 287 PASS including `/api/offset_unit_dx_still_shifts` (unnamed) and `/api/filter_named_result_still_applies` (`result='o'` then feMerge). `make check-parity` pass=723 fail=0 skip=27.
 - Outcome: **fixed**.
 
+### SA-3 — drawing ctx leak when render_new fails (try 1, committed)
+
+- Site: `rsvg-cairo-render.c` `rsvg_cairo_new_drawing_ctx`. `draw` is allocated, then `if (!render) return NULL` leaked it. `rsvg_cairo_render_new` currently always returns a pointer (`g_new0`), so this is defensive.
+- Plan: `g_free (draw)` on that path.
+- Change: that free only.
+- Tests: `make check` 287 PASS including `/api/render_cairo_sub`. `make check-parity` pass=723 fail=0 skip=27. The NULL `render` path is not unit-tested.
+- Outcome: **fixed**.
+
 ## Remaining (not this batch)
 
 - Medium: none.
-- Low / note: see `00-SUMMARY.md`. This batch: SA-3, SA-4, E4-5, E4-7 next.
+- Low / note: see `00-SUMMARY.md`. This batch: SA-4, E4-5, E4-7 next.
