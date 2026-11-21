@@ -618,11 +618,11 @@ parse_attrib (const char **pp, const char *end, Qual *q)
             q->attr_op = ATTR_EQ;
             p++;
         } else {
-            return FALSE;
+            goto fail;
         }
         q->value = parse_ident_or_string (&p, end);
         if (!q->value)
-            return FALSE;
+            goto fail;
         skip_ws_and_comments (&p, end);
         if (p < end && (*p == 'i' || *p == 'I')) {
             const char *qch = p + 1;
@@ -634,10 +634,15 @@ parse_attrib (const char **pp, const char *end, Qual *q)
         }
     }
     if (p >= end || *p != ']')
-        return FALSE;
+        goto fail;
     p++;
     *pp = p;
     return TRUE;
+
+fail:
+    qual_clear (q);
+    memset (q, 0, sizeof (*q));
+    return FALSE;
 }
 
 static gboolean

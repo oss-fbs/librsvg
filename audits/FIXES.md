@@ -33,6 +33,7 @@ Ranked from `00-SUMMARY.md`. High first. Noise skipped.
 27. **E4-3** — honor g_convert failure on xi:include parse="text"
 28. **E4-6** — check cairo_matrix_invert on gradients and feImage
 29. **E4-10** — return FALSE from measure/render_cairo when cairo_status fails
+30. **E4-11** — free Qual name/value when an attribute selector fails to parse
 
 ## Attempts
 
@@ -268,7 +269,15 @@ Ranked from `00-SUMMARY.md`. High first. Noise skipped.
 - Tests: `make check` 305 PASS including `/api/render_cairo_error_context_fails` (unmatched cairo_restore, both render_cairo and render_document FALSE) and existing `/api/render_cairo_sub` / `/api/get_geometry_for_layer`. `make check-parity` pass=723 fail=0 skip=27. The measure cancelled/cairo-error branches are not unit-tested from the public API.
 - Outcome: **fixed**.
 
+### E4-11 — CSS Qual strings leak on selector parse failure (try 1, committed)
+
+- Site: `css/rsvg-css-engine.c` `parse_attrib`. After `q->name = ns`, three FALSE returns leaked name/value: unknown operator, `parse_ident_or_string` fail, missing `]`. The caller `simple_sel_clear (out)` never frees the local `q`.
+- Plan: on those fail paths, `qual_clear` then `memset` so the caller is safe. Early `if (!ns) return FALSE` paths still just return FALSE (`q` is still zeroed). `qual_clear` does not NULL the pointers, so only this path clears.
+- Change: those three returns go to a `fail:` label that frees then zeros `q`. `parse_pseudo` leftover on a missing `)` was left alone (audit was specifically `parse_attrib`).
+- Tests: `make check` 307 PASS including `/api/css_malformed_attr_selector_does_not_abort` (`rect[foo!]`, `rect[foo=`, `rect[foo=bar` without `]`) and `/api/css_attr_selector_still_applies` (`rect[id='r']` paints red). `make check-parity` pass=723 fail=0 skip=27 (styling-css-* still green).
+- Outcome: **fixed**.
+
 ## Remaining (not this batch)
 
 - Medium: none.
-- Low / note: see `00-SUMMARY.md`. Working E4-3, E4-6, E4-10, E4-11. Next after this batch: E4-11 leftover if not reached, E4-12, E4-13, E4-14.
+- Low / note: see `00-SUMMARY.md`. Next: E4-12, E4-13, E4-14.

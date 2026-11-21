@@ -904,6 +904,38 @@ css_long_attr_selector_does_not_abort (void)
     g_string_free (css, TRUE);
 }
 
+/* E4-11: parse_attrib used to leak Qual name/value on a bad operator or
+ * a missing ']'. */
+static void
+css_malformed_attr_selector_does_not_abort (void)
+{
+    css_engine_load_style_survives ("rect[foo!]{fill:blue}rect{fill:red}");
+    css_engine_load_style_survives ("rect[foo={fill:blue}rect{fill:red}");
+    css_engine_load_style_survives ("rect[foo=bar{fill:blue}rect{fill:red}");
+}
+
+static void
+css_attr_selector_still_applies (void)
+{
+    const char *svg =
+        "<svg xmlns='http://www.w3.org/2000/svg' width='8' height='8'>"
+        "<style>rect[id='r']{fill:#ff0000}</style>"
+        "<rect id='r' width='8' height='8' fill='#00ff00'/>"
+        "</svg>";
+    GError *error = NULL;
+    RsvgHandle *handle = rsvg_handle_new_from_data ((const guint8 *) svg, strlen (svg), &error);
+    cairo_surface_t *output;
+
+    g_assert_no_error (error);
+    g_assert_nonnull (handle);
+    output = cairo_image_surface_create (CAIRO_FORMAT_ARGB32, 8, 8);
+    render_to_surface (handle, output);
+    g_assert_cmphex (pixel_argb (output, 4, 4), ==, 0xffff0000);
+
+    cairo_surface_destroy (output);
+    g_object_unref (handle);
+}
+
 static void
 css_style_http_import_does_not_abort (void)
 {
@@ -4509,6 +4541,8 @@ main (int argc, char **argv)
     g_test_add_func ("/api/css_long_combinator_does_not_abort", css_long_combinator_does_not_abort);
     g_test_add_func ("/api/css_huge_nth_does_not_abort", css_huge_nth_does_not_abort);
     g_test_add_func ("/api/css_long_attr_selector_does_not_abort", css_long_attr_selector_does_not_abort);
+    g_test_add_func ("/api/css_malformed_attr_selector_does_not_abort", css_malformed_attr_selector_does_not_abort);
+    g_test_add_func ("/api/css_attr_selector_still_applies", css_attr_selector_still_applies);
     g_test_add_func ("/api/css_style_http_import_does_not_abort", css_style_http_import_does_not_abort);
     g_test_add_func ("/api/css_deep_decl_parens_does_not_abort", css_deep_decl_parens_does_not_abort);
     g_test_add_func ("/api/css_stray_close_brace_does_not_abort", css_stray_close_brace_does_not_abort);
