@@ -13,9 +13,6 @@ Version 2.63.5
   by default).
 - The discontinued libcroco archive has been removed. css/ is the
   only stylesheet engine.
-
-Resource limits and robustness
-
 - rsvg.c, rsvg-cairo-draw.c, rsvg-filter.c: Cap document, filter, and
   offscreen canvases at the image pixel budget. Oversize filter and
   opacity layers use a 1×1 dummy so push/pop stay balanced.
